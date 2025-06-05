@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Lancer l'IHM (interface_tk.py)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/interface_tk.py",
+      "console": "integratedTerminal",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      }
+    }
+  ]
+}

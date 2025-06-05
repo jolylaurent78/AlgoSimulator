@@ -1,0 +1,8 @@
+numpy
+opencv-python
+pillow
+pandas
+pyproj
+skyfield
+convertdate
+beautifulsoup4

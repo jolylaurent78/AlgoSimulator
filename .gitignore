@@ -1,0 +1,20 @@
+# Fichiers Python compilés
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Données générées automatiquement
+/exports/
+/logs/
+/data/carto
+/data/ephemeride
+*.log
+*.tmp
+
+# Fichiers système inutiles
+.DS_Store
+Thumbs.db
+
+# Fichiers ephemeride
+*.bsp

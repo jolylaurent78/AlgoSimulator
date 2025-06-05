@@ -1,0 +1,68 @@
+# Format CSV de définition d'une IHM algorithmique dynamique
+# Chaque ligne décrit un composant graphique de l’interface utilisateur
+#
+# Colonnes du fichier :
+# 1. Section     : Nom du groupe logique (ex : 'Observation', 'Axe des planètes')
+# 2. Categorie   : Type de bloc. Valeurs possibles :
+#                 - Global : Données générales d'observation (ex: lieu, date, orientation)
+#                 - Construction : Composants liés à des constructions graphiques
+#                 - Resultat : Résultats affichés à l’utilisateur après calcul
+# 3. Ligne       : Position verticale (entier)
+# 4. Widget      : Type d’élément graphique (field, combo, checkbox, text, spacer)
+# 5. FieldType   : Format de donnée :
+#                 - shorttext : texte court (10 caractères)
+#                 - longtext  : texte long (40 caractères)
+#                 - date      : jj/mm/aaaa
+#                 - heure     : hh:mm:ss
+#                 - angle     : xxx.xx°
+#                 - distance  : xxxx km (entier arrondi)
+#                 - lettre    : 1 caractère majuscule
+#                 - int       : entier (5 chiffres)
+# 6. Alignement  : Position du bloc dans la ligne : left, right
+# 7. Label       : Libellé affiché dans l'IHM
+# 8. Hauteur     : Nombre de lignes visibles (utile pour checkbox)
+# 9. Type        : Rôle fonctionnel :
+#                 - data           : donnée non modifiable
+#                 - input_single   : choix unique (radio)
+#                 - input_multiple : choix multiples (checkbox)
+#                 - dataSet        : source d’une liste
+#                 - static         : texte informatif uniquement
+#10. Style       : Apparence du texte : std, bold, italic
+#11. Module          : Identifiant métier (clé liée à l'objet)
+#12. Attribut      : Méthode de lecture
+
+Section,Categorie,Ligne,Widget,FieldType,Alignement,Label,ShortLabel,Hauteur,Type,Style,Module,Attribut
+Observation,Global,1,field,date,left,Date Seg,D,1,data,std,dataset,date
+Observation,Global,1,field,lettre,right,Lettre Seg,LS,1,data,std,soleil,lettreSeg
+Observation,Global,1,field,shorttext,left,Visibilité de Zéta,V,1,data,std,soleil,visibiliteZeta
+Observation,Global,2,field,shorttext,left,Date Observation,DO,1,data,std,soleil,dateObservation
+Observation,Global,2,field,lettre,right,Lettre Obs,LD,1,data,std,soleil,lettreObs
+Observation,Global,3,field,heure,left,Lever soleil Strasbourg,LS,1,data,std,carte,heure
+Observation,Global,3,field,angle,left,Azimut,A,1,data,std,carte,azimut
+Observation,Global,3,field,angle,left,Rotation%E,R,1,data,std,carte,rotation
+Observation,Global,4,field,heure,left,Heure lever Zéta,HZ,1,data,std,carte,heureLeverZeta
+Observation,Global,4,field,angle,right,Azimut,AZ,1,data,std,carte,azimutZeta
+Observation,Global,5,checkboxH,shorttext,left,Ville d'observation,O,2,input_multiple,std,soleil,lieuObservation
+Axe des planètes,Construction,0,field,shorttext,left,Planete,P,1,data,std,planete,nom
+Axe des planètes,Construction,0,field,angle,right,Azimut,PA,1,data,std,planete,azimut
+Axe des planètes,Construction,0,field,angle,right,Hauteur,PH,1,data,std,planete,hauteur
+Axe des planètes,Construction,1,checkbox,shorttext,left,Planete,P,2,input_multiple,std,planete,nom
+Axe des planètes,Construction,1,checkbox,shorttext,center,Carte,PC,2,input_multiple,std,planete,sensCarte
+Axe des planètes,Construction,1,checkbox,shorttext,right,Axe Zeta,PZ,2,input_multiple,std,planete,sensZeta
+Axe des planètes,Construction,2,field,longtext,left,Axe final,AFP,1,data,std,planete,axeFinalCalcul
+Axe des planètes,Construction,2,field,angle,right,=,AFP,1,data,std,planete,axeFinal
+Axe de la Grande Ourse,Construction,0,field,shorttext,left,Etoile,E,1,data,std,etoile,nom
+Axe de la Grande Ourse,Construction,0,field,angle,right,Azimut,AE,1,data,std,etoile,azimut
+Axe de la Grande Ourse,Construction,0,field,angle,right,Hauteur,AH,1,data,std,etoile,hauteur
+Axe de la Grande Ourse,Construction,1,checkbox,shorttext,left,Etoile,E,2,input_multiple,std,etoile,nom
+Axe de la Grande Ourse,Construction,1,checkbox,shorttext,left,Carte,EC,2,input_multiple,std,etoile,sensCarte
+Axe de la Grande Ourse,Construction,1,checkbox,shorttext,center,Axe Zeta,EZ,2,input_multiple,std,etoile,sensZeta
+Axe de la Grande Ourse,Construction,1,checkbox,shorttext,right,Axe Origine,EO,2,input_multiple,std,etoile,origineTrait
+Axe de la Grande Ourse,Construction,2,field,longtext,left,Axe final,AFE,1,data,std,etoile,axeFinalCalcul
+Axe de la Grande Ourse,Construction,2,field,angle,right,=,AFE,1,data,std,etoile,axeFinal
+Axe Horaire,Construction,0,checkboxH,shorttext,left,Sentinelles,H,2,data,std,sentinelle,heure
+Axe Horaire,Construction,1,checkboxH,shorttext,left,Sens Cadran,HC,2,data,std,sentinelle,sensCadran
+Candidat,Construction,0,field,shorttext,left,Ligne horaire la plus proche,A,1,data,std,candidats,heureSentinelle
+Candidat,Construction,0,field,distance,left,Distance,A,1,data,std,candidats,distKM
+Candidat,Construction,1,field,longtext,left,Statut,S,1,data,std,candidats,selection
+Candidat,Construction,2,PointVille,shortext,left,Solution,S,1,data,std,candidats,villeSolution
