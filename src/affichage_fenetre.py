@@ -5,6 +5,7 @@ import sqlite3
 import queue
 import os
 import tkinter as tk
+import math
 from tkinter import filedialog
 
 # Base de données des villes
@@ -62,7 +63,7 @@ class ListePOIs:
         categorie = (self.interface.varPOICategorie.get() or "").lower()
         sujet = (self.interface.varPOISujet.get() or "").lower()
 
-        def worker(pertinence: str, categorie: str, sujet: str):
+        def worker(pertinence: str, categorie: str, sujet: str, zoom_val: float):
             conn = sqlite3.connect(self.chemin_bd)
             cursor = conn.cursor()
 
@@ -112,8 +113,23 @@ class ListePOIs:
             conn.close()
 
             objets = []
+            positions = []  # (x_l93, y_l93) des POIs retenus
 
             for qid, titre, source_backlink, summary, x_l93, y_l93, icone, url in lignes:
+                # On regarde d'abord si le POI est déjà proche d'un autre
+                px, py = lambert93_to_pixels(x_l93, y_l93)
+                x2_l93, y2_l93 = pixels_to_lambert93(px + 1, py)
+                metres_par_pixel = math.hypot(x2_l93 - x_l93, y2_l93 - y_l93)
+                distance_seuil = metres_par_pixel * 16 / zoom_val
+
+                skip = False
+                for sx, sy in positions:
+                    if math.hypot(x_l93 - sx, y_l93 - sy) < distance_seuil:
+                        skip = True
+                        break
+                if skip:
+                    continue
+
                 tooltips = [source_backlink, url, summary]
                 icone = icone if icone is not None else self.icone_par_defaut
                 icone_path = os.path.join("images", icone)
@@ -130,12 +146,13 @@ class ListePOIs:
                         tooltips=tooltips,
                     )
                 )
+                positions.append((x_l93, y_l93))
 
             self.layer.supprimerTousObjets()
             self.layer.inclureObjetDansLayer(objets)
             self.canvas.after(0, self._afficherPOIs)
 
-        self.thread_courant = threading.Thread(target=worker, args=(pertinence, categorie, sujet), daemon=True)
+        self.thread_courant = threading.Thread(target=worker, args=(pertinence, categorie, sujet, zoom), daemon=True)
         self.thread_courant.start()
 
     def _afficherPOIs(self):
