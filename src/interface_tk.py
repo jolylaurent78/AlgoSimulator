@@ -69,7 +69,7 @@ class InterfaceCarte(tk.Tk):
         
         # Variable d'affichage pour la gestion des POIs
         self.varPOIVisible = tk.BooleanVar(value=False)
-        self.varPOIPertinence = tk.StringVar(value="Elevé")
+        self.varPOIPertinence = tk.StringVar(value="Elevée")
         self.varPOICategorie = tk.StringVar(value="Standard")
         self.varPOISujet = tk.StringVar()
 
@@ -459,7 +459,8 @@ class InterfaceCarte(tk.Tk):
             textvariable=self.varPOIPertinence,
             state="readonly",
             width=8,
-        )
+       )
+        self.varPOIPertinence.trace_add("write", lambda *args: self._refresh_images())
         self.comboPOIPertinence.pack(side="left", padx=(0, 4))
 
         ttk.Label(ligne_poi, text="Catégories:").pack(side="left", padx=(0, 4))
@@ -470,6 +471,7 @@ class InterfaceCarte(tk.Tk):
             state="readonly",
             width=8,
         )
+        self.varPOICategorie.trace_add("write", lambda *args: self._refresh_images())
         self.comboPOICategorie.pack(side="left", padx=(0, 4))
 
         ttk.Label(ligne_poi, text="Sujet:").pack(side="left", padx=(0, 4))
@@ -487,10 +489,11 @@ class InterfaceCarte(tk.Tk):
             values=sujets,
             textvariable=self.varPOISujet,
             state="readonly",
-            width=15,
-        )
+            width=15
+        )   
         if sujets and not self.varPOISujet.get():
             self.varPOISujet.set(sujets[0])
+        self.varPOISujet.trace_add("write", lambda *args: self._refresh_images())
         self.comboPOISujet.pack(side="left")
 #
 # 2ème ligne avec filtrage pr TAG

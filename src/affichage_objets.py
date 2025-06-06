@@ -376,18 +376,19 @@ class SymboleWiki(PointGraphique):
         if x0 < 0 or y0 < 0 or x0 + w > canvas.shape[1] or y0 + h > canvas.shape[0]:
             return  # Icône sort du cadre
 
-        # Fusion avec alpha
-        for c in range(3):  # BGR
-            canvas[y0:y0 + h, x0:x0 + w, c] = np.where(
-                self.icone[:, :, 3] > 0,
-                self.icone[:, :, c],
-                canvas[y0:y0 + h, x0:x0 + w, c]
-            )
+        # Fusion avec alpha : blending progressif
+        alpha_s = self.icone[:, :, 3] / 255.0  # [0,1]
+        alpha_l = 1.0 - alpha_s
 
+        for c in range(3):  # BGR
+            canvas[y0:y0 + h, x0:x0 + w, c] = (
+                alpha_s * self.icone[:, :, c] +
+                alpha_l * canvas[y0:y0 + h, x0:x0 + w, c]
+            ).astype(np.uint8)
+
+        # Affichage du texte éventuel
         if self.afficherNom and self.nom:
             self.afficherTexte(canvas, self.nom, x, y + h // 2 + 5)
-
-
 
 
 class Cercle:

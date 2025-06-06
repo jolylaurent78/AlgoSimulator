@@ -58,25 +58,43 @@ class ListePOIs:
             return  # Un thread est déjà actif : on ne relance pas
 
         xmin, ymin, xmax, ymax = bbox
+        pertinence = (self.interface.varPOIPertinence.get() or "").lower()
+        categorie = (self.interface.varPOICategorie.get() or "").lower()
+        sujet = (self.interface.varPOISujet.get() or "").lower()
 
-        def worker():
+        def worker(pertinence: str, categorie: str, sujet: str):
             conn = sqlite3.connect(self.chemin_bd)
             cursor = conn.cursor()
 
             # Conditions dynamiques de filtrage
-            conditions = [
-                "lambert_x BETWEEN ? AND ?",
-                "lambert_y BETWEEN ? AND ?",
-                "P31Categorie.visible = 1"
-            ]
+            conditions = ["lambert_x BETWEEN ? AND ?", "lambert_y BETWEEN ? AND ?"]
             params = [xmin, xmax, ymin, ymax]
+
+            # condition dynamique si le filtrage par catégorie est actif
+            if not ("toute" in categorie or "toutes" in categorie):
+                conditions.append("P31Categorie.visible = 1")
+
+            # Condition dynamique si le filtrage par sujet est actif
+            if sujet and sujet != "tous":
+                conditions.append("source_backlink = ?")
+                params.append(self.interface.varPOISujet.get())
 
             # Si le zoom est trop large, on ne garde que les POIs croisés
             diagonale =((xmax - xmin) ** 2 + (ymax - ymin) ** 2) ** 0.5
             if diagonale > self.zoom_seuil_diagonale:
                 conditions.append("crossReference = 2")
-            elif diagonale > self.zoom_seuil_diagonale/2:
-                conditions.append("crossReference > 0")
+            elif diagonale > self.zoom_seuil_diagonale / 2:
+                if pertinence == "elevée":
+                    conditions.append("crossReference = 2")
+                else:
+                    conditions.append("crossReference IN (1,2)")
+            else:
+                if pertinence == "faible":
+                    conditions.append("crossReference >= 0")
+                elif pertinence == "moyenne":
+                    conditions.append("crossReference >= 1")
+                else:
+                    conditions.append("crossReference = 2")
 
 
             sql = f"""
@@ -96,25 +114,28 @@ class ListePOIs:
             objets = []
 
             for qid, titre, source_backlink, summary, x_l93, y_l93, icone, url in lignes:
-                tooltips = [source_backlink, url, summary ]
-                icone = icone_par_defaut if icone is None else icone
-                icone_path = "images/"+icone
-                icone_path = icone_path if os.path.exists(icone_path) else "images/" + self.icone_par_defaut
-                objets.append(SymboleWiki(
-                    url,
-                    x_l93, y_l93,
-                    icone_path=icone_path,
-                    nom=titre,
-                    layer=self.layer,
-                    tooltips=tooltips
-                ))
+                tooltips = [source_backlink, url, summary]
+                icone = icone if icone is not None else self.icone_par_defaut
+                icone_path = os.path.join("images", icone)
+                if not os.path.exists(icone_path):
+                    icone_path = os.path.join("images", self.icone_par_defaut)
+                objets.append(
+                    SymboleWiki(
+                        url,
+                        x_l93,
+                        y_l93,
+                        icone_path=icone_path,
+                        nom=titre,
+                        layer=self.layer,
+                        tooltips=tooltips,
+                    )
+                )
 
-            self.layer.supprimerTousObjets()                  # Nettoie les anciens objets
-            self.layer.inclureObjetDansLayer(objets)   # Ajoute les nouveaux
-            self.canvas.after(0, self._afficherPOIs)  # méthode UI appelée une seule fois
+            self.layer.supprimerTousObjets()
+            self.layer.inclureObjetDansLayer(objets)
+            self.canvas.after(0, self._afficherPOIs)
 
-
-        self.thread_courant = threading.Thread(target=worker, daemon=True)
+        self.thread_courant = threading.Thread(target=worker, args=(pertinence, categorie, sujet), daemon=True)
         self.thread_courant.start()
 
     def _afficherPOIs(self):
