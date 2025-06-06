@@ -66,13 +66,20 @@ class InterfaceCarte(tk.Tk):
         self.varSegmentAffiche = None
         self.comboSegmentAffiche = None
         self.pointReferenceMesureDistance = None
+        
+        # Variable d'affichage pour la gestion des POIs
+        self.varPOIVisible = tk.BooleanVar(value=False)
+        self.varPOIPertinence = tk.StringVar(value="Elevé")
+        self.varPOICategorie = tk.StringVar(value="Standard")
+        self.varPOISujet = tk.StringVar()
 
         self._setup_main_split(largeur, hauteur )
         self._setup_menu()
 
-        # Création de la liste dynamique des POIs Wikipédia et par défaut, il n'est pas visible
+        # Création de la liste dynamique des POIs Wikipédia et paramètres d'affichage des POIs
         self.listePOIs = ListePOIs(self.canvas_image, self.chemin_bd, self)
         self.listePOIs.layer.setVisible(False)
+
 
         # Le nom du fichier de description de l'IHM porte le même nom de la classe Métier'
         nom_fichier_csv = "config/"+type(self.moteurAlgo).__name__ + ".csv"
@@ -203,19 +210,6 @@ class InterfaceCarte(tk.Tk):
 
         # Menu Wikipedia
         menu_wiki = tk.Menu(menubar, tearoff=0)
-        afficher_pois_var = tk.BooleanVar(value=False)
-
-
-        def callbackAfficherPOIs():
-            self.listePOIs.layer.setVisible(afficher_pois_var.get())
-            self._refresh_images()
-
-        menu_wiki.add_checkbutton(
-            label="Afficher les points d’intérêt",
-            variable=afficher_pois_var,
-            command=callbackAfficherPOIs
-)
-
         menu_wiki.add_command(label="Filtrage des catégories...", command=self.afficherFiltrageCategories)
         menu_wiki.add_separator()
         menu_wiki.add_command(label="Extraire les TAG P31", command=self.extraireTagsP31)
@@ -441,8 +435,65 @@ class InterfaceCarte(tk.Tk):
         # === Frame principale de filtrage ===
         frame_filtrage = ttk.Frame(parent)
         frame_filtrage.pack(fill="x", padx=5, pady=5)
+
+        # === Ligne de configuration des POIs ===
+        ligne_poi = ttk.Frame(frame_filtrage)
+        ligne_poi.pack(fill="x", pady=(0, 2))
+
+        def togglePOIVisible():
+            """Active ou désactive l'affichage des POIs."""
+            self.listePOIs.layer.setVisible(self.varPOIVisible.get())
+            self._refresh_images()
+
+        ttk.Label(ligne_poi, text="POI").pack(side="left", padx=(0, 2))
+        tk.Checkbutton(
+            ligne_poi,
+            variable=self.varPOIVisible,
+            command=togglePOIVisible
+        ).pack(side="left", padx=(0, 2))
+
+        ttk.Label(ligne_poi, text="Pertinence:").pack(side="left", padx=(0, 4))
+        self.comboPOIPertinence = ttk.Combobox(
+            ligne_poi,
+            values=["Elevée", "Moyenne", "Faible"],
+            textvariable=self.varPOIPertinence,
+            state="readonly",
+            width=8,
+        )
+        self.comboPOIPertinence.pack(side="left", padx=(0, 4))
+
+        ttk.Label(ligne_poi, text="Catégories:").pack(side="left", padx=(0, 4))
+        self.comboPOICategorie = ttk.Combobox(
+            ligne_poi,
+            values=["Filtrées", "Toutes"],
+            textvariable=self.varPOICategorie,
+            state="readonly",
+            width=8,
+        )
+        self.comboPOICategorie.pack(side="left", padx=(0, 4))
+
+        ttk.Label(ligne_poi, text="Sujet:").pack(side="left", padx=(0, 4))
+        try:
+            with sqlite3.connect(self.chemin_bd) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT source_backlink FROM SourceBacklink ORDER BY source_backlink"
+                )
+                sujets = ["Tous"] + [row[0] for row in cursor.fetchall()]
+        except Exception:
+            sujets = []
+        self.comboPOISujet = ttk.Combobox(
+            ligne_poi,
+            values=sujets,
+            textvariable=self.varPOISujet,
+            state="readonly",
+            width=15,
+        )
+        if sujets and not self.varPOISujet.get():
+            self.varPOISujet.set(sujets[0])
+        self.comboPOISujet.pack(side="left")
 #
-# 1ere ligne avec filtrage pr TAG
+# 2ème ligne avec filtrage pr TAG
 #
 
 
@@ -451,7 +502,7 @@ class InterfaceCarte(tk.Tk):
         ligne_niveau_module = ttk.Frame(frame_filtrage)
         ligne_niveau_module.pack(fill="x", pady=(0, 2))
 
-        ttk.Label(ligne_niveau_module, text="Filtrage :").pack(side="left", padx=(0, 4))
+        ttk.Label(ligne_niveau_module, text="Tracé:").pack(side="left", padx=(0, 4))
         self.comboFiltrageNiveau = ttk.Combobox(ligne_niveau_module, values=["Tous", "Construction", "Design"], state="readonly", width=15)
         self.comboFiltrageNiveau.set("Tous")
         self.comboFiltrageNiveau.pack(side="left", padx=(0, 10))
