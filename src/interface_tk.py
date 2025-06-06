@@ -138,7 +138,7 @@ class InterfaceCarte(tk.Tk):
             self.ihm_algo.destroy()
 
         # 4. Recréer une nouvelle IHM liée au bon moteur
-        nom_fichier_csv = type(self.moteurAlgo).__name__ + ".csv"
+        nom_fichier_csv = "config/"+type(self.moteurAlgo).__name__ + ".csv"
         self.ihm_algo = IHMAlgorithme(
             self.frameIHMAlgo,
             nom_fichier_csv,
