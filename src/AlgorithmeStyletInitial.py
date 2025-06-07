@@ -187,13 +187,20 @@ class Soleil(ModuleAlgo):
         ville1 = Soleil.tableauObservation.get(self.lettreSeg, "-")
         ville2 = Soleil.tableauObservationDecale.get(self.lettreSeg, "-")
 
+        # On gère le cas Roncevaux en rajoutant "Gérardmer si présent"
         if ville1 ==  Soleil.tableauObservation.get("C"):
-            return [ville1, "Gérardmer", ville2]
+            solution = [ville1, "Gérardmer", ville2]
         elif ville2 == Soleil.tableauObservation.get("C"):
-            return [ville1, ville2, "Gérardmer"]
+            solution = [ville1, ville2, "Gérardmer"]
         else:
-            return[ville1, ville2]
+            solution =[ville1, ville2]
 
+        # Si la date du segment est le 18/05/1152, on rajoute Lampouy
+        if self.dateDataset == "18/05/1152":
+            solution.append("Lampouy")
+
+        return solution
+    
     def calculer(self):
 
         ville = villes_dict[self.lieuObservation]
@@ -638,11 +645,11 @@ class Etoile(ModuleAlgo):
 #
 class Sentinelle(ModuleAlgo):
     def getEntreesModules(self):
-        return ["soleil.lettreObs"]
+        return ["soleil.lettreSeg"]
 
     def __init__(self):
 # Variable input des autres modules
-        self.lettreObsSoleil = None
+        self.lettreSegSoleil = None
 
 # Valeurs initialisées à calculer
         self.heure = None
@@ -659,7 +666,7 @@ class Sentinelle(ModuleAlgo):
 
     def setup(self):
         # On calcule en premier le tableaux des heures elligibles
-        indexes = getIndexesPourNote(self.lettreObsSoleil, Sentinelle.tableauHeures)
+        indexes = getIndexesPourNote(self.lettreSegSoleil, Sentinelle.tableauHeures)
         self.heuresPossibles= [Sentinelle.tableauHeures[i] for i in indexes]
         self.heuresPossibles.append(Sentinelle.Joker)
 
@@ -701,7 +708,7 @@ class Sentinelle(ModuleAlgo):
         self.azimutMidi = ligneMidi.azimut()
 
         # On met à jour l'heure par défaut'
-        indexes = getIndexesPourNote(self.lettreObsSoleil, Sentinelle.tableauHeures)
+        indexes = getIndexesPourNote(self.lettreSegSoleil, Sentinelle.tableauHeures)
         self.heure = Sentinelle.tableauHeures[indexes[0]]
 
     def getValeursHeure(self):
