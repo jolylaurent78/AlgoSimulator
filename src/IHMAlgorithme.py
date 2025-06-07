@@ -378,6 +378,9 @@ class IHMAlgorithme(tk.Frame):
                     listbox.pack(padx=10, fill="both", expand=True)
                     listbox.configure(exportselection=False)
 
+                    #On recharge la liste des villes
+                    villes_dict.recharger()
+                    
                     def filtrer():
                         texte = var_filtre.get().lower()
                         listbox.delete(0, tk.END)
