@@ -57,9 +57,17 @@ class Soleil(ModuleAlgo):
 # Affiché
         self.lettreSeg = None
         self.lieuObservation = None
+        self.heureLeverSoleilStrasbourg = None
+        self.azimutLeverSoleil = None        
+        self.rotationCarte = None
+        self.tableauAzimut = []        
+
 # Variables output pour les autres modules
         self.dateObservationJD = None
         self.coordObservation = None
+        self.stylet = None
+        self.heureSentinelle = None
+        self.sensCarte = None
         super().__init__()
 
 
@@ -83,6 +91,8 @@ class Soleil(ModuleAlgo):
         "D": "Bourges"
     }
 
+    tableauHeures = ["09:43", "11:36", "11:42", "12:00", "10:22", "08:00", "08:12", "10:55" ]
+    
     def setup(self):
         """
         Initialise la valeur par défaut de lieuObservation à partir de la lettre dominicale.
@@ -102,8 +112,41 @@ class Soleil(ModuleAlgo):
         _, self.azimutLeverSoleil = positionSoleil(coord_strasbourg, self.heureLeverSoleilStrasbourgJD)
         self.rotationCarte = 90 - self.azimutLeverSoleil
 
+        # On initialise le lieu d'observation
         self.lieuObservation = Soleil.tableauObservation.get(self.lettreSeg, "-")
 
+        # On calcule d'abord l'azimut du soleil pour le tableau des 7 heures + Joker'
+        date_str = "15/08/1066"
+        coordCarnac = villes_dict["Carnac"].getCoordonneesGPS()
+        (lat, lon) = coordCarnac
+
+        for heureStr in Soleil.tableauHeures:
+            heureLocale = heureStr + ":00"
+            # On pase en heure UTC
+            heureUTC = convertirHeureLocaleVersUTC(heureLocale, lon)
+            # Création des objets date-heure
+            date_am = MyJulianDate.fromString(date_str, heureUTC)
+            # Calcul des positions
+            _, az_am = positionSoleil((lat, lon), date_am)
+            self.tableauAzimut.append((heureLocale, az_am))
+
+         # On calcule ensuite l'axe du midi solaire Coetquidan - GF'
+        self.pointCoetquidan = PointGraphique(villes_dict["Coetquidan"])
+        self.pointGolfeJuan = PointGraphique(villes_dict["Golfe-Juan"])
+        px1, py1 = self.pointCoetquidan.coordonneesPixelAbs()
+        px2, py2 = self.pointGolfeJuan.coordonneesPixelAbs()
+        ligneMidi = Ligne(px1, py1, px2, py2)
+        self.azimutMidi = ligneMidi.azimut()
+
+        self.tableauLignesHoraires = []
+        for heureLocal, azimut in self.tableauAzimut:
+            delta_am = (180 - azimut) % 360
+            azimut_corrige_am = (self.azimutMidi + delta_am) % 360
+            azimut_corrige_sym = (self.azimutMidi - delta_am) % 360
+            ligneAM = Ligne.depuisPointEtAzimut(self.pointCoetquidan.coordonneesPixelAbs(), azimut_corrige_am)
+            lignePM = Ligne.depuisPointEtAzimut(self.pointCoetquidan.coordonneesPixelAbs(), azimut_corrige_sym)
+            self.tableauLignesHoraires.append((heureLocal, ligneAM, lignePM))
+       
 
     def getValeursLieuObservation(self):
         ville1 = Soleil.tableauObservation.get(self.lettreSeg, "-")
@@ -123,6 +166,34 @@ class Soleil(ModuleAlgo):
 
         return solution
     
-    def calculer(self):
-        pass
 
+    # On calcule automatiquement l'heure de la sentinelle en fonction du stylet initial
+    def calculer(self):
+        # on skip tant que le stylet n'est pas défini
+        if self.stylet is None:
+            return
+
+        self.pointStylet = PointGraphique(self.stylet)
+        px, py = self.pointStylet.coordonneesPixelAbs()
+        distMin = None
+        heureMin = None
+        sens = None
+        for heureLocale, ligneAM, lignePM in self.tableauLignesHoraires:
+            distAM = ligneAM.distanceAuPoint(px, py)
+            distPM = lignePM.distanceAuPoint(px, py)
+            if distMin is None:
+                distMin = distAM
+                heureMin = heureLocale
+                sens = "AM"
+            if distMin>distAM:
+                distMin = distAM
+                heureMin = heureLocale  
+                sens = "AM"
+            if distMin>distPM:
+                distMin = distPM
+                heureMin = heureLocale   
+                sens = "PM"                            
+            distMin = distAM if distMin>distAM else distMin
+
+        self.heureSentinelle = heureMin
+        self.sensCarte = sens

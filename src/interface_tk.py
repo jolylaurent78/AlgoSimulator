@@ -132,21 +132,33 @@ class InterfaceCarte(tk.Tk):
             f.read(taille)  # on ignore les métadonnées
             data = pickle.load(f)
 
-        # 1. Recharger les objets depuis le fichier
-        self.layerManager = data["layers"]
-        self.moteurAlgo = data["moteur"]
+        self.appliquerEtat(data["layers"], data["moteur"])
 
-        # 2. Synchroniser les attributs principaux
+
+    def appliquerEtat(self, layerManager: LayerManager, moteurAlgo):
+        """Applique le nouvel état (layers et moteur) à l'interface."""
+        self.layerManager = layerManager
+        self.moteurAlgo = moteurAlgo
+
+        # Synchroniser les attributs principaux
         segment_actif = self.moteurAlgo.segment_actif
+        if not self.varSegmentAffiche:
+            self.varSegmentAffiche = tk.StringVar()
         self.varSegmentAffiche.set(segment_actif)
         self.layerManager.segmentActif = segment_actif
 
-        # 3. Détruire l'IHM existante si elle existe
+        # MAJ de la combo des segments
+        if hasattr(self, "frameSegment") and self.frameSegment:
+            for widget in self.frameSegment.winfo_children():
+                widget.destroy()
+            self.creerSelectionSegments(self.frameSegment)
+
+        # Détruire l'IHM existante si elle existe
         if hasattr(self, "ihm_algo") and self.ihm_algo:
             self.ihm_algo.destroy()
 
-        # 4. Recréer une nouvelle IHM liée au bon moteur
-        nom_fichier_csv = "config/"+type(self.moteurAlgo).__name__ + ".csv"
+        # Recréer une nouvelle IHM liée au bon moteur
+        nom_fichier_csv = "config/" + type(self.moteurAlgo).__name__ + ".csv"
         self.ihm_algo = IHMAlgorithme(
             self.frameIHMAlgo,
             nom_fichier_csv,
@@ -154,11 +166,11 @@ class InterfaceCarte(tk.Tk):
             self.layerManager,
             callbackRefreshLayers=lambda nomScenario=None: self.creerLayerControle(self.frameLayers, nomScenario),
             callbackRedessinerCarte=self._refresh_images,
-            callbackMiseAJourMenu=None
+            callbackMiseAJourMenu=None,
         )
         self.ihm_algo.pack(fill="both", expand=True)
 
-        # 5. Rafraîchir les layers et la carte
+        # Rafraîchir les layers et la carte
         self.creerLayerControle(self.frameLayers)
         self._refresh_images()
 
@@ -172,6 +184,17 @@ class InterfaceCarte(tk.Tk):
         #
         # Menu Fichier
         menu_fichier = tk.Menu(menubar, tearoff=0)
+
+        menu_nouveau = tk.Menu(menu_fichier, tearoff=0)
+        menu_nouveau.add_command(
+            label="AlgorithmeStyletInitial",
+            command=lambda: self.actionNouveauProjet(AlgorithmeStyletInitial),
+        )
+        menu_nouveau.add_command(
+            label="AlgorithmeLumiereStyletInitial",
+            command=lambda: self.actionNouveauProjet(AlgorithmeLumiereStyletInitial),
+        )
+        menu_fichier.add_cascade(label="🆕 Nouveau", menu=menu_nouveau)
         menu_fichier.add_command(label="💾 Sauvegarder un projet...", command=self.actionSauvegarderProjet)
         menu_fichier.add_command(label="📂 Charger un projet", command=self.actionChargerProjet)
         menu_fichier.add_separator()
@@ -279,6 +302,7 @@ class InterfaceCarte(tk.Tk):
             state="readonly"
         )
         comboSegment.pack(fill="x", padx=5, pady=5)
+        self.comboSegmentAffiche = comboSegment
 
         def onSegmentChange(event=None):
             segment = self.varSegmentAffiche.get()
@@ -1685,7 +1709,7 @@ class InterfaceCarte(tk.Tk):
             initialdir=self.dossiers["projets"],
             filetypes=[("{nom_module} (*.pkl)", "*.pkl")],
             title="Charger un projet",
-)
+        )
         if not fichier:
             return
 
@@ -1695,7 +1719,11 @@ class InterfaceCarte(tk.Tk):
         except Exception as e:
             messagebox.showerror("Erreur", f"Erreur lors du chargement :\n{e}")
 
-
+    def actionNouveauProjet(self, algo_cls):
+        """Crée un nouveau projet basé sur la classe d'algorithme donnée."""
+        layer = LayerManager()
+        moteur = algo_cls(layer)
+        self.appliquerEtat(layer, moteur)
 
     def sauvegarder_carte(self):
 

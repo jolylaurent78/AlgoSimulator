@@ -38,3 +38,5 @@ Observation,Global,2,field,heure,left,Lever soleil Strasbourg,LS,1,data,std,sole
 Observation,Global,2,field,angle,left,Azimut,A,1,data,std,soleil,azimutLeverSoleil
 Observation,Global,2,field,angle,left,Rotation%E,R,1,data,std,soleil,rotationCarte
 Observation,Global,3,checkboxH,shorttext,left,Ville d'observation,O,2,input_multiple,std,soleil,lieuObservation
+Point d'Observation et Heure,Construction,1,PointVille,shortext,left,Position Stylet,PO,1,data,std,soleil,stylet
+Point d'Observation et Heure,Construction,1,field,heure,left,Heure observation,HO,1,data,std,soleil,heureSentinelle
