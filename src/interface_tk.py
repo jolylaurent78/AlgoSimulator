@@ -31,6 +31,7 @@ from src.IHMAlgorithme import IHMAlgorithme
 
 # Gestion de l'algo
 from src.AlgorithmeStyletInitial import AlgorithmeStyletInitial
+from src.AlgorithmeLumiereStyletInitial import AlgorithmeLumiereStyletInitial
 from src.AlgorithmeManager import TypeScenario
 
 # Gestion des layers graphiques
@@ -58,7 +59,7 @@ class InterfaceCarte(tk.Tk):
         # On crée le layer Manager
         self.layerManager = LayerManager()
 
-        self.moteurAlgo = AlgorithmeStyletInitial(self.layerManager)
+        self.moteurAlgo = AlgorithmeLumiereStyletInitial(self.layerManager)
         largeur, hauteur = self.moteurAlgo.getLargeurHauteurIHM()
 
 
