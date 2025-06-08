@@ -8,7 +8,7 @@ from src.ListeSegmentsDataSet import ListeSegmentsDataSet
 
 # Librairie calcul astronomique
 from src.calculAstronomique import positionSoleil, positionAstre, calculLeverAstre, calculLeverSoleil, calculCoucherSoleil, ASTRES
-from src.calculAstronomique import MyJulianDate, decalage2Notes, decalage2Jours, getIndexesPourNote, convertirHeureLocaleVersUTC, heureSymetrique
+from src.calculAstronomique import MyJulianDate, decalage2Notes, decalage2Jours, getIndexesPourNote, convertirHeureLocaleVersUTC, heureSymetrique, decalageGamme
 
 # Affichage des objects graphiques
 from src.affichage_objets import *
@@ -50,13 +50,15 @@ class AlgorithmeLumiereStyletInitial(AlgorithmeManager):
 #
 class Soleil(ModuleAlgo):
     def getEntreesModules(self):
-        return ["dataset.date"]
+        return ["dataset.date",
+                "dataset.note"]
 
     def __init__(self):
 # Variables input des autres modules
         self.dateDataset = ""
+        self.noteDataset = ""
 # Affiché
-        self.lettreSeg = None
+        self.choixNote = None
         self.lieuObservation = None
         self.heureLeverSoleilStrasbourg = None
         self.azimutLeverSoleil = None        
@@ -70,6 +72,7 @@ class Soleil(ModuleAlgo):
         self.heureSentinelle = None
         self.heureAMPM = None
         self.validite = None
+        self.choixHeure = None
         self.heureUTC = None
 
         super().__init__()
@@ -107,9 +110,31 @@ class Soleil(ModuleAlgo):
         "D": ("2**-1/12", 2**(-1/12)),
     }
 
-    def getValeursSensCarte(self):
-        return ["Endroit", "Envers"]
+    def getValeursChoixNote(self):
+        return [self.choix, self.choix_plus2, self.choix_moins2]
     
+    def getValeursChoixHeure(self):
+        return ["Même heure", "Symétrique"]
+
+    def getValeursLieuObservation(self):
+        ville1 = Soleil.tableauObservation.get(self.choix, "-")
+        ville2 = Soleil.tableauObservation.get(self.choix_plus2, "-")
+        ville3 = Soleil.tableauObservation.get(self.choix_moins2, "-")
+        solutions = [ville1]
+        # on évite les doublons!
+        if ville2 not in solutions:
+            solutions.append(ville2)
+        if ville3 not in solutions:
+            solutions.append(ville3)
+         # On gère le cas Roncevaux en rajoutant "Gérardmer si présent"
+        if "Roncevaux" in solutions:
+            solutions.append("Gérardmer")  # ou la ville que tu veux
+
+        # Si la date du segment est le 18/05/1152, on rajoute Lampouy
+        if self.dateDataset == "18/05/1152":
+            solutions.append("Lampouy")
+
+        return solutions
 
     def setup(self):
         """
@@ -120,7 +145,9 @@ class Soleil(ModuleAlgo):
 
         # On calcule la déclinaison du soleil pour savoir si nous sommes au Printemps / Ete ou Automne / Hivers
         self.dateSegmentJD = MyJulianDate.fromString(self.dateDataset)
-        self.lettreSeg = self.dateSegmentJD.lettreDominicale()
+
+        self.choix, self.choix_plus2, self.choix_moins2 = decalageGamme(self.noteDataset)
+        self.choixNote = self.choix
 
         # On calcule l'heure de lever et de coucher du soleil à Strasbourg pour savoir si Zeta est visible à cette date
         villeStrasbourg = villes_dict["Strasbourg"]
@@ -131,7 +158,7 @@ class Soleil(ModuleAlgo):
         self.rotationCarte = 90 - self.azimutLeverSoleil
 
         # On initialise le lieu d'observation
-        self.lieuObservation = Soleil.tableauObservation.get(self.lettreSeg, "-")
+        self.lieuObservation = Soleil.tableauObservation.get(self.noteDataset, "-")
 
         # On calcule d'abord l'azimut du soleil pour le tableau des 7 heures + Joker'
         date_str = "15/08/1066"
@@ -165,24 +192,8 @@ class Soleil(ModuleAlgo):
             lignePM = Ligne.depuisPointEtAzimut(self.pointCoetquidan.coordonneesPixelAbs(), azimut_corrige_sym)
             self.tableauLignesHoraires.append((heureLocal, ligneAM, lignePM))
 
+        self.choixHeure = "Même heure"
 
-    def getValeursLieuObservation(self):
-        ville1 = Soleil.tableauObservation.get(self.lettreSeg, "-")
-        ville2 = Soleil.tableauObservationDecale.get(self.lettreSeg, "-")
-
-        # On gère le cas Roncevaux en rajoutant "Gérardmer si présent"
-        if ville1 ==  Soleil.tableauObservation.get("C"):
-            solution = [ville1, "Gérardmer", ville2]
-        elif ville2 == Soleil.tableauObservation.get("C"):
-            solution = [ville1, ville2, "Gérardmer"]
-        else:
-            solution =[ville1, ville2]
-
-        # Si la date du segment est le 18/05/1152, on rajoute Lampouy
-        if self.dateDataset == "18/05/1152":
-            solution.append("Lampouy")
-
-        return solution
     
 
     # On calcule automatiquement l'heure de la sentinelle en fonction du stylet initial
@@ -215,13 +226,15 @@ class Soleil(ModuleAlgo):
 
         distance = self.pointStylet.pixelsVersMetres()*distMin/1000
         if distance<20:
-            self.heureSentinelle = heureMin
             self.heureAMPM = sens
             self.validite = "Valide"
-             # on récupère les coords GPS du stylet
-            _, lon = self.pointStylet.getCoordonneesGPS()
+            symetrique = (sens == "PM" and self.choixHeure == "Même heure") or  (sens == "AM" and self.choixHeure == "Symétrique")
+            self.heureSentinelle = heureSymetrique(heureMin) if symetrique else heureMin
+
+             # on récupère les coords GPS de la ville d'observation
+            (lat, lon) = villes_dict[self.lieuObservation].getCoordonneesGPS()
             self.heureUTC = convertirHeureLocaleVersUTC(self.heureSentinelle, lon)
-            
+
         else:
             self.heureSentinelle = None
             self.heureAMPM = None
@@ -232,7 +245,7 @@ class Soleil(ModuleAlgo):
 class Stylet(ModuleAlgo):
     def getEntreesModules(self):
         return ["dataset.date",
-                "soleil.lettreSeg",
+                "soleil.choixNote",
                 "soleil.heureAMPM",
                 "soleil.lieuObservation",
                 "soleil.rotationCarte",
@@ -246,7 +259,7 @@ class Stylet(ModuleAlgo):
     def __init__(self):
 # Variables input des autres modules
         self.dateDataset = ""
-        self.lettreSegSoleil = ""
+        self.choixNoteSoleil = ""
         self.heureAMPMSoleil = None
         self.lieuObservationSoleil = None
         self.rotationCarteSoleil = None
@@ -256,7 +269,6 @@ class Stylet(ModuleAlgo):
         self.heureAMPMSoleil = None
         self.heureUTCSoleil = None
 # Affiché
-        self.pointStylet = None
         self.distanceMetz = None
         self.formuleDistance = None
         self.hauteurStylet = None
@@ -269,7 +281,7 @@ class Stylet(ModuleAlgo):
 
         super().__init__()
 
-
+    RAYON_CANDIDAT = 20
  
     tableauGamme = {
         "C": ("2**-12/12", 2**(-12/12)),
@@ -283,23 +295,19 @@ class Stylet(ModuleAlgo):
 
     def getValeursSensCarte(self):
         return ["Endroit", "Envers"]
-    
+    """   
     def getRegles(self):
         return [
             ["Si l'heure du stylet est AM, carte à l'envers et  si PM, carte à l'endroit", "sensCarte", self._regleSensCarte]
         ]
         
     def _regleSensCarte(self):
-        """
-        Si la planète sélectionnée est le premier choix, Zéta est à l'endroit.
-        Si c’est le deuxième choix, Zéta est à l’envers.
-        Sinon : on conserve la valeur actuelle.
-        """
+
         if self.heureAMPMSoleil == "PM":
             return "Endroit"
         else:
             return "Envers"
-
+    """
 
     def setup(self):
         """
@@ -317,11 +325,11 @@ class Stylet(ModuleAlgo):
 
         if self.validiteSoleil == "Valide":
             #On calcule la distance % Metz
-            self.pointStylet = PointGraphique(villes_dict[self.styletSoleil])
-            self.distanceMetz = self.pointMetz.distance(self.pointStylet)
+            pointStylet = PointGraphique(villes_dict[self.styletSoleil])
+            self.distanceMetz = self.pointMetz.distance(pointStylet)
             # On calcule la formule en str du calcul de la hauteur
             (faLongueurStr, faLongueur) = Soleil.tableauGamme.get("F", ("-", 0))
-            (noteLongueurStr, noteLongueur) = Soleil.tableauGamme.get(self.lettreSegSoleil, ("-", 0))           
+            (noteLongueurStr, noteLongueur) = Soleil.tableauGamme.get(self.choixNoteSoleil, ("-", 0))           
             self.formuleDistance =f"{float(self.distanceMetz):.0f} / {faLongueurStr} * {noteLongueurStr}"
             self.hauteurStylet = self.distanceMetz / faLongueur * noteLongueur
 
@@ -352,3 +360,109 @@ class Stylet(ModuleAlgo):
             self.hauteurStylet = None 
             self.formuleAxeCarte = None
 
+
+    def construireRepresentationCarte(self) -> list[ObjetGraphique]:
+        listeObjets = []
+        if self.validiteSoleil == "Valide":
+            villeOrigineTrait = villes_dict[self.styletSoleil]
+
+            #
+            # D'abord la construction du level 'Design'
+            #
+            origineStylet = PointGraphique(
+                villeOrigineTrait,
+                afficherNom = True,
+                tags = {"level" : "design"}
+            )
+            listeObjets.append(origineStylet)
+
+            if self.sensCarte =="Endroit":
+                ligneLumiere= LigneAzimut(
+                    villeOrigineTrait,
+                    self.azimutSoleil,
+                    f"Axe soleil observé",
+                    couleur=(94,94,255), # Rouge  clair
+                    tooltips = [f"Axe observation={self.azimutSoleil:.2f}°", f"Sens carte: {self.sensCarte}"],
+                    tags = {"level" : "design"}
+                )
+                arcRotationLumiere = ArcOriente(
+                    villeOrigineTrait,
+                    150,
+                    self.azimutSoleil,
+                    self.rotationCarteSoleil,
+                    nom = "Rotation",
+                    epaisseur=1,
+                    couleur = (64,64,0),  # LEs arc en rouge
+                    style = "Arrow",
+                    tooltips = [f"Rotation Carte={self.rotationCarteSoleil:.2f}°",f"Sens carte: {self.sensCarte}"],
+                    tags = {"level" : "design"}
+                    )
+            else:
+                ligneLumiere= LigneAzimut(
+                    villeOrigineTrait,
+                    360-self.azimutSoleil,
+                    f"Axe soleil observé symetrique",
+                    couleur=(94,94,255), # Rouge  clair
+                    tooltips = [f"Axe observation={self.azimutSoleil:.2f}°"],
+                    tags = {"level" : "design"}
+                )    
+                arcRotationLumiere = ArcOriente(
+                    villeOrigineTrait,
+                    150,
+                    360-self.azimutSoleil,
+                    -self.rotationCarteSoleil,
+                    nom = "Rotation",
+                    epaisseur=1,
+                    couleur = (64,64,0),  # LEs arc en rouge
+                    style = "Arrow",
+                    tooltips = [f"Rotation Carte={-self.rotationCarteSoleil:.2f}°",f"Sens carte: {self.sensCarte}"],
+                    tags = {"level" : "design"}
+                    )         
+            listeObjets.append(ligneLumiere)
+            listeObjets.append(arcRotationLumiere)
+
+            ligne = LigneAzimut(
+                villeOrigineTrait,
+                self.axeCarte,
+                f"Axe Lumière après rotation",
+                epaisseur=1,
+                tooltips = [f"Axe apres rotation ={self.axeCarte:.2f}°"],
+                tags = {"level" : "construction"}
+                )
+            listeObjets.append(ligne)
+
+            cercle = CercleGraphique(
+                origineStylet,
+                self.distanceStylet,
+                epaisseur = 1,
+                nom ="Ombre du stylet",
+                tooltips=[f"Hauteur soleil : {self.hauteurSoleil}", f"Distance  = {self.distanceStylet}km"],
+                tags = {"level" : "construction"}
+            )        
+            listeObjets.append(cercle)
+
+            intersections = cercle.intersectionLigne(ligne)
+            px1, py1 = intersections[0]
+            px2, py2 = intersections[1]
+            pt1 = PointGraphique("intersection 1", px1, py1)
+            pt2 = PointGraphique("intersection 2", px2, py2 )
+            cercleCandidat1 = CercleGraphique(
+                pt1,
+                Stylet.RAYON_CANDIDAT,
+                epaisseur = 2,
+                nom ="Candidat",
+                tooltips=[f"Hauteur soleil : {self.hauteurSoleil}", f"Distance  = {self.distanceStylet}km"],
+                tags = {"level" : "construction"}
+            )   
+            listeObjets.append(cercleCandidat1)
+            cercleCandidat2 = CercleGraphique(
+                pt2,
+                Stylet.RAYON_CANDIDAT,
+                epaisseur = 2,
+                nom ="Candidat",
+                tooltips=[f"Hauteur soleil : {self.hauteurSoleil}", f"Distance  = {self.distanceStylet}km"],
+                tags = {"level" : "construction"}
+            ) 
+            listeObjets.append(cercleCandidat2)
+
+        return listeObjets

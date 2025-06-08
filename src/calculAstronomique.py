@@ -1,7 +1,7 @@
 from skyfield.api import load, wgs84
 from skyfield.toposlib import Topos
 from skyfield.units import Angle
-from skyfield.almanac import sunrise_sunset, find_discrete
+from skyfield.almanac import sunrise_sunset, find_discrete, meridian_transits
 import numpy as np
 from functools import total_ordering
 from math import floor
@@ -47,6 +47,36 @@ ALTITUDE_LEVER_STANDARD = -0.566  # degrés, pour simuler la réfraction atmosph
 #
 # des fonctions pour manipuler les notes de musique
 #
+def decalageGamme(note):
+    gamme = ["C", "D", "E", "F", "G", "A", "B"]
+
+    def substituer(n):
+        if n == "F":
+            return "G"
+        elif n == "G":
+            return "F"
+        else:
+            return n
+
+    # Substitution de la note de départ
+    note_substituee = substituer(note)
+
+    # Trouver l'index dans la gamme
+    index = gamme.index(note_substituee)
+
+    # Calcul des décalages
+    note_plus_2 = gamme[(index + 2) % len(gamme)]
+    note_moins_2 = gamme[(index - 2) % len(gamme)]
+
+    # Substituer les résultats
+    note_plus_2 = substituer(note_plus_2)
+    note_moins_2 = substituer(note_moins_2)
+
+    return note_substituee, note_moins_2, note_plus_2
+
+
+
+
 def decalage2Notes(note, code):
     notesMusique = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
     if note not in notesMusique:
@@ -511,6 +541,27 @@ def calculCoucherSoleil(coord_tuple, jd):
         if yi == 0:  # coucher du Soleil (transition 1 → 0)
             return MyJulianDate.fromJD(ti.ut1)
     raise RuntimeError("Aucun coucher trouvé avec find_discrete pour ce jour.")
+
+def calculZenithSoleil(coord_tuple, jd):
+    """
+    Calcule l'heure du midi solaire (transit du Soleil au méridien).
+    Retourne un MyJulianDate.
+    """
+    latitude, longitude = coord_tuple
+    observateur = wgs84.latlon(latitude, longitude)
+
+    t0 = ts.ut1_jd(float(jd) - 0.5)
+    t1 = ts.ut1_jd(float(jd) + 0.5)
+
+    # Fonction événement de transit
+    f = meridian_transits(eph, sun, observateur)
+    t, y = find_discrete(t0, t1, f)
+
+    for ti, yi in zip(t, y):
+        if yi == 1:  # Passage supérieur (midi solaire)
+            return MyJulianDate.fromJD(ti.ut1)
+
+    raise RuntimeError("Aucun transit trouvé avec find_discrete pour ce jour.")
 
 def declinaisonSoleil(jd):
     t = ts.ut1_jd(float(jd))

@@ -972,11 +972,16 @@ class AlgorithmeManager:
         if type_scenario is None:
             return scenarios
 
+        if type_scenario == TypeScenario.UTILISATEUR:
+            return {
+                nom: sc for nom, sc in scenarios.items()
+                if sc.getTypeScenario() in [TypeScenario.UTILISATEUR, TypeScenario.DEFAULT ]
+            }
+
         return {
             nom: sc for nom, sc in scenarios.items()
-            if sc.getTypeScenario() == type_scenario
+            if sc.getTypeScenario()==type_scenario
         }
-
 
 
     def getModulesAvecAffichage(self) -> list[str]:
