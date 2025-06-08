@@ -208,6 +208,8 @@ class IHMAlgorithme(tk.Frame):
                 if valeur is not None:
                     if field_type == "angle":
                         valeur = f"{float(valeur):.2f}"
+                    elif field_type == "distance":
+                        valeur = f"{float(valeur):.1f}"
                     var.set(valeur)  #
 
         # 🔁 Mise à jour explicite des checkboxes
@@ -309,6 +311,12 @@ class IHMAlgorithme(tk.Frame):
                             valeur = f"{float(valeur):.2f}"
                         except ValueError:
                             pass  # on laisse la valeur telle quelle si non convertible
+                    if field_type == "distance":
+                        try:
+                            valeur = f"{float(valeur):.1f}"
+                        except ValueError:
+                            pass  # on laisse la valeur telle quelle si non convertible
+
                     var.set(valeur)
                 self.parametres_widgets[id_objet] = var
 
@@ -363,7 +371,7 @@ class IHMAlgorithme(tk.Frame):
                 entry_ville.pack(side="left")
 
                 # Bouton ...
-                def ouvrir_selection_ville():
+                def ouvrir_selection_ville(module_courant=module, attribut_courant=attribut):
                     popup = tk.Toplevel()
                     popup.title("Choisir une ville")
                     popup.transient(container)
@@ -391,7 +399,7 @@ class IHMAlgorithme(tk.Frame):
                     def valider(event=None):
                         selection = listbox.get(tk.ACTIVE)
                         var_nom_ville.set(selection)
-                        self.updateModuleEtInterface(module, attribut, selection)
+                        self.updateModuleEtInterface(module_courant, attribut_courant, selection)
                         popup.destroy()
 
                     entry.bind("<KeyRelease>", lambda e: filtrer())
