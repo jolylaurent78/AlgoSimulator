@@ -220,6 +220,33 @@ class PointGraphique(ObjetGraphique):
                 tags=tags, tooltips=tooltips
         )
 
+
+    @classmethod
+    def depuisDeuxPoints(cls, p1: "PointGraphique", p2: "PointGraphique",
+        nom=None, couleur=None, epaisseur=None, style="plein", afficherNom=False, layer=None, tags=None, tooltips=None):
+
+        # On récupère les coordonnées Lambert des deux points
+        x1_l93, y1_l93 = p1.coordonneesLambert()
+        x2_l93, y2_l93 = p2.coordonneesLambert()
+
+        # Calcul du centre
+        x_centre = (x1_l93 + x2_l93) / 2
+        y_centre = (y1_l93 + y2_l93) / 2
+
+        # Création du nouveau PointGraphique centré
+        return cls(
+            nom or "CentreDeuxPoints",
+            x_centre,
+            y_centre,
+            couleur=couleur,
+            epaisseur=epaisseur,
+            style=style,
+            afficherNom=afficherNom,
+            layer=layer,
+            tags=tags,
+            tooltips=tooltips
+        )
+
     def copie(self):
         return PointGraphique(self.nom, self.x_l93, self.y_l93, lat=lat, lon=lon,
             couleur=self._couleur, epaisseur=self._epaisseur, style=self.style, afficherNom=self.afficherNom, layer=self.layer,
@@ -420,7 +447,7 @@ class CercleGraphique(ObjetGraphique):
 
 
     @staticmethod
-    def depuisTroisVilles(v1: PointGraphique, v2: PointGraphique, v3: PointGraphique,
+    def depuisTroisPoints(v1: PointGraphique, v2: PointGraphique, v3: PointGraphique,
         nom=None,
         couleur=None, epaisseur=None, layer=None, style=None,
         tags: dict[str, Any] = None, tooltips: list[str] = None) -> "CercleGraphique | None":
@@ -940,6 +967,41 @@ class Ligne:
         x2, y2 = self.pt2
         return math.hypot(x2 - x1, y2 - y1)
 
+    def angleAvec(self, autre: "Ligne") -> float:
+        """
+        Calcule l'angle (en degrés, <= 180°) entre cette ligne et une autre ligne.
+        """
+        # Vecteur directeur de la première ligne
+        dx1 = self.pt2[0] - self.pt1[0]
+        dy1 = self.pt2[1] - self.pt1[1]
+
+        # Vecteur directeur de la deuxième ligne
+        dx2 = autre.pt2[0] - autre.pt1[0]
+        dy2 = autre.pt2[1] - autre.pt1[1]
+
+        # Produit scalaire
+        dot = dx1 * dx2 + dy1 * dy2
+
+        # Normes des vecteurs
+        norm1 = math.hypot(dx1, dy1)
+        norm2 = math.hypot(dx2, dy2)
+
+        if norm1 == 0 or norm2 == 0:
+            raise ValueError("Impossible de calculer l'angle avec un vecteur nul.")
+
+        # Cosinus de l'angle
+        cos_theta = dot / (norm1 * norm2)
+        # Clamp (sécurité contre arrondis)
+        cos_theta = max(min(cos_theta, 1), -1)
+
+        # Angle en radians
+        theta_rad = math.acos(cos_theta)
+
+        # Conversion en degrés
+        theta_deg = math.degrees(theta_rad)
+
+        # On retourne un angle <= 180°
+        return min(theta_deg, 180.0 - theta_deg + 180.0) if theta_deg > 180 else theta_deg
 
 
 class LigneGraphique(ObjetGraphique):
@@ -1121,31 +1183,28 @@ class LigneGraphique(ObjetGraphique):
 
     def orthogonale(self, point: "PointGraphique") -> "LigneEntreVilles":
         """
-        Crée une LigneEntre2Villes orthogonale à cette ligne,
-        passant par le PointGraphique donné et sa projection sur la ligne.
+        Retourne une vraie droite orthogonale à self, passant par le PointGraphique donné.
         """
-
-        # Coordonnées image absolues du point
         px, py = point.coordonneesPixelAbs()
 
-        # Projection du point sur la ligne
-        px_proj, py_proj = self.lignePixelImage.projection(px, py)
+        dx, dy = self.vecteur
+        norme = math.hypot(dx, dy)
+        if norme == 0:
+            raise ValueError("Vecteur nul : impossible de construire une orthogonale.")
 
-        # Conversion des deux points en Lambert 93
-        x1_l93, y1_l93 = pixels_to_lambert93(px, py)
-        x2_l93, y2_l93 = pixels_to_lambert93(px_proj, py_proj)
+        # Vecteur orthogonal unitaire
+        ortho_dx = dy / norme
+        ortho_dy = -dx / norme   # <-- C'est ici qu'on tient compte de l'inversion de l'axe Y
 
-        # Création des deux points graphiques
-        p1 = PointGraphique(x_l93=x1_l93, y_l93=y1_l93, nom=f"{point.nom}_A", source="custom", layer=self.layer)
-        p2 = PointGraphique(x_l93=x2_l93, y_l93=y2_l93, nom=f"{point.nom}_proj", source="custom", layer=self.layer)
 
-        # Retourne une ligne graphique
-        return LigneEntreVilles(
-            p1,
-            p2,
-            nom=f"Ortho_{point.nom}_vers_{self.nom}",
+        # On construit une LigneGraphique
+        return LigneGraphique(
+            point_px=(px, py),
+            vecteur_px=(ortho_dx, ortho_dy),
+            nom=f"Ortho vraie de {point.nom}",
             layer=self.layer
         )
+
 
     def parallele(self, point: "PointGraphique") -> "LigneAzimut":
         """
@@ -1170,8 +1229,6 @@ class LigneGraphique(ObjetGraphique):
         Calcule deux points situés orthogonalement à la ligne à la distance donnée (en mètres Lambert93),
         à partir du PointGraphique donné (position centrale).
         """
-        from affichage_objets import PointGraphique
-
         # Coordonnées Lambert du point de départ
         x0_l93, y0_l93 = point.coordonneesLambert()
 

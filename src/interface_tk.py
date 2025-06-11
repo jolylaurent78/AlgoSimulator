@@ -32,6 +32,7 @@ from src.IHMAlgorithme import IHMAlgorithme
 # Gestion de l'algo
 from src.AlgorithmeStyletInitial import AlgorithmeStyletInitial
 from src.AlgorithmeLumiereStyletInitial import AlgorithmeLumiereStyletInitial
+from src.AlgorithmeBaseCadran import AlgorithmeBaseCadran
 from src.AlgorithmeManager import TypeScenario
 
 # Gestion des layers graphiques
@@ -59,7 +60,7 @@ class InterfaceCarte(tk.Tk):
         # On crée le layer Manager
         self.layerManager = LayerManager()
 
-        self.moteurAlgo = AlgorithmeLumiereStyletInitial(self.layerManager)
+        self.moteurAlgo = AlgorithmeBaseCadran(self.layerManager)
         largeur, hauteur = self.moteurAlgo.getLargeurHauteurIHM()
 
 
@@ -187,12 +188,16 @@ class InterfaceCarte(tk.Tk):
 
         menu_nouveau = tk.Menu(menu_fichier, tearoff=0)
         menu_nouveau.add_command(
-            label="AlgorithmeStyletInitial",
+            label="Algorithme Stylet Initial",
             command=lambda: self.actionNouveauProjet(AlgorithmeStyletInitial),
         )
         menu_nouveau.add_command(
-            label="AlgorithmeLumiereStyletInitial",
+            label="Algorithme Lumiere Stylet Initial",
             command=lambda: self.actionNouveauProjet(AlgorithmeLumiereStyletInitial),
+        )
+        menu_nouveau.add_command(
+            label="Algorithme Base Cadran",
+            command=lambda: self.actionNouveauProjet(AlgorithmeBaseCadran),
         )
         menu_fichier.add_cascade(label="🆕 Nouveau", menu=menu_nouveau)
         menu_fichier.add_command(label="💾 Sauvegarder un projet...", command=self.actionSauvegarderProjet)

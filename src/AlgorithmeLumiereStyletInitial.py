@@ -25,7 +25,7 @@ from src.layerManager import LayerManager
 class AlgorithmeLumiereStyletInitial(AlgorithmeManager):
 
     def __init__(self, layerManager:LayerManager):
-        self.dataset = ListeSegmentsDataSet("config/dataset.csv")  # Créé explicitement ici
+        self.dataset = ListeSegmentsDataSet("data/dataset.csv")  # Créé explicitement ici
         super().__init__(layerManager)
 
     def chargerStructure(self, structure):
@@ -51,12 +51,14 @@ class AlgorithmeLumiereStyletInitial(AlgorithmeManager):
 class Soleil(ModuleAlgo):
     def getEntreesModules(self):
         return ["dataset.date",
-                "dataset.note"]
+                "dataset.note",
+                "dataset.stylet"]
 
     def __init__(self):
 # Variables input des autres modules
         self.dateDataset = ""
         self.noteDataset = ""
+        self.styletDataset = ""
 # Affiché
         self.choixNote = None
         self.lieuObservation = None
@@ -100,16 +102,6 @@ class Soleil(ModuleAlgo):
 
     tableauHeures = ["09:43", "11:36", "11:42", "12:00", "10:22", "08:00", "08:12", "10:55" ]
     
-    tableauGamme = {
-        "C": ("2**-12/12", 2**(-12/12)),
-        "B": ("2**-10/12", 2**(-10/12)),
-        "A": ("2**-9/12", 2**(-9/12)),
-        "G": ("2**-7/12", 2**(-7/12)),
-        "F": ("2**-5/12", 2**(-5/12)),
-        "E": ("2**-3/12", 2**(-3/12)),
-        "D": ("2**-1/12", 2**(-1/12)),
-    }
-
     def getValeursChoixNote(self):
         return [self.choix, self.choix_plus2, self.choix_moins2]
     
@@ -193,6 +185,7 @@ class Soleil(ModuleAlgo):
             self.tableauLignesHoraires.append((heureLocal, ligneAM, lignePM))
 
         self.choixHeure = "Même heure"
+        self.stylet = self.styletDataset
 
     
 
@@ -328,8 +321,8 @@ class Stylet(ModuleAlgo):
             pointStylet = PointGraphique(villes_dict[self.styletSoleil])
             self.distanceMetz = self.pointMetz.distance(pointStylet)
             # On calcule la formule en str du calcul de la hauteur
-            (faLongueurStr, faLongueur) = Soleil.tableauGamme.get("F", ("-", 0))
-            (noteLongueurStr, noteLongueur) = Soleil.tableauGamme.get(self.choixNoteSoleil, ("-", 0))           
+            (faLongueurStr, faLongueur) = Stylet.tableauGamme.get("F", ("-", 0))
+            (noteLongueurStr, noteLongueur) = Stylet.tableauGamme.get(self.choixNoteSoleil, ("-", 0))           
             self.formuleDistance =f"{float(self.distanceMetz):.0f} / {faLongueurStr} * {noteLongueurStr}"
             self.hauteurStylet = self.distanceMetz / faLongueur * noteLongueur
 

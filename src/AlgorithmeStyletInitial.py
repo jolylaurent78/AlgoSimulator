@@ -5,6 +5,7 @@ from collections import OrderedDict
 # Moteur Algo générique
 from src.AlgorithmeManager import ModuleAlgo, AlgorithmeManager
 from src.ListeSegmentsDataSet import ListeSegmentsDataSet
+from src.Sentinelle import Sentinelle
 
 # Librairie calcul astronomique
 from src.calculAstronomique import positionSoleil, positionAstre, calculLeverAstre, calculLeverSoleil, calculCoucherSoleil, ASTRES
@@ -25,7 +26,7 @@ from src.layerManager import LayerManager
 class AlgorithmeStyletInitial(AlgorithmeManager):
 
     def __init__(self, layerManager:LayerManager):
-        self.dataset = ListeSegmentsDataSet("config/dataset.csv")  # Créé explicitement ici
+        self.dataset = ListeSegmentsDataSet("data/dataset.csv")  # Créé explicitement ici
         super().__init__(layerManager)
 
     def chargerStructure(self, structure):
@@ -37,7 +38,7 @@ class AlgorithmeStyletInitial(AlgorithmeManager):
                 ("carte", "default", Carte()),
                 ("planete", "default", Planete()),
                 ("etoile", "default", Etoile()),
-                ("sentinelle", "default", Sentinelle()),
+                ("sentinelle", "default", SentinelleAlgo()),
                 ("candidats", "default", Candidats())
             ]
 
@@ -579,160 +580,6 @@ class Etoile(ModuleAlgo):
         else:
             return[]
 
-#
-# Gestion de l'axe de la grande ourse
-#
-class Sentinelle(ModuleAlgo):
-    def getEntreesModules(self):
-        return ["soleil.lettreSeg"]
-
-    def __init__(self):
-# Variable input des autres modules
-        self.lettreSegSoleil = None
-
-# Valeurs initialisées à calculer
-        self.heure = None
-        self.sensCadran = "Endroit"
-        self.azimut = None
-# A exporter
-        self.tableauAzimut = []
-        self.azimutMidi = None
-
-        super().__init__()
-
-    tableauHeures = ["09:43", "11:36", "11:42", "12:00", "10:22", "08:00", "08:12"]
-    Joker = "10:55"
-
-    def setup(self):
-        # On calcule en premier le tableaux des heures elligibles
-        indexes = getIndexesPourNote(self.lettreSegSoleil, Sentinelle.tableauHeures)
-        self.heuresPossibles= [Sentinelle.tableauHeures[i] for i in indexes]
-        self.heuresPossibles.append(Sentinelle.Joker)
-
-        # On calcule les 7 heures de Carnarc dans un tableau
-        villeCarnac = villes_dict["Carnac"]
-        coordCarnac = villeCarnac.getCoordonneesGPS()
-
-        # On calcule d'abord l'azimut du soleil pour le tableau des 7 heures + Joker'
-        date_str = "15/08/1066"
-        coordCarnac = villes_dict["Carnac"].getCoordonneesGPS()
-        (lat, lon) = coordCarnac
-
-
-
-        for heureStr in self.heuresPossibles:
-            # Complète avec :00 si pas de secondes
-            if len(heureStr.split(":")) == 2:
-                heureLocale = heureStr + ":00"
-            else:
-                heureLocale = heureStr
-
-            # Conversion locale → UTC
-            heureUTC = convertirHeureLocaleVersUTC(heureLocale, lon)
-
-            # Création des objets date-heure
-            date_am = MyJulianDate.fromString(date_str, heureUTC)
-
-            # Calcul des positions
-            _, az_am = positionSoleil((lat, lon), date_am)
-
-            self.tableauAzimut.append((heureLocale, az_am))
-
-        # On calcule ensuite l'axe du midi solaire Coetquidan - GF'
-        self.pointCoetquidan = PointGraphique(villes_dict["Coetquidan"])
-        self.pointGolfeJuan = PointGraphique(villes_dict["Golfe-Juan"])
-        px1, py1 = self.pointCoetquidan.coordonneesPixelAbs()
-        px2, py2 = self.pointGolfeJuan.coordonneesPixelAbs()
-        ligneMidi = Ligne(px1, py1, px2, py2)
-        self.azimutMidi = ligneMidi.azimut()
-
-        # On met à jour l'heure par défaut'
-        indexes = getIndexesPourNote(self.lettreSegSoleil, Sentinelle.tableauHeures)
-        self.heure = Sentinelle.tableauHeures[indexes[0]]
-
-    def getValeursHeure(self):
-        return self.heuresPossibles
-
-    def getValeursSensCadran(self):
-        return ["Endroit", "Envers"]
-
-
-
-    def calculer(self):
-        pass
-
-    def construireRepresentationCarte(self) -> list[ObjetGraphique]:
-        objets = []
-
-        COULEUR_TRAIT_MIDI = (255, 145, 34)
-        COULEUR_TRAIT_HEURE = (255, 193, 132)
-        COULEUR_TRAIT_CANDIDAT = (164, 82, 0)
-
-        # 🔷 Ligne de référence (Midi solaire)
-        ligneMidi = LigneEntreVilles(self.pointCoetquidan, self.pointGolfeJuan,
-            nom="Axe Midi solaire",
-            couleur=COULEUR_TRAIT_MIDI,
-            epaisseur = 1,
-            tags={"level": "design"}
-        )
-
-        objets.append(self.pointCoetquidan)
-        objets.append(ligneMidi)
-
-        for heureLocal, azimut in self.tableauAzimut:
-            # On vérifie si l'heure est l'heure sélectionnée dans la combo
-            heureTronquee = ":".join(heureLocal.split(":")[:2])  # → "09:43"'
-
-            # --- Ligne AM ---
-            delta_am = (180 - azimut) % 360
-            azimut_corrige_am = (self.azimutMidi + delta_am) % 360
-
-            if (heureTronquee==self.heure) and self.sensCadran=="Endroit":
-                tagLevel = "construction"
-                couleurAffichage = COULEUR_TRAIT_CANDIDAT
-            else:
-                tagLevel = "design"
-                couleurAffichage = COULEUR_TRAIT_HEURE
-
-
-            ligne_am = LigneAzimut(
-                self.pointCoetquidan,
-                azimut_corrige_am,
-                nom=f"Ligne Horaire {heureLocal} AM",
-                couleur=couleurAffichage,  # bleu clair
-                epaisseur=1,
-                tooltips=[f"Heure AM : {heureLocal}", f"Δ azimut = {delta_am:.2f}°"],
-                tags={"level": tagLevel}
-            )
-            objets.append(ligne_am)
-
-            # --- Ligne PM ---
-            azimut_corrige_sym = (self.azimutMidi - delta_am) % 360
-
-            if (heureTronquee==self.heure) and self.sensCadran=="Envers":
-                tagLevel = "construction"
-                couleurAffichage = COULEUR_TRAIT_CANDIDAT
-            else:
-                tagLevel = "design"
-                couleurAffichage = COULEUR_TRAIT_HEURE
-
-
-            ligne_pm = LigneAzimut(
-                self.pointCoetquidan,
-                azimut_corrige_sym,
-                nom=f"Ligne Horaire {heureLocal} PM",
-                couleur=couleurAffichage,   # bleu clair
-                epaisseur=1,
-                tooltips=[f"Heure Symetrique : {heureLocal}", f"Δ azimut = {delta_am:.2f}°"],
-                tags={"level": tagLevel}
-            )
-            objets.append(ligne_pm)
-
-        return objets
-
-
-
-
 
 #
 # Gestion des candidats
@@ -741,48 +588,22 @@ class Candidats(ModuleAlgo):
     RAYON_CANDIDAT = 20
 
     def getEntreesModules(self):
-        return ["planete.axeFinal","etoile.axeFinal","etoile.origineTrait", "sentinelle.tableauAzimut", "sentinelle.azimutMidi" ]
+        return ["planete.axeFinal","etoile.axeFinal","etoile.origineTrait" ]
 
     def __init__(self):
         # Variable input des autres modules
         self.axeFinalPlanete = None
         self.axeFinalEtoile = None
         self.origineTraitEtoile = None
-        self.tableauAzimutSentinelle = None
-        self.azimutMidiSentinelle = None
         self.heureSentinelle =None
         self.distKM = None
         self.selection  = None
         self.azimutHeure = None
-        self.pointCoetquidan = PointGraphique(villes_dict["Coetquidan"])
         self.villeSolution = None
 
+        self.sentinelle=Sentinelle("data/sentinelle.csv")
+
         super().__init__()
-
-    def CandidatSurLigneHoraire(self, px, py):
-
-        distMin = 10000
-        candidatHeure = None
-        for heureLocal, azimut in self.tableauAzimutSentinelle:
-            delta = (180 - azimut) % 360
-            azimut_corrige_am = (self.azimutMidiSentinelle + delta) % 360
-            azimut_corrige_sym = (self.azimutMidiSentinelle - delta) % 360
-
-            ligneAM = Ligne.depuisPointEtAzimut(self.pointCoetquidan.coordonneesPixelAbs(), azimut_corrige_am)
-            lignePM = Ligne.depuisPointEtAzimut(self.pointCoetquidan.coordonneesPixelAbs(), azimut_corrige_sym)
-            distAM = ligneAM.distanceAuPoint(px, py)
-            distPM = lignePM.distanceAuPoint(px, py)
-
-            if distMin>distAM:
-                distMin = distAM
-                candidatHeure = heureLocal + "AM"
-                azimutHeure = azimut_corrige_am
-            if distMin>distPM:
-                distMin = distPM
-                candidatHeure = heureLocal + "PM"
-                azimutHeure = azimut_corrige_sym
-        return candidatHeure, int(distMin), azimutHeure
-
 
     def calculer(self):
         if self.axeFinalPlanete is None or self.axeFinalEtoile is None:
@@ -811,17 +632,17 @@ class Candidats(ModuleAlgo):
             return
 
         # On calcule la distance avec la ligne horaire la pllus proche
-        self.heureSentinelle, distMin, self.azimutHeure = self.CandidatSurLigneHoraire(x, y)
+        self.heureSentinelle, distMin, self.azimutHeure = self.sentinelle.surLigneHoraire(x, y)
         self.distKM = int(intersectionPlaneteEtoile.pixelsVersMetres()*distMin/1000)
 
         if self.distKM >20:
-            self.selection = "Trpo loin d'une ligne horaire"
+            self.selection = "Trop loin d'une ligne horaire"
             return
 
         # On calcule finalement le centre des 3 droites
         self.selection = "Sélectionné"
         ligneSentinelle = Ligne.depuisPointEtAzimut(
-            self.pointCoetquidan.coordonneesPixelAbs(),
+            self.sentinelle.getOrigineStylet().coordonneesPixelAbs(),
             self.azimutHeure
         )
 
@@ -842,5 +663,54 @@ class Candidats(ModuleAlgo):
             )]
 
         return []
+
+
+#
+# Gestion de l'axe de la grande ourse
+#
+class SentinelleAlgo(ModuleAlgo):
+    def getEntreesModules(self):
+        return ["candidats.selection","candidats.heureSentinelle"]
+
+    def __init__(self):
+# Variable input des autres modules
+        self.selectionCandidats = None
+        self.heureSentinelleCandidats = None
+
+# Valeurs initialisées à calculer
+        self.heure = ""
+        self.sensCadran = ""
+        self.sentinelle=Sentinelle("data/sentinelle.csv")
+
+        super().__init__()
+
+
+    def calculer(self):
+        if self.selectionCandidats == "Sélectionné":
+            self.heure = self.heureSentinelleCandidats[:-2]
+            self.sensCadran = self.heureSentinelleCandidats[-2:]
+        else:
+            self.heure = ""
+            self.sensCadran = ""
+
+    def construireRepresentationCarte(self) -> list[ObjetGraphique]:
+        objets = []
+
+        # 🔷 Ligne de référence (Midi solaire)
+        objets.append(self.sentinelle.afficherLigneMidi("design"))
+        objets.append(self.sentinelle.getOrigineStylet())
+    
+        tableauNotes = ["C", "B", "A", "G", "F", "E", "D", "J"]
+        for note in tableauNotes:
+            heureLocale = self.sentinelle[note]["HeureLocale"]
+            selectionAM = (heureLocale == self.heure) and (self.sensCadran== "AM")
+            selectionPM = (heureLocale == self.heure) and (self.sensCadran== "PM") 
+            tagLevelAM = "construction" if selectionAM else "design"
+            tagLevelPM = "construction" if selectionPM else "design"
+
+            objets.append(self.sentinelle.afficherLigneHoraire(note, "AM", tagLevelAM, selectionAM))
+            objets.append(self.sentinelle.afficherLigneHoraire(note, "PM", tagLevelPM, selectionPM))       
+
+        return objets
 
 

@@ -23,12 +23,14 @@ class ListeSegmentsDataSet(ModuleAlgo):
                 cle = row["Evènement"]
                 self.evenements[cle] = {
                     "Note": row["Note"],
-                    "Date": row["Date"]
+                    "Date": row["Date"],
+                    "Stylet": row["Stylet"],
                 }
                 if i == 0: # Première ligne pour la valeur par défaut
                     self.segment = cle
         self.date = None
         self.note = None
+        self.stylet = None
         super().__init__()
 
 
@@ -66,4 +68,5 @@ class ListeSegmentsDataSet(ModuleAlgo):
         infos = self.evenements[self.segment]
         self.date = infos["Date"]
         self.note = infos["Note"]
+        self.stylet = infos["Stylet"]
 

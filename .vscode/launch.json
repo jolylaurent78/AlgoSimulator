@@ -11,5 +11,15 @@
         "PYTHONPATH": "${workspaceFolder}"
       }
     }
+    {
+      "name": "Tester Sentinelle",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/Sentinelle.py",
+      "console": "integratedTerminal",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      }
+    }
   ]
 }

@@ -1,0 +1,38 @@
+# Format CSV de définition d'une IHM algorithmique dynamique
+# Chaque ligne décrit un composant graphique de l’interface utilisateur
+#
+# Colonnes du fichier :
+# 1. Section     : Nom du groupe logique (ex : 'Observation', 'Axe des planètes')
+# 2. Categorie   : Type de bloc. Valeurs possibles :
+#                 - Global : Données générales d'observation (ex: lieu, date, orientation)
+#                 - Construction : Composants liés à des constructions graphiques
+#                 - Resultat : Résultats affichés à l’utilisateur après calcul
+# 3. Ligne       : Position verticale (entier)
+# 4. Widget      : Type d’élément graphique (field, combo, checkbox, text, spacer)
+# 5. FieldType   : Format de donnée :
+#                 - shorttext : texte court (10 caractères)
+#                 - longtext  : texte long (40 caractères)
+#                 - date      : jj/mm/aaaa
+#                 - heure     : hh:mm:ss
+#                 - angle     : xxx.xx°
+#                 - distance  : xxxx km (entier arrondi)
+#                 - lettre    : 1 caractère majuscule
+#                 - int       : entier (5 chiffres)
+# 6. Alignement  : Position du bloc dans la ligne : left, right
+# 7. Label       : Libellé affiché dans l'IHM
+# 8. Hauteur     : Nombre de lignes visibles (utile pour checkbox)
+# 9. Type        : Rôle fonctionnel :
+#                 - data           : donnée non modifiable
+#                 - input_single   : choix unique (radio)
+#                 - input_multiple : choix multiples (checkbox)
+#                 - dataSet        : source d’une liste
+#                 - static         : texte informatif uniquement
+#10. Style       : Apparence du texte : std, bold, italic
+#11. Module          : Identifiant métier (clé liée à l'objet)
+#12. Attribut      : Méthode de lecture
+
+Section,Categorie,Ligne,Widget,FieldType,Alignement,Label,ShortLabel,Hauteur,Type,Style,Module,Attribut
+Note du Segment,Global,1,field,lettre,right,Lettre Segment,LS,1,data,std,dataset,note
+Note du Segment,Global,1,checkboxH,lettre,left,Choix Note,O,2,input_multiple,std,segment,choixNote
+Concervation Angles,Global,1,PointVille,shortext,left,Position Stylet,PO,1,data,std,cercleHoraire,stylet
+Concervation Angles,Global,1,field,angle,left,Angle Horaire,A,1,data,std,cercleHoraire,angleHoraire

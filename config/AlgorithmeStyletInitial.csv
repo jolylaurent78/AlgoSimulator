@@ -60,9 +60,9 @@ Axe de la Grande Ourse,Construction,1,checkbox,shorttext,center,Axe Zeta,EZ,2,in
 Axe de la Grande Ourse,Construction,1,checkbox,shorttext,right,Axe Origine,EO,2,input_multiple,std,etoile,origineTrait
 Axe de la Grande Ourse,Construction,2,field,longtext,left,Axe final,AFE,1,data,std,etoile,axeFinalCalcul
 Axe de la Grande Ourse,Construction,2,field,angle,right,=,AFE,1,data,std,etoile,axeFinal
-Axe Horaire,Construction,0,checkboxH,shorttext,left,Sentinelles,H,2,data,std,sentinelle,heure
-Axe Horaire,Construction,1,checkboxH,shorttext,left,Sens Cadran,HC,2,data,std,sentinelle,sensCadran
 Candidat,Construction,0,field,shorttext,left,Ligne horaire la plus proche,A,1,data,std,candidats,heureSentinelle
 Candidat,Construction,0,field,distance,left,Distance,A,1,data,std,candidats,distKM
 Candidat,Construction,1,field,longtext,left,Statut,S,1,data,std,candidats,selection
 Candidat,Construction,2,PointVille,shortext,left,Solution,S,1,data,std,candidats,villeSolution
+Axe Horaire,Construction,0,field,heure,left,Sentinelles,H,2,data,std,sentinelle,heure
+Axe Horaire,Construction,0,field,shorttext,left,Sens Cadran,HC,2,data,std,sentinelle,sensCadran

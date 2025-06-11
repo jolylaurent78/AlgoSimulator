@@ -143,13 +143,16 @@ def getIndexesPourNote(note, heures):
 #
 # des fonctions de manipulation des heures
 #
-def convertirHeureLocaleVersUTC(heure: str, longitude_deg: float) -> str:
+def convertirHeureLocaleVersUTC(heure: str, longitude_deg: float, inverse=False):
     """
     Convertit une heure locale vraie (HH:MM:SS) en heure UTC, 
-    en tenant compte de la longitude du lieu.
+    ou l'inverse si inverse=True.
 
     Chaque degré de longitude = 4 minutes d'avance locale sur UTC.
     Exemple : longitude 3°05′ → 3.0833 × 4 min = 12 min 20 s → 740 s
+
+    - inverse=False (par défaut) : Locale → UTC (comportement actuel)
+    - inverse=True : UTC → Locale
     """
     hh, mm, ss = map(int, heure.split(":"))
     total_seconds = hh * 3600 + mm * 60 + ss
@@ -157,15 +160,20 @@ def convertirHeureLocaleVersUTC(heure: str, longitude_deg: float) -> str:
     # Écart horaire dû à la longitude (en secondes)
     decalage_sec = round(longitude_deg * 4 * 60)
 
-    total_seconds -= decalage_sec
-    if total_seconds < 0:
-        total_seconds += 86400  # wrap-around minuit
+    if not inverse:
+        total_seconds -= decalage_sec
+    else:
+        total_seconds += decalage_sec
 
-    hh_utc = total_seconds // 3600
-    mm_utc = (total_seconds % 3600) // 60
-    ss_utc = total_seconds % 60
+    # Normalisation sur 0..86400
+    total_seconds %= 86400
 
-    return f"{hh_utc:02}:{mm_utc:02}:{ss_utc:02}"
+    hh_res = total_seconds // 3600
+    mm_res = (total_seconds % 3600) // 60
+    ss_res = total_seconds % 60
+
+    return f"{hh_res:02}:{mm_res:02}:{ss_res:02}"
+
 
 
 def heureSymetrique(heure: str) -> str:
@@ -322,6 +330,16 @@ class MyJulianDate:
             return f"{d:02d} {moisNom(m)} {y} à {hh:02d}:{mm:02d}:{ss:02d}"
         elif format == "HH:MM:SS":
             return f"{hh:02d}:{mm:02d}:{ss:02d}"
+        elif format == "HH:MM":
+            # On arrondit la minute en fonction des secondes
+            if ss >= 30:
+                mm += 1
+                if mm == 60:
+                    mm = 0
+                    hh += 1
+                    if hh == 24:
+                        hh = 0
+            return f"{hh:02d}:{mm:02d}"
         elif format == "ISO":
             return f"{y:04d}-{m:02d}-{d:02d}T{hh:02d}:{mm:02d}:{ss:02d}"
         else:
@@ -477,6 +495,72 @@ def positionAstre(coord_tuple, jd, astre):
         return 1+45/60+13/3600, 65+31/60+13/3600
         
     return float(alt.degrees), float(az.degrees)
+
+
+def calculHeurePourAzimutSoleil(coord_tuple, jd, azimut_cible, altitude_min=0.0, precision_deg=0.5):
+    latitude, longitude = coord_tuple
+    lieu = Topos(latitude_degrees=latitude, longitude_degrees=longitude)
+    jd_lever = calculLeverSoleil(coord_tuple, jd)
+    jd_coucher = calculCoucherSoleil(coord_tuple, jd)
+    t0 = float(jd_lever)
+    t1 = float(jd_coucher)
+    dt = DEFAULT_INTERVAL
+
+    previous_azimut = None
+    previous_alt = None
+
+    def azimut_et_altitude(jd_local):
+        t = ts.ut1_jd(jd_local)
+        astrometric = (earth + lieu).at(t).observe(sun).apparent()
+        alt, az, _ = astrometric.altaz()
+        return az.degrees, alt.degrees
+
+    # Première passe : détection du passage autour de l'azimut cible, en étant au-dessus de altitude_min
+    t = t0
+    while t < t1:
+        az, alt = azimut_et_altitude(t)
+
+        if previous_azimut is not None and previous_alt is not None:
+            # On cherche un passage autour de l'azimut cible
+            delta1 = (az - azimut_cible + 360) % 360
+            delta2 = (previous_azimut - azimut_cible + 360) % 360
+            # On vérifie que les deux points successifs sont au-dessus de altitude_min
+            if (alt > altitude_min and previous_alt > altitude_min) and \
+                ((delta1 < 180 and delta2 > 180) or (delta2 < 180 and delta1 > 180)):
+                # Passage détecté
+                t_before = t - dt
+                t_after = t
+                break
+
+        previous_azimut = az
+        previous_alt = alt
+        t += dt
+    else:
+        raise RuntimeError("Aucun passage de l'azimut cible détecté ce jour-là avec le Soleil levé.")
+
+    # Recherche binaire
+    while (t_after - t_before) > DEFAULT_PRECISION:
+        t_mid = (t_before + t_after) / 2
+        az, alt = azimut_et_altitude(t_mid)
+
+        if alt < altitude_min:
+            # Si on passe sous l'horizon, on rétrécit l'intervalle
+            t_before = t_mid
+            continue
+
+        delta = (az - azimut_cible + 360) % 360
+        if delta > 180:
+            delta = 360 - delta
+
+        if az < azimut_cible:
+            t_before = t_mid
+        else:
+            t_after = t_mid
+
+    return MyJulianDate.fromJD((t_before + t_after) / 2)
+
+
+
 
 # === Calcul du lever d’un astre ===
 def calculLeverAstre(coord_tuple, jd, astre, altitude_lever=ALTITUDE_LEVER_STANDARD):
