@@ -1,8 +1,6 @@
 import csv
 from collections import OrderedDict
 
-
-
 # Librairie calcul astronomique
 from src.calculAstronomique import calculHeurePourAzimutSoleil
 from src.calculAstronomique import MyJulianDate, convertirHeureLocaleVersUTC

@@ -4,10 +4,7 @@ import math
 from typing import Any
 
 # Gestion des coordonnées / projection
-from src.carte_config import lambert93_to_pixels, pixels_to_lambert93, image_size, lambert93_to_gps
-
-# Gestion des layers graphiques
-from src.layerManager import Layer
+from src.carte_config import carteConfig
 
 COULEURS = {
     "BLUE": (255, 0, 0),
@@ -105,7 +102,7 @@ class ObjetGraphique:
         """
         if self.pointReference is None:
             return True
-        w, h = image_size
+        w, h = carteConfig.image_size
         x, y = self.pointReference
         return 0 <= x <= w and 0 <= y <= h
 
@@ -191,12 +188,12 @@ class PointGraphique(ObjetGraphique):
             raise ValueError("Format de PointGraphique non reconnu : coordonnées Lambert93 requises")
 
         # Coordonnées image en pixels absolus
-        self.pointReference = lambert93_to_pixels(self.x_l93, self.y_l93)
+        self.pointReference = carteConfig.lambert93_to_pixels(self.x_l93, self.y_l93)
 
         # On génère les coordonnées GPS si elles ne sont pas définies
         if self.lat is None and self.lon is None:
-            self.lon, self.lat = lambert93_to_gps(self.x_l93, self.y_l93)
-            self.lat, self.lon = lambert93_to_gps(self.x_l93, self.y_l93)
+            self.lon, self.lat = carteConfig.lambert93_to_gps(self.x_l93, self.y_l93)
+            self.lat, self.lon = carteConfig.lambert93_to_gps(self.x_l93, self.y_l93)
 
     @classmethod
     def depuisIntersectionLignes(
@@ -282,8 +279,8 @@ class PointGraphique(ObjetGraphique):
         autour du point (px, py).
         """
         px, py = self.pointReference
-        x1_l93, y1_l93 = pixels_to_lambert93(px, py)
-        x2_l93, y2_l93 = pixels_to_lambert93(px + 1, py)
+        x1_l93, y1_l93 = carteConfig.pixels_to_lambert93(px, py)
+        x2_l93, y2_l93 = carteConfig.pixels_to_lambert93(px + 1, py)
         return math.hypot(x2_l93 - x1_l93, y2_l93 - y1_l93)
 
 
@@ -316,8 +313,8 @@ class PointGraphique(ObjetGraphique):
         d_pix = abs(A * px + B * py + C) / denom
 
         # Convertir 1 pixel horizontal en mètres via la transformation inverse
-        x1_l93, y1_l93 = pixels_to_lambert93(px, py)
-        x2_l93, y2_l93 = pixels_to_lambert93(px + 1, py)
+        x1_l93, y1_l93 = carteConfig.pixels_to_lambert93(px, py)
+        x2_l93, y2_l93 = carteConfig.pixels_to_lambert93(px + 1, py)
         m_par_pixel = math.hypot(x2_l93 - x1_l93, y2_l93 - y1_l93)
 
         return d_pix * m_par_pixel
@@ -475,10 +472,10 @@ class CercleGraphique(ObjetGraphique):
             return None
 
         cx_pix, cy_pix, rayon_pix = result
-        x_l93, y_l93 = pixels_to_lambert93(cx_pix, cy_pix)
+        x_l93, y_l93 = carteConfig.pixels_to_lambert93(cx_pix, cy_pix)
         centre = PointGraphique("Centre", x_l93, y_l93)
 
-        x_edge_l93, y_edge_l93 = pixels_to_lambert93(cx_pix + rayon_pix, cy_pix)
+        x_edge_l93, y_edge_l93 = carteConfig.pixels_to_lambert93(cx_pix + rayon_pix, cy_pix)
         rayon_m = math.hypot(x_edge_l93 - x_l93, y_edge_l93 - y_l93)
         rayon_km = rayon_m / 1000
 
@@ -503,10 +500,10 @@ class CercleGraphique(ObjetGraphique):
         à partir du centre Lambert93 et du rayon en km.
         """
         x_l93, y_l93 = self.ville.coordonneesLambert()
-        px_centre, py_centre = lambert93_to_pixels(x_l93, y_l93)
+        px_centre, py_centre = carteConfig.lambert93_to_pixels(x_l93, y_l93)
 
         x_edge_l93 = x_l93 + self.rayon_km * 1000
-        px_edge, py_edge = lambert93_to_pixels(x_edge_l93, y_l93)
+        px_edge, py_edge = carteConfig.lambert93_to_pixels(x_edge_l93, y_l93)
         rayon_px = math.hypot(px_edge - px_centre, py_edge - py_centre)
 
         return (int(px_centre), int(py_centre)), int(rayon_px)
@@ -538,7 +535,7 @@ class CercleGraphique(ObjetGraphique):
 
 
     def getCentre(self) -> PointGraphique:
-        x_l93, y_l93 = pixels_to_lambert93(*self.pointReference)
+        x_l93, y_l93 = carteConfig.pixels_to_lambert93(*self.pointReference)
         return PointGraphique("Centre", x_l93, y_l93)
 
 
@@ -560,14 +557,14 @@ class CercleGraphique(ObjetGraphique):
             return []
 
         points_px = ligneGraphique.lignePixelImage.intersections_avec_cercle(self.cercle)
-        return [pixels_to_lambert93(px, py) for px, py in points_px]
+        return [carteConfig.pixels_to_lambert93(px, py) for px, py in points_px]
 
     def estVisibledansImage(self) -> bool:
         """
         Retourne True si au moins une partie du cercle (en pixels absolus) est dans les dimensions de l'image source.
         """
 
-        w_img, h_img = image_size
+        w_img, h_img = carteConfig.image_size
         px, py = self.coordonnéesPixelAbs()
         r = self.cercle.rayon
 
@@ -1018,10 +1015,10 @@ class LigneGraphique(ObjetGraphique):
         self.pointReference = point_px
         self.vecteur = vecteur_px
 
-        if image_size is None:
+        if carteConfig.image_size is None:
             raise ValueError("image_size doit être défini.")
 
-        w_img, h_img = image_size
+        w_img, h_img = carteConfig.image_size
         px, py = point_px
         vx, vy = vecteur_px
 
@@ -1151,14 +1148,14 @@ class LigneGraphique(ObjetGraphique):
         if pt is None:
             return None
 
-        return pixels_to_lambert93(*pt)
+        return carteConfig.pixels_to_lambert93(*pt)
 
     def intersectionCercle(self, cercleGraphique: CercleGraphique) -> list[PointGraphique]:
         points_px = self.lignePixelImage.intersections_avec_cercle(cercleGraphique.cercle)
         resultats = []
 
         for i, (px, py) in enumerate(points_px):
-            x_l93, y_l93 = pixels_to_lambert93(px, py)
+            x_l93, y_l93 = carteConfig.pixels_to_lambert93(px, py)
             nom = f"Inter-{self.nom}-{i+1}" if self.nom else None
             pt = PointGraphique(nom or "Intersection", x_l93, y_l93, layer=self.layer)
             resultats.append(pt)
@@ -1176,7 +1173,7 @@ class LigneGraphique(ObjetGraphique):
         px, py = point.coordonneesPixelAbs()
         proj_px, proj_py = self.lignePixelImage.projection(px, py)
 
-        x_l93, y_l93 = pixels_to_lambert93(proj_px, proj_py)
+        x_l93, y_l93 = carteConfig.pixels_to_lambert93(proj_px, proj_py)
         nom = f"Proj({point.nom})" if point.nom else "Projection"
 
         return PointGraphique(nom, x_l93, y_l93, layer=self.layer)
@@ -1264,7 +1261,7 @@ class LigneGraphique(ObjetGraphique):
 
         # On récupère le point de référence en tant que PointGraphique
         px, py = self.pointReference
-        x_l93, y_l93 = pixels_to_lambert93(px, py)
+        x_l93, y_l93 = carteConfig.pixels_to_lambert93(px, py)
         point_ref = PointGraphique(x_l93=x_l93, y_l93=y_l93, nom=f"{self.nom}_ref", source="custom")
 
         # Points décalés latéralement
@@ -1284,8 +1281,8 @@ class LigneEntreVilles(LigneGraphique):
     def __init__(self, ville1, ville2, nom=None, couleur=None, epaisseur=None, layer=None, tags: dict[str, Any] = None, tooltips: list[str] = None):
         x1_l93, y1_l93 = ville1.coordonneesLambert()
         x2_l93, y2_l93 = ville2.coordonneesLambert()
-        px1, py1 = lambert93_to_pixels(x1_l93, y1_l93)
-        px2, py2 = lambert93_to_pixels(x2_l93, y2_l93)
+        px1, py1 = carteConfig.lambert93_to_pixels(x1_l93, y1_l93)
+        px2, py2 = carteConfig.lambert93_to_pixels(x2_l93, y2_l93)
         pref_x, pref_y = (px1+px2)/2, (py1+py2)/2
         vx = px2 - px1
         vy = py2 - py1
@@ -1304,7 +1301,7 @@ from math import radians, cos, sin
 class LigneAzimut(LigneGraphique):
     def __init__(self, ville, azimut_deg, nom=None, couleur=None, epaisseur=None, layer=None, tags: dict[str, Any] = None,tooltips: list[str] = None):
         x_l93, y_l93 = ville.coordonneesLambert()
-        px, py = lambert93_to_pixels(x_l93, y_l93)
+        px, py = carteConfig.lambert93_to_pixels(x_l93, y_l93)
 
         angle_rad = math.radians(azimut_deg)
         vx = math.sin(angle_rad)
@@ -1317,7 +1314,7 @@ class LigneAzimut(LigneGraphique):
 class LigneVerticale(LigneGraphique):
     def __init__(self, ville, nom=None, couleur=None, epaisseur=None, layer=None, tags: dict[str, Any] = None, tooltips: list[str] = None):
         x_l93, y_l93 = ville.coordonneesLambert()
-        px, _ = lambert93_to_pixels(x_l93, y_l93)
+        px, _ = carteConfig.lambert93_to_pixels(x_l93, y_l93)
 
         super().__init__(point_px=(px, 0), vecteur_px=(0, 1), nom=nom, couleur=couleur, epaisseur=epaisseur, layer=layer, tags=tags, tooltips=tooltips)
 
@@ -1326,7 +1323,7 @@ class LigneVerticale(LigneGraphique):
 class LigneHorizontale(LigneGraphique):
     def __init__(self, ville, nom=None, couleur=None, epaisseur=None, layer=None, tags: dict[str, Any] = None, tooltips: list[str] = None):
         x_l93, y_l93 = ville.coordonneesLambert()
-        _, py = lambert93_to_pixels(x_l93, y_l93)
+        _, py = carteConfig.lambert93_to_pixels(x_l93, y_l93)
 
         super().__init__(point_px=(0, py), vecteur_px=(1, 0), nom=nom, couleur=couleur, epaisseur=epaisseur, layer=layer, tags=tags, tooltips=tooltips)
 

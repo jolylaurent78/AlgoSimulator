@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Gestion des coordonnées / projection
-from src.carte_config import gps_to_lambert93
+from src.carte_config import carteConfig
 
 # Affichage des objects graphiques
 from src.affichage_objets import *
@@ -25,7 +25,7 @@ class VillesDict(dict):
             nom = row["Nom"]
             lat = self.dms_to_decimal(row["Latitude"])
             lon = self.dms_to_decimal(row["Longitude"])
-            x_l93, y_l93 = gps_to_lambert93(lon, lat)
+            x_l93, y_l93 = carteConfig.gps_to_lambert93(lon, lat)
             self[nom] = PointGraphique(nom, x_l93, y_l93, lat=lat, lon=lon)
 
 

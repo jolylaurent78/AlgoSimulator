@@ -15,7 +15,7 @@ from src.calculAstronomique import MyJulianDate, decalage2Notes, decalage2Jours,
 from src.affichage_objets import *
 
 # Gestion des coordonnées / projection
-from src.carte_config import lambert93_to_gps, pixels_to_lambert93
+from src.carte_config import carteConfig
 
 # Base de données des villes
 from src.data_loader import villes_dict
@@ -624,7 +624,7 @@ class Candidats(ModuleAlgo):
 
         # On calcule l'intersection.
         x, y = lignePlanete.intersection(ligneEtoile)
-        x_l93, y_l93 =pixels_to_lambert93(x, y)
+        x_l93, y_l93 =carteConfig.pixels_to_lambert93(x, y)
         intersectionPlaneteEtoile = PointGraphique("intersection", x_l93,y_l93)
 
         # On vérifie que le point est visible
@@ -649,7 +649,7 @@ class Candidats(ModuleAlgo):
 
         # Le centre du triangle
         px, py = Ligne.barycentreTriangle(lignePlanete, ligneEtoile, ligneSentinelle)
-        x_l93, y_l93 = pixels_to_lambert93(px, py)
+        x_l93, y_l93 = carteConfig.pixels_to_lambert93(px, py)
         self.pointIntersection = PointGraphique("intersection", x_l93,y_l93)
 
     def construireRepresentationCarte(self) -> list[ObjetGraphique]:

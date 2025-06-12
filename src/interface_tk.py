@@ -16,12 +16,13 @@ import webbrowser
 from src.data_loader import villes_dict
 
 # Affichage de la carte interractive
-from src.affichage_fenetre import display, img, transformer_pixel_affichage_vers_image, selectionVille, selectionObjet, sauvegarder_carte_complete
+from src.affichage_fenetre import display, transformer_pixel_affichage_vers_image, selectionVille, selectionObjet, sauvegarder_carte_complete
 from src.affichage_fenetre import ListePOIs
 from src.affichage_fenetre import pan_x, pan_y, zoom_factor, frame_width, frame_height, set_globals, canvasDisplay
 
 # Gestion des coordonnées / projection
-from src.carte_config import lambert93_to_pixels, pixels_to_lambert93, image_size, lambert93_to_gps, charger_icone, hexVersBGR, bgrVersHex
+from src.carte_config import carteConfig, charger_icone, hexVersBGR, bgrVersHex
+from src.configGlobale import ConfigGlobale  
 
 # Affichage des objects graphiques
 from src.affichage_objets import *
@@ -52,6 +53,8 @@ class InterfaceCarte(tk.Tk):
             "images": os.path.join(os.getcwd(), "images"),
             "exports": os.path.join(os.getcwd(), "exports")
         }
+        # Fichier ini de config
+        self.cfg = ConfigGlobale()
 
         # Création automatique si nécessaire
         for dossier in self.dossiers.values():
@@ -68,6 +71,7 @@ class InterfaceCarte(tk.Tk):
         self.varSegmentAffiche = None
         self.comboSegmentAffiche = None
         self.pointReferenceMesureDistance = None
+        self.modeCalibration = False
         
         # Variable d'affichage pour la gestion des POIs
         self.varPOIVisible = tk.BooleanVar(value=False)
@@ -245,6 +249,47 @@ class InterfaceCarte(tk.Tk):
         menu_wiki.add_command(label="Importer un fichier P31...", command=self.importerFichierP31)
 
         menubar.add_cascade(label="Wikipedia", menu=menu_wiki)
+
+        # === Menu Carte ===
+        menu_carte = tk.Menu(menubar, tearoff=0)
+
+        import glob
+
+        carte_dir = "data/carto"
+        json_files = sorted(glob.glob(os.path.join(carte_dir, "*.json")))
+
+        for json_path in json_files:
+            try:
+                with open(json_path, "r", encoding="utf-8") as f:
+                    config = json.load(f)
+
+                # Vérifie qu'il y a bien l'image correspondante
+                image_file = config.get("image_file")
+                image_path = os.path.join(carte_dir, image_file)
+                if not os.path.exists(image_path):
+                    print(f"[⚠️] Image manquante pour {json_path} → ignoré.")
+                    continue
+
+                description = config.get("description", os.path.basename(json_path))
+
+                # Crée une entrée de menu pour cette carte
+                menu_carte.add_command(
+                    label=description,
+                    command=lambda p=json_path: self.actionChangerCarte(p)
+                )
+
+            except Exception as e:
+                print(f"[⚠️] Erreur lecture {json_path} : {e}")
+
+        # Ajoute un séparateur
+        menu_carte.add_separator()
+
+        # Ajoute l'entrée "Charger et calibrer une nouvelle carte"
+        menu_carte.add_command(
+            label="Charger et calibrer une nouvelle carte...",
+            command=self.demarrerCalibrationNouvelleCarte
+)
+        menubar.add_cascade(label="Carte", menu=menu_carte)
 
         self.config(menu=menubar)
 
@@ -1054,7 +1099,7 @@ class InterfaceCarte(tk.Tk):
     def _on_canvas_resize(self, event):
         import src.affichage_fenetre as af
 
-        (w_img, h_img) = image_size
+        (w_img, h_img) = carteConfig.image_size
         if event.width <= 1 or event.height <= 1:
             return
 
@@ -1079,8 +1124,11 @@ class InterfaceCarte(tk.Tk):
         if not hasattr(self, "canvas_image"):
             return  # L'objet n'est pas encore prêt
 
-        (w_img, h_img) = image_size
-        canvas = display(self.layerManager, self.listePOIs, retourner_image=True, afficherPOIsUniquement = afficherPOIsUniquement)
+        (w_img, h_img) = carteConfig.image_size
+        if self.modeCalibration:
+            canvas = display(LayerManager(), ListePOIs(self.canvas_image, self.chemin_bd, self), retourner_image=True, afficherPOIsUniquement=False)
+        else:
+            canvas = display(self.layerManager, self.listePOIs, retourner_image=True, afficherPOIsUniquement = afficherPOIsUniquement)
 
         image_rgb = cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB)
         image_pil = Image.fromarray(image_rgb)
@@ -1092,8 +1140,8 @@ class InterfaceCarte(tk.Tk):
         minimap_height = int(250 * 2 / 3)
         minimap_ratio = w_img / h_img
         minimap_width = int(minimap_ratio * minimap_height)
-        from src.affichage_fenetre import img as full_img
-        minimap = cv2.resize(full_img, (minimap_width, minimap_height))
+
+        minimap = cv2.resize(carteConfig.img, (minimap_width, minimap_height))
         minimap_rgb = cv2.cvtColor(minimap, cv2.COLOR_BGR2RGB)
         minimap_pil = Image.fromarray(minimap_rgb)
         self.tk_minimap = ImageTk.PhotoImage(minimap_pil)
@@ -1126,7 +1174,25 @@ class InterfaceCarte(tk.Tk):
             outline="red", width=2
         )
 
+        # Si en mode calibration → on affiche le texte
+        if self.modeCalibration:
+            img_rgb = cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB)
+            img_pil = Image.fromarray(img_rgb)
+            self.tk_image = ImageTk.PhotoImage(img_pil)
 
+            self.canvas_image.create_image(0, 0, anchor="nw", image=self.tk_image)
+            if self.calibrationVilleIndex < len(self.calibrationVilles):
+                ville_courante = self.calibrationVilles[self.calibrationVilleIndex]
+                texte = f"Calibration : Clic droit sur '{ville_courante}' ({self.calibrationVilleIndex+1}/{len(self.calibrationVilles)})"
+            else:
+                texte = "Calibration terminée — confirmez."
+
+            self.canvas_image.create_text(
+                self.canvas_image.winfo_width() // 2, 20,
+                text=texte,
+                fill="red",
+                font=("Helvetica", 16, "bold")
+            )
 
 ### Gesion des évènements souris
 
@@ -1166,7 +1232,7 @@ class InterfaceCarte(tk.Tk):
             return
 
         x_ref, y_ref = self.pointReferenceMesureDistance
-        x, y = pixels_to_lambert93(px, py)
+        x, y = carteConfig.pixels_to_lambert93(px, py)
 
         dx = x - x_ref
         dy = y - y_ref
@@ -1189,7 +1255,7 @@ class InterfaceCarte(tk.Tk):
     def _on_mouse_press(self, event):
 
         import src.affichage_fenetre as af
-        (w_img, h_img) = image_size
+        (w_img, h_img) = carteConfig.image_size
         minimap_height = int(250 * 2 / 3)
         minimap_ratio = w_img / h_img
         minimap_width = int(minimap_ratio * minimap_height)
@@ -1240,7 +1306,7 @@ class InterfaceCarte(tk.Tk):
 
         # Gestion de l'outil de distance
         # 1. Conversion coordonnées pixels image → Lambert93
-        x_l93, y_l93 = pixels_to_lambert93(px, py)
+        x_l93, y_l93 = carteConfig.pixels_to_lambert93(px, py)
 
 
         # 2. Chercher d'abord une ville
@@ -1263,7 +1329,7 @@ class InterfaceCarte(tk.Tk):
             texte = f"Mesurer depuis \"{nom}\""
             x_ref, y_ref = point.coordonneesLambert()
         else:
-            lat, lon = lambert93_to_gps(x_l93, y_l93)
+            lat, lon = carteConfig.lambert93_to_gps(x_l93, y_l93)
             nom = f"({lat:.4f}, {lon:.4f})"
             texte = f"Mesurer depuis {nom}"
             x_ref, y_ref = x_l93, y_l93
@@ -1367,8 +1433,8 @@ class InterfaceCarte(tk.Tk):
 
 
     def centrerCarte(self, px, py, zoom_max=2.5):
-        from affichage_fenetre import frame_width, frame_height, image_size
-        w_img, h_img = image_size
+        from affichage_fenetre import frame_width, frame_height
+        w_img, h_img = carteConfig.image_size
 
         # Zoom auto si nécessaire
         facteur_zoom = zoom_factor
@@ -1752,6 +1818,173 @@ class InterfaceCarte(tk.Tk):
 
     def demanderGenerationRapport(self):
         self.ihm_algo.ouvrirBoiteGenerationRapport(self.dossiers["exports"])
+
+
+    def actionChangerCarte(self, json_path):
+
+        carteConfig.load_from_json(json_path)
+
+        # Sauvegarde le chemin de la carte sélectionnée
+        self.cfg.set("Carte", "lastCarte", json_path)
+        self.cfg.save()
+
+        # Important : forcer le redraw complet
+        self._refresh_images()
+
+
+    def demarrerCalibrationNouvelleCarte(self):
+
+        print("[🗺️] Démarrage calibration nouvelle carte...")
+
+        # Demande l'image
+        image_path = filedialog.askopenfilename(
+            title="Sélectionner l'image de la carte",
+            initialdir="data/carto",
+            filetypes=[("Images JPG", "*.jpg"), ("Toutes les images", "*.*")]
+        )
+        if not image_path:
+            print("[❌] Calibration annulée (pas d'image sélectionnée)")
+            return
+
+        print(f"[✅] Image sélectionnée : {image_path}")
+
+        # Charge la liste des villes de calibration
+        try:
+            df = pd.read_csv("data/carto/calibration_villes.csv")
+            self.calibrationVilles = list(df["Nom"])
+        except Exception as e:
+            print(f"[❌] Erreur lecture calibration_villes.csv : {e}")
+            return
+
+        print(f"[✅] Villes de calibration : {self.calibrationVilles}")
+
+        # Vérifie que toutes les villes existent dans villes_dict
+        villesManquantes = [v for v in self.calibrationVilles if v not in villes_dict]
+        if villesManquantes:
+            print(f"[❌] Villes manquantes dans villes_dict : {villesManquantes}")
+            return
+
+        # Charge l'image brute de la carte
+        calibrationImage = cv2.imread(image_path)
+        if calibrationImage is None:
+            print(f"[❌] Erreur chargement image {image_path}")
+            return
+
+        h_img, w_img = calibrationImage.shape[:2]
+        calibrationImageSize = (w_img, h_img)
+
+        print(f"[✅] Image chargée ({w_img}x{h_img}) — prêt pour calibration.")
+
+        # Met à jour carteConfig pour bénéficier du zoom/pan standard
+        self._jsonCartePrecedente = self.cfg.get("Carte", "lastCarte", défaut="data/carto/899.json")
+        carteConfig.img = calibrationImage
+        carteConfig.image_size = calibrationImageSize
+        carteConfig.description = "Calibration en cours"
+        carteConfig.A = np.identity(2)
+        carteConfig.offset = np.array([0.0, 0.0])
+
+        # Active le mode calibration
+        self.modeCalibration = True
+        self.clicksCalibration = []
+        self.calibrationVilleIndex = 0
+        self.calibrationImagePath = image_path
+        self.carteCalibrationActive = True
+
+        # Sauvegarde les handlers d'origine
+        self._on_right_click_saved = self._on_right_click
+
+        # Remplace les handlers par ceux spécifiques à calibration
+        self._on_mouse_move_global_saved = self._on_mouse_move_global
+        self._on_mouse_move_global = lambda event: None
+
+
+        self.canvas_image.bind("<Button-3>", self._on_right_click_calibrationMode)
+        self._escape_bind_id = self.bind("<Escape>", self.annulerCalibration)
+
+
+        # Force un redraw
+        self._refresh_images()
+
+    def _on_right_click_calibrationMode(self, event):
+
+        # Transforme click écran → coord image
+        px, py = transformer_pixel_affichage_vers_image(event.x, event.y)
+        if px is None or py is None:
+            print("[⚠️] Click hors image → ignoré.")
+            return
+
+        print(f"[🖱️] Click calibration : ({px:.1f}, {py:.1f}) pour {self.calibrationVilles[self.calibrationVilleIndex]}")
+
+        # Enregistre le point
+        self.clicksCalibration.append((px, py))
+        self.calibrationVilleIndex += 1
+
+        # Redraw pour afficher ville suivante ou message de fin
+        self._refresh_images()
+
+        # Si calibration terminée → on pourra appeler une fonction pour finaliser
+        if self.calibrationVilleIndex >= len(self.calibrationVilles):
+            self.terminerCalibration()
+
+    def terminerCalibration(self):
+        # Construit liste des points Lambert
+        liste_points_lambert = []
+        for nom_ville in self.calibrationVilles:
+            ville = PointGraphique(villes_dict[nom_ville])
+            liste_points_lambert.append(ville.coordonneesPixelAbs())
+        liste_points_pixel = self.clicksCalibration
+
+        # Calibrer la carte
+        carteConfig.calibrer(liste_points_lambert, liste_points_pixel)
+        carteConfig.afficherCalibration()
+
+        # Sauvegarde dans un .json
+        image_file = os.path.basename(self.calibrationImagePath)
+        json_file_name = os.path.splitext(image_file)[0] + "_calibree.json"
+        json_path = os.path.join("data/carto", json_file_name)
+
+        carteConfig.sauvegarderCalibrationDansJson(
+            json_path=json_path,
+            image_file=image_file,
+            calibration_villes=self.calibrationVilles
+        )
+        # Restaure les handlers d'origine
+        self.canvas_image.bind("<Button-3>", self._on_right_click)
+        self._on_mouse_move_global = self._on_mouse_move_global_saved
+
+        # Restaure le bind Escape global par défaut
+        self.unbind("<Escape>", self._escape_bind_id)
+        self.bind("<Escape>", self.desactiverMesureDistance)
+
+        # Reset flags
+        self.modeCalibration = False
+        self.carteCalibrationActive = False
+
+        # Redraw en mode normal
+        self._refresh_images()
+        print(f"[✅] Calibration terminée et sauvegardée : {json_path}")
+
+    def annulerCalibration(self, event=None):
+        print("[❌] Calibration annulée par ESC.")
+
+        # Restaure les handlers d'origine
+        self.canvas_image.bind("<Button-3>", self._on_right_click)
+        self._on_mouse_move_global = self._on_mouse_move_global_saved
+
+        # Restaure le bind Escape global par défaut
+        self.unbind("<Escape>", self._escape_bind_id)
+        self.bind("<Escape>", self.desactiverMesureDistance)
+
+        # Recharge la carte précédente
+        carteConfig.load_from_json(self._jsonCartePrecedente)
+
+        # Reset flags
+        self.modeCalibration = False
+        self.carteCalibrationActive = False
+
+        # Redraw en mode normal
+        self._refresh_images()
+
 
 if __name__ == "__main__":
     app = InterfaceCarte()

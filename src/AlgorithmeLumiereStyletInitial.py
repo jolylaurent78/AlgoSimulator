@@ -15,9 +15,6 @@ from src.calculAstronomique import MyJulianDate, decalage2Notes, decalage2Jours,
 # Affichage des objects graphiques
 from src.affichage_objets import *
 
-# Gestion des coordonnées / projection
-from src.carte_config import lambert93_to_gps, pixels_to_lambert93
-
 # Base de données des villes
 from src.data_loader import villes_dict
 
