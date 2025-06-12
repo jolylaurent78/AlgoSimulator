@@ -21,5 +21,15 @@
         "PYTHONPATH": "${workspaceFolder}"
       }
     }
+    {
+      "name": "Tester Calendrier180j",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/Calendrier180j.py",
+      "console": "integratedTerminal",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      }   
+    } 
   ]
 }

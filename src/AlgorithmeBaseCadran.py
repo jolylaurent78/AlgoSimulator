@@ -5,6 +5,8 @@ from collections import OrderedDict
 # Moteur Algo générique
 from src.AlgorithmeManager import ModuleAlgo, AlgorithmeManager
 from src.ListeSegmentsDataSet import ListeSegmentsDataSet
+from src.calendrier180j import Calendrier180j
+from src.Sentinelle import Sentinelle
 
 # Librairie calcul astronomique
 from src.calculAstronomique import positionSoleil, positionAstre, calculLeverAstre, calculLeverSoleil, calculCoucherSoleil, ASTRES
@@ -50,50 +52,100 @@ class AlgorithmeBaseCadran(AlgorithmeManager):
 #
 class Segment(ModuleAlgo):
     def getEntreesModules(self):
-        return ["dataset.note"]
+        return ["dataset.date",
+                "dataset.lettreDecl"]
 
     def __init__(self):
 # Variables input des autres modules
-        self.noteDataset = ""
+        self.dateDataset = ""
+        self.lettreDom = ""
+        self.lettreChoix = ""
+        self.lettreDeclDataset = ""
+
 # Affiché
-        self.choixNote = None
+        self.choixCalendrier = None
         super().__init__()
 
-    def getValeursChoixNote(self):
-        return [self.choix1, self.choix2, self.choix3]
-    
+    def getValeursChoixCalendrier(self):
+        return ["Standard", "Déclinaison"]
+  
     def setup(self):
-        self.choix1, self.choix2, self.choix3 = decalageGamme(self.noteDataset)
-        self.choixNote = self.choix1
+        # On calcule la déclinaison du soleil pour savoir si nous sommes au Printemps / Ete ou Automne / Hivers
+        self.dateSegmentJD = MyJulianDate.fromString(self.dateDataset)
+        self.lettreDom = self.dateSegmentJD.lettreDominicale()
+        self.lettreChoix = self.lettreDom       
+        self.choixCalendrier = "Standard"
+
+    def calculer(self):
+        self.lettreChoix = self.lettreDom if self.choixCalendrier == "Standard" else self.lettreDeclDataset
+
 
 class CercleHoraire(ModuleAlgo):
     def getEntreesModules(self):
-        return ["segment.choixNote",
-                "dataset.stylet"]
-    
+        return ["segment.choixCalendrier",
+                "dataset.stylet",
+                "dataset.date",
+                "segment.lettreChoix"]
+
+    def getValeursHeureAMPM(self):
+        return ["AM", "PM"]
+
+    def getValeursHeureSubstitution(self):
+        liste = ["Non", "11:00"]
+        if self.dateDataset=="18/05/1152":
+            liste.append("10:05")
+        return liste 
+         
     def __init__(self):
 # Variables input des autres modules
-        self.choixNoteSegment = None
+        self.choixCalendrierSegment = None
         self.styletDataset = None
+        self.lettreChoixSegment = None
+        self.dateDataset = None
+
 # Variable IHM
         self.stylet = None
+        self.heureStylet = None
+        self.styletAMPM = None
+        self.heureSentinelle = None
+        self.heureAMPM = "AM"
+        self.heureSubstitution = "Non"
         self.angleHoraire = None
+        self.sentinelle = Sentinelle("data/sentinelle.csv")
 
     def setup(self):
         # On initialise la valeur du stylet avec celui défini par le segment par défaut
         self.stylet = self.styletDataset
 
     def calculer(self):
+        # On récupère l'heure associée au stylet
+        self.pointStylet = PointGraphique(villes_dict[self.stylet])
+        px, py = self.pointStylet.coordonneesPixelAbs()
+        selection, self.heureStylet, self.styletAMPM, _, _ = self.sentinelle.surLigneHoraire(px, py)
+
+        # On prend en compte les heures de substitution
+        if self.heureSubstitution == "11:00":
+            self.heureSentinelle = self.sentinelle["J"]["HeureLocale"]
+        elif self.heureSubstitution == "10:05":
+            self.heureSentinelle = "10:05"
+        else:
+            self.heureSentinelle = self.heureStylet if self.choixCalendrierSegment == "Standard" else self.sentinelle[self.lettreChoixSegment]["HeureLocale"]
+
+        # On prend l'heure du matin ou de l'apres midi      
+        self.heureSentinelle = heureSymetrique(self.heureSentinelle) if self.heureAMPM == "PM" else self.heureSentinelle
+
+        # On se place à Carnac
+        villeCarnac = villes_dict["Carnac"]
+        coordCarnac = villeCarnac.getCoordonneesGPS()
+        (lat, lon) = coordCarnac
+        self.heureUTC = convertirHeureLocaleVersUTC(self.heureSentinelle, lon)
+        heureObservationJD = MyJulianDate.fromString(self.dateDataset, self.heureUTC)        
         # On calcule l'angle entre la droite de Midi Solaire et la droite Stylet - ST Cyr
-        self.pointCoetquidan = PointGraphique(villes_dict["Coetquidan"])
-        self.pointGolfeJuan = PointGraphique(villes_dict["Golfe-Juan"])
-        px1, py1 = self.pointCoetquidan.coordonneesPixelAbs()
-        px2, py2 = self.pointGolfeJuan.coordonneesPixelAbs()
-        ligneMidi = Ligne(px1, py1, px2, py2)
-        self.pointStylet = PointGraphique(villes_dict[self.stylet], epaisseur = 4)
-        px3, py3 = self.pointStylet.coordonneesPixelAbs()  
-        ligneHoraire = Ligne(px1, py1, px3, py3)
-        self.angleHoraire = ligneHoraire.angleAvec(ligneMidi)      
+        hauteurSoleil, azimutSoleil = positionSoleil((lat, lon),heureObservationJD)
+        self.angleHoraire = 180-azimutSoleil
+
+        self.angleHoraire = self.angleHoraire if self.heureAMPM == "AM" else -self.angleHoraire
+
 
     def construireRepresentationCarte(self) -> list[ObjetGraphique]:
         listeObjets = []    
@@ -132,13 +184,13 @@ class CercleHoraire(ModuleAlgo):
         cercleHoraire1 = CercleGraphique.depuisTroisPoints(
             self.pointBourges, self.pointStylet, pt1,
             nom = f"Cercle horaire",
-            tooltips = [f"CercleHoraire ={self.angleHoraire:.2f}°"],
+            tooltips = [f"CercleHoraire PM ={self.angleHoraire:.2f}°"],
             tags = {"level" : "construction"}
         ) 
         cercleHoraire2 = CercleGraphique.depuisTroisPoints(
             self.pointBourges, self.pointStylet, pt2,
             nom = f"Cercle horaire",
-            tooltips = [f"CercleHoraire ={self.angleHoraire:.2f}°"],
+            tooltips = [f"CercleHoraire AM ={self.angleHoraire:.2f}°"],
             tags = {"level" : "construction"}
         )  
         listeObjets.append(cercleHoraire1)  

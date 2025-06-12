@@ -1,13 +1,16 @@
-from skyfield.api import load, wgs84
+from skyfield.api import load, wgs84, Star
 from skyfield.toposlib import Topos
 from skyfield.units import Angle
 from skyfield.almanac import sunrise_sunset, find_discrete, meridian_transits
-import numpy as np
+from skyfield.positionlib import ICRF
+from skyfield.framelib import ecliptic_frame
+from skyfield import almanac
+
 from functools import total_ordering
 from math import floor
-
+from numpy import arctan2, sqrt, degrees
 # === Dictionnaire des astres ===
-from skyfield.api import Star
+
 
 #eph = load('de406.bsp')
 eph = load('data/ephemeride/de406.bsp')
@@ -154,7 +157,23 @@ def convertirHeureLocaleVersUTC(heure: str, longitude_deg: float, inverse=False)
     - inverse=False (par défaut) : Locale → UTC (comportement actuel)
     - inverse=True : UTC → Locale
     """
-    hh, mm, ss = map(int, heure.split(":"))
+    def parseHeure(heure: str):
+        """
+        Parse une heure au format 'HH:MM' ou 'HH:MM:SS' et retourne (hh, mm, ss).
+        Si SS est absent, ss = 0.
+        """
+        parties = heure.strip().split(":")
+        if len(parties) == 2:
+            hh, mm = map(int, parties)
+            ss = 0
+        elif len(parties) == 3:
+            hh, mm, ss = map(int, parties)
+        else:
+            raise ValueError(f"Format d'heure invalide : {heure}")
+
+        return hh, mm, ss
+
+    hh, mm, ss = parseHeure(heure)
     total_seconds = hh * 3600 + mm * 60 + ss
 
     # Écart horaire dû à la longitude (en secondes)
@@ -181,15 +200,14 @@ def heureSymetrique(heure: str) -> str:
     Calcule l'heure symétrique (locale) par rapport à midi solaire.
     Ex: 09:43:00 → 14:17:00
     """
-    hh, mm, ss = map(int, heure.split(":"))
-    total_seconds = hh * 3600 + mm * 60 + ss
+    hh, mm = map(int, heure.split(":"))
+    total_seconds = hh * 3600 + mm * 60
     total_sym = 86400 - total_seconds
 
     hh_sym = total_sym // 3600
     mm_sym = (total_sym % 3600) // 60
-    ss_sym = total_sym % 60
 
-    return f"{hh_sym:02}:{mm_sym:02}:{ss_sym:02}"
+    return f"{hh_sym:02}:{mm_sym:02}"
 
 
 
@@ -647,29 +665,80 @@ def calculZenithSoleil(coord_tuple, jd):
 
     raise RuntimeError("Aucun transit trouvé avec find_discrete pour ce jour.")
 
-def declinaisonSoleil(jd):
-    t = ts.ut1_jd(float(jd))
-    astrometric = earth.at(t).observe(sun).apparent()
-    ra, dec, distance = astrometric.radec()
-    return float(dec.degrees)
-
-
 
 from skyfield.positionlib import ICRF
-from numpy import arctan2, sqrt, degrees
+from skyfield.constants import AU_KM
+
+
+from numpy import sin, cos, radians, degrees, arcsin
+
+def declinaisonSoleil(jd):
+    """
+    Déclinaison géométrique du Soleil calculée depuis sa longitude écliptique
+    et l'obliquité vraie de l'écliptique. C'est LA valeur physique recherchée.
+    """
+    t = ts.ut1_jd(float(jd))
+
+    # Formule officielle IAU 2000 pour obliquité vraie (en degrés)
+    def obliquity_IAU2000(jd):
+        T = (jd - 2451545.0) / 36525.0  # siècles juliens depuis J2000.0
+        epsilon_deg = 23.43929111 \
+                    - (46.8150 / 3600) * T \
+                    - (0.00059 / 3600) * T**2 \
+                    + (0.001813 / 3600) * T**3
+        return radians(epsilon_deg)
+  
+    # Obliquité vraie de l'écliptique en radians
+    epsilon = obliquity_IAU2000(float(jd))
+
+    
+    # Longitude écliptique du Soleil
+    astrometric = earth.at(t).observe(sun).apparent()  # ici apparent ok pour la position géométrique
+    lon_deg = astrometric.frame_latlon(ecliptic_frame)[1].degrees
+    lon_rad = radians(lon_deg)
+    
+    # Calcul de la déclinaison
+    decl_rad = arcsin(sin(epsilon) * sin(lon_rad))
+    decl_deg = degrees(decl_rad)
+    
+    return decl_deg
+
 
 def longitudeEcliptiqueSoleil(jd):
     t = ts.ut1_jd(float(jd))
     astrometric = earth.at(t).observe(sun).apparent()
-
-    # Position en coordonnées héliocentriques (HCRS)
-    x, y, z = astrometric.position.au
-
-    # Calcul longitude écliptique (sans inclinaison)
-    lon_rad = arctan2(y, x)
-    lon_deg = degrees(lon_rad) % 360
+    ecliptic_pos = astrometric.frame_latlon(ecliptic_frame)
+    lon_deg = ecliptic_pos[1].degrees % 360
     return lon_deg
-    
+
+
+# === Trouver le solstice d'été avec Skyfield Almanac ===
+
+
+def trouverSolsticeEteAvecAlmanac(annee):
+    """
+    Trouve le moment exact du solstice d'été pour l'année donnée.
+    Retourne (MyJulianDate du solstice, déclinaison max du Soleil à cet instant).
+    """
+    # On définit une fenêtre autour de fin juin
+    t0 = ts.utc(annee, 6, 1)
+    t1 = ts.utc(annee, 7, 15)
+
+    # Récupère la fonction événement saisons
+    f = almanac.seasons(eph)
+
+    # Cherche les instants des événements
+    times, events = almanac.find_discrete(t0, t1, f)
+
+    for t, e in zip(times, events):
+        if e == 1:  # e == 1 → solstice d'été
+            jd_solstice = MyJulianDate.fromJD(t.ut1)
+            decl_max = declinaisonSoleil(jd_solstice)
+            return jd_solstice, decl_max
+
+    raise RuntimeError("Pas de solstice trouvé dans la période donnée.")
+
+
 
 # === Exemple de test ===
 if __name__ == "__main__":

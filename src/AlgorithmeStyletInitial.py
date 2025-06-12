@@ -596,6 +596,7 @@ class Candidats(ModuleAlgo):
         self.axeFinalEtoile = None
         self.origineTraitEtoile = None
         self.heureSentinelle =None
+        self.ampm = None
         self.distKM = None
         self.selection  = None
         self.azimutHeure = None
@@ -632,10 +633,10 @@ class Candidats(ModuleAlgo):
             return
 
         # On calcule la distance avec la ligne horaire la pllus proche
-        self.heureSentinelle, distMin, self.azimutHeure = self.sentinelle.surLigneHoraire(x, y)
-        self.distKM = int(intersectionPlaneteEtoile.pixelsVersMetres()*distMin/1000)
+        selection, self.heureSentinelle, self.ampm, self.distKM, self.azimutHeure = self.sentinelle.surLigneHoraire(x, y)
 
-        if self.distKM >20:
+
+        if not selection:
             self.selection = "Trop loin d'une ligne horaire"
             return
 
@@ -670,12 +671,13 @@ class Candidats(ModuleAlgo):
 #
 class SentinelleAlgo(ModuleAlgo):
     def getEntreesModules(self):
-        return ["candidats.selection","candidats.heureSentinelle"]
+        return ["candidats.selection","candidats.heureSentinelle", "candidats.ampm"]
 
     def __init__(self):
 # Variable input des autres modules
         self.selectionCandidats = None
         self.heureSentinelleCandidats = None
+        self.ampmCandidats = None
 
 # Valeurs initialisées à calculer
         self.heure = ""
@@ -687,8 +689,8 @@ class SentinelleAlgo(ModuleAlgo):
 
     def calculer(self):
         if self.selectionCandidats == "Sélectionné":
-            self.heure = self.heureSentinelleCandidats[:-2]
-            self.sensCadran = self.heureSentinelleCandidats[-2:]
+            self.heure = self.heureSentinelleCandidats
+            self.sensCadran = self.ampmCandidats
         else:
             self.heure = ""
             self.sensCadran = ""

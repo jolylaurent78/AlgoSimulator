@@ -22,14 +22,16 @@ class ListeSegmentsDataSet(ModuleAlgo):
             for i, row in enumerate(reader):
                 cle = row["Evènement"]
                 self.evenements[cle] = {
-                    "Note": row["Note"],
+                    "DateSegment": row["DateSegment"],
                     "Date": row["Date"],
                     "Stylet": row["Stylet"],
+                    "LettreDecl": row["LettreDecl"],
                 }
                 if i == 0: # Première ligne pour la valeur par défaut
                     self.segment = cle
         self.date = None
-        self.note = None
+        self.dateSegment = None
+        self.lettreDecl = None
         self.stylet = None
         super().__init__()
 
@@ -67,6 +69,6 @@ class ListeSegmentsDataSet(ModuleAlgo):
 
         infos = self.evenements[self.segment]
         self.date = infos["Date"]
-        self.note = infos["Note"]
+        self.dateSegment = infos["DateSegment"]
         self.stylet = infos["Stylet"]
-
+        self.lettreDecl = infos["LettreDecl"]

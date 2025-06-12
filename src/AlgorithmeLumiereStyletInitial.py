@@ -5,9 +5,11 @@ from collections import OrderedDict
 # Moteur Algo générique
 from src.AlgorithmeManager import ModuleAlgo, AlgorithmeManager
 from src.ListeSegmentsDataSet import ListeSegmentsDataSet
+from src.Sentinelle import Sentinelle
+
 
 # Librairie calcul astronomique
-from src.calculAstronomique import positionSoleil, positionAstre, calculLeverAstre, calculLeverSoleil, calculCoucherSoleil, ASTRES
+from src.calculAstronomique import positionSoleil, calculLeverAstre, calculLeverSoleil, calculCoucherSoleil
 from src.calculAstronomique import MyJulianDate, decalage2Notes, decalage2Jours, getIndexesPourNote, convertirHeureLocaleVersUTC, heureSymetrique, decalageGamme
 
 # Affichage des objects graphiques
@@ -51,16 +53,14 @@ class AlgorithmeLumiereStyletInitial(AlgorithmeManager):
 class Soleil(ModuleAlgo):
     def getEntreesModules(self):
         return ["dataset.date",
-                "dataset.note",
                 "dataset.stylet"]
 
     def __init__(self):
 # Variables input des autres modules
         self.dateDataset = ""
-        self.noteDataset = ""
         self.styletDataset = ""
 # Affiché
-        self.choixNote = None
+        self.lettreDom = None
         self.lieuObservation = None
         self.heureLeverSoleilStrasbourg = None
         self.azimutLeverSoleil = None        
@@ -77,6 +77,7 @@ class Soleil(ModuleAlgo):
         self.choixHeure = None
         self.heureUTC = None
 
+        self.sentinelle = Sentinelle("data/sentinelle.csv")
         super().__init__()
 
 
@@ -101,23 +102,15 @@ class Soleil(ModuleAlgo):
     }
 
     tableauHeures = ["09:43", "11:36", "11:42", "12:00", "10:22", "08:00", "08:12", "10:55" ]
-    
-    def getValeursChoixNote(self):
-        return [self.choix, self.choix_plus2, self.choix_moins2]
-    
+  
     def getValeursChoixHeure(self):
-        return ["Même heure", "Symétrique"]
+        return ["Même heure", "Symétrique", "10:05", "13:55"]
 
     def getValeursLieuObservation(self):
-        ville1 = Soleil.tableauObservation.get(self.choix, "-")
-        ville2 = Soleil.tableauObservation.get(self.choix_plus2, "-")
-        ville3 = Soleil.tableauObservation.get(self.choix_moins2, "-")
-        solutions = [ville1]
-        # on évite les doublons!
-        if ville2 not in solutions:
-            solutions.append(ville2)
-        if ville3 not in solutions:
-            solutions.append(ville3)
+        ville1 = Soleil.tableauObservation.get(self.lettreDom, "-")
+        ville2 = Soleil.tableauObservationDecale.get(self.lettreDom, "-")
+        solutions = [ville1, ville2]
+
          # On gère le cas Roncevaux en rajoutant "Gérardmer si présent"
         if "Roncevaux" in solutions:
             solutions.append("Gérardmer")  # ou la ville que tu veux
@@ -137,9 +130,7 @@ class Soleil(ModuleAlgo):
 
         # On calcule la déclinaison du soleil pour savoir si nous sommes au Printemps / Ete ou Automne / Hivers
         self.dateSegmentJD = MyJulianDate.fromString(self.dateDataset)
-
-        self.choix, self.choix_plus2, self.choix_moins2 = decalageGamme(self.noteDataset)
-        self.choixNote = self.choix
+        self.lettreDom = self.dateSegmentJD.lettreDominicale()
 
         # On calcule l'heure de lever et de coucher du soleil à Strasbourg pour savoir si Zeta est visible à cette date
         villeStrasbourg = villes_dict["Strasbourg"]
@@ -150,39 +141,7 @@ class Soleil(ModuleAlgo):
         self.rotationCarte = 90 - self.azimutLeverSoleil
 
         # On initialise le lieu d'observation
-        self.lieuObservation = Soleil.tableauObservation.get(self.noteDataset, "-")
-
-        # On calcule d'abord l'azimut du soleil pour le tableau des 7 heures + Joker'
-        date_str = "15/08/1066"
-        coordCarnac = villes_dict["Carnac"].getCoordonneesGPS()
-        (lat, lon) = coordCarnac
-
-        for heureStr in Soleil.tableauHeures:
-            heureLocale = heureStr + ":00"
-            # On pase en heure UTC
-            heureUTC = convertirHeureLocaleVersUTC(heureLocale, lon)
-            # Création des objets date-heure
-            date_am = MyJulianDate.fromString(date_str, heureUTC)
-            # Calcul des positions
-            _, az_am = positionSoleil((lat, lon), date_am)
-            self.tableauAzimut.append((heureLocale, az_am))
-
-         # On calcule ensuite l'axe du midi solaire Coetquidan - GF'
-        self.pointCoetquidan = PointGraphique(villes_dict["Coetquidan"])
-        self.pointGolfeJuan = PointGraphique(villes_dict["Golfe-Juan"])
-        px1, py1 = self.pointCoetquidan.coordonneesPixelAbs()
-        px2, py2 = self.pointGolfeJuan.coordonneesPixelAbs()
-        ligneMidi = Ligne(px1, py1, px2, py2)
-        self.azimutMidi = ligneMidi.azimut()
-
-        self.tableauLignesHoraires = []
-        for heureLocal, azimut in self.tableauAzimut:
-            delta_am = (180 - azimut) % 360
-            azimut_corrige_am = (self.azimutMidi + delta_am) % 360
-            azimut_corrige_sym = (self.azimutMidi - delta_am) % 360
-            ligneAM = Ligne.depuisPointEtAzimut(self.pointCoetquidan.coordonneesPixelAbs(), azimut_corrige_am)
-            lignePM = Ligne.depuisPointEtAzimut(self.pointCoetquidan.coordonneesPixelAbs(), azimut_corrige_sym)
-            self.tableauLignesHoraires.append((heureLocal, ligneAM, lignePM))
+        self.lieuObservation = Soleil.tableauObservation.get(self.lettreDom, "-")
 
         self.choixHeure = "Même heure"
         self.stylet = self.styletDataset
@@ -197,32 +156,18 @@ class Soleil(ModuleAlgo):
 
         self.pointStylet = PointGraphique(villes_dict[self.stylet])
         px, py = self.pointStylet.coordonneesPixelAbs()
-        distMin = None
-        heureMin = None
-        sens = None
-        for heureLocale, ligneAM, lignePM in self.tableauLignesHoraires:
-            distAM = ligneAM.distanceAuPoint(px, py)
-            distPM = lignePM.distanceAuPoint(px, py)
-            if distMin is None:
-                distMin = distAM
-                heureMin = heureLocale
-                sens = "AM"
-            if distMin>distAM:
-                distMin = distAM
-                heureMin = heureLocale  
-                sens = "AM"
-            if distMin>distPM:
-                distMin = distPM
-                heureMin = heureLocale   
-                sens = "PM"                            
-            distMin = distAM if distMin>distAM else distMin
+        selection, heure, ampm, distance, self.azimutHeure = self.sentinelle.surLigneHoraire(px, py)
 
-        distance = self.pointStylet.pixelsVersMetres()*distMin/1000
-        if distance<20:
-            self.heureAMPM = sens
+        if selection:
+            self.heureAMPM = ampm
             self.validite = "Valide"
-            symetrique = (sens == "PM" and self.choixHeure == "Même heure") or  (sens == "AM" and self.choixHeure == "Symétrique")
-            self.heureSentinelle = heureSymetrique(heureMin) if symetrique else heureMin
+            if self.choixHeure  == "10:05":
+                self.heureSentinelle = "10:05:00"        
+            elif self.choixHeure  == "13:55":
+                self.heureSentinelle = "13:55:00"       
+            else:
+                symetrique = (ampm == "PM" and self.choixHeure == "Même heure") or  (ampm == "AM" and self.choixHeure == "Symétrique")
+                self.heureSentinelle = heureSymetrique(heure) if symetrique else heure
 
              # on récupère les coords GPS de la ville d'observation
             (lat, lon) = villes_dict[self.lieuObservation].getCoordonneesGPS()
@@ -238,7 +183,7 @@ class Soleil(ModuleAlgo):
 class Stylet(ModuleAlgo):
     def getEntreesModules(self):
         return ["dataset.date",
-                "soleil.choixNote",
+                "soleil.lettreDom",
                 "soleil.heureAMPM",
                 "soleil.lieuObservation",
                 "soleil.rotationCarte",
@@ -252,7 +197,7 @@ class Stylet(ModuleAlgo):
     def __init__(self):
 # Variables input des autres modules
         self.dateDataset = ""
-        self.choixNoteSoleil = ""
+        self.lettreDomSoleil = ""
         self.heureAMPMSoleil = None
         self.lieuObservationSoleil = None
         self.rotationCarteSoleil = None
@@ -322,7 +267,7 @@ class Stylet(ModuleAlgo):
             self.distanceMetz = self.pointMetz.distance(pointStylet)
             # On calcule la formule en str du calcul de la hauteur
             (faLongueurStr, faLongueur) = Stylet.tableauGamme.get("F", ("-", 0))
-            (noteLongueurStr, noteLongueur) = Stylet.tableauGamme.get(self.choixNoteSoleil, ("-", 0))           
+            (noteLongueurStr, noteLongueur) = Stylet.tableauGamme.get(self.lettreDomSoleil, ("-", 0))           
             self.formuleDistance =f"{float(self.distanceMetz):.0f} / {faLongueurStr} * {noteLongueurStr}"
             self.hauteurStylet = self.distanceMetz / faLongueur * noteLongueur
 

@@ -32,7 +32,17 @@
 #12. Attribut      : Méthode de lecture
 
 Section,Categorie,Ligne,Widget,FieldType,Alignement,Label,ShortLabel,Hauteur,Type,Style,Module,Attribut
-Note du Segment,Global,1,field,lettre,right,Lettre Segment,LS,1,data,std,dataset,note
-Note du Segment,Global,1,checkboxH,lettre,left,Choix Note,O,2,input_multiple,std,segment,choixNote
+Date et Lettre,Global,1,field,date,right,Date Transposé,LS,1,data,std,dataset,date
+Date et Lettre,Global,1,text,date,right,<->,LS,1,data,std
+Date et Lettre,Global,1,field,date,left,Date Segment,LS,1,data,std,dataset,dateSegment
+Date et Lettre,Global,2,field,lettre,right,Lettre Dom,LS,1,data,std,segment,lettreDom
+Date et Lettre,Global,2,field,lettre,right,Lettre Decl,LS,1,data,std,dataset,lettreDecl
+Date et Lettre,Global,2,checkboxH,lettre,left,Type calendrier,O,1,input_multiple,std,segment,choixCalendrier
 Concervation Angles,Global,1,PointVille,shortext,left,Position Stylet,PO,1,data,std,cercleHoraire,stylet
-Concervation Angles,Global,1,field,angle,left,Angle Horaire,A,1,data,std,cercleHoraire,angleHoraire
+Concervation Angles,Global,1,field,heure,left,Heure,HO,1,data,std,cercleHoraire,heureStylet
+Concervation Angles,Global,1,field,heure,left,AM/PM,SC,1,data,std,cercleHoraire,styletAMPM
+Concervation Angles,Global,2,field,shortext,left,Calendrier,PO,1,data,std,segment,choixCalendrier
+Concervation Angles,Global,2,checkboxH,shorttext,left,Période,O,1,input_multiple,std,cercleHoraire,heureAMPM
+Concervation Angles,Global,3,checkboxH,shorttext,left,Heure Substitution,O,1,input_multiple,std,cercleHoraire,heureSubstitution
+Concervation Angles,Global,4,field,heure,left,Heure Observation,HO,1,data,std,cercleHoraire,heureSentinelle
+Concervation Angles,Global,4,field,angle,left,Angle Horaire,A,1,data,std,cercleHoraire,angleHoraire

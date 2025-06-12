@@ -1,27 +1,19 @@
 import csv
-import math
 from collections import OrderedDict
 
 
 
 # Librairie calcul astronomique
-from src.calculAstronomique import calculHeurePourAzimutSoleil, ASTRES
-from src.calculAstronomique import MyJulianDate, decalage2Notes, decalage2Jours, getIndexesPourNote, convertirHeureLocaleVersUTC, heureSymetrique
+from src.calculAstronomique import calculHeurePourAzimutSoleil
+from src.calculAstronomique import MyJulianDate, convertirHeureLocaleVersUTC
 
 # Affichage des objects graphiques
 from src.affichage_objets import *
 
-# Gestion des coordonnées / projection
-from src.carte_config import lambert93_to_gps, pixels_to_lambert93
-
 # Base de données des villes
 from src.data_loader import villes_dict
 
-# Gestion des layers graphiques
-from src.layerManager import LayerManager
-
 class Sentinelle(dict):
-
     COULEUR_TRAIT_MIDI = (255, 145, 34)
     COULEUR_TRAIT_HEURE = (255, 193, 132)
     COULEUR_TRAIT_CANDIDAT = (164, 82, 0)
@@ -133,6 +125,18 @@ class Sentinelle(dict):
     def getOrigineStylet(self):
         return self.pointCoetquidan
 
+    def getAzimut(self, heureLocale: str):
+        """
+        Retourne l'azimut associé à une heure locale donnée (au format 'HH:MM').
+        Si aucune correspondance n'est trouvée, retourne None.
+        """
+        for note, valeurs in self.items():
+            if valeurs["HeureLocale"] == heureLocale:
+                return valeurs["AzimutCalibre"]
+
+        # Si non trouvé
+        return None
+
     #
     # Fonctions d'affichage
     # 
@@ -187,17 +191,24 @@ class Sentinelle(dict):
 
             if distMin is None:
                 distMin = distAM
-                candidatHeure = heureLocale + "AM"
+                candidatHeure = heureLocale
+                ampm = "AM"
                 azimutHeure = azimut_corrige_am            
             elif distMin>distAM:
                 distMin = distAM
-                candidatHeure = heureLocale + "AM"
+                candidatHeure = heureLocale
+                ampm = "AM"
                 azimutHeure = azimut_corrige_am
             if distMin>distPM:
                 distMin = distPM
-                candidatHeure = heureLocale + "PM"
+                candidatHeure = heureLocale
+                ampm = "PM"
                 azimutHeure = azimut_corrige_sym
-        return candidatHeure, int(distMin), azimutHeure        
+
+        distKM = int(self.pointCoetquidan.pixelsVersMetres()*distMin/1000)
+        selection = distKM<20
+
+        return selection, candidatHeure, ampm, distKM, azimutHeure        
 
 
 
