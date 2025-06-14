@@ -1828,6 +1828,9 @@ class InterfaceCarte(tk.Tk):
         self.cfg.set("Carte", "lastCarte", json_path)
         self.cfg.save()
 
+        # On recalcule toutes les coordonnées absolues des objets graphiques
+        self.layerManager.recalculerCoordonneesPixelAbsTous()
+        
         # Important : forcer le redraw complet
         self._refresh_images()
 
@@ -1959,6 +1962,9 @@ class InterfaceCarte(tk.Tk):
         # Reset flags
         self.modeCalibration = False
         self.carteCalibrationActive = False
+
+        # On recalcule toutes les coordonnées absolues des objets graphiques
+        self.layerManager.recalculerCoordonneesPixelAbsTous()
 
         # Redraw en mode normal
         self._refresh_images()

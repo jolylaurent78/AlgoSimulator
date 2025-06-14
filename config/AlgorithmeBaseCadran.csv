@@ -55,14 +55,14 @@ Partition,Global,1,field,heure,left,Locale,,1,data,std,partition,leverSoleilLoca
 Partition,Global,2,field,heure,left,Locale+6H,,1,data,std,partition,leverlLocaleP6
 Partition,Global,2,field,heure,left,UTC Carnac,,1,data,std,partition,heureUTCCarnac
 Partition,Global,2,field,angle,left,Azimut,HO,1,data,std,partition,azimutSoleil
-Partition,Global,3,field,lettre,right,Lettre date,,1,data,std,segment,lettreChoix
+Partition,Global,3,field,lettre,right,Lettre date,,1,data,std,partition,lettreChoixSegment
 Partition,Global,3,checkboxH,lettre,right,Choix:,NP,1,input_multiple,std,partition,P2M2
 Partition,Global,3,field,lettre,right,Note,,1,data,std,partition,lettrePartition
 Concervation Distance,Global,1,checkboxH,shorttext,right,Référence,RC,1,input_multiple,std,cercleDistance,centreCercle
 Concervation Distance,Global,1,field,heure,right,Heure,,1,data,std,cercleDistance,heureReference
 Concervation Distance,Global,2,checkboxH,shorttext,right,Clef,C,1,input_multiple,std,cercleDistance,clef
 Concervation Distance,Global,2,field,distance,right,Distance % Clef,,1,data,std,cercleDistance,distanceClef
-Concervation Distance,Global,3,field,lettre,right,Lettre date,,1,data,std,segment,lettreChoix
+Concervation Distance,Global,3,field,lettre,right,Lettre date,,1,data,std,cercleDistance,lettreChoixSegment
 Concervation Distance,Global,3,checkboxH,lettre,right,Choix,ND,1,input_multiple,std,cercleDistance,P2M2
 Concervation Distance,Global,3,field,lettre,right,Note,,1,data,std,cercleDistance,lettreHauteur
 Concervation Distance,Global,3,field,distance,right,Hauteur stylet,,1,data,std,cercleDistance,hauteurStylet

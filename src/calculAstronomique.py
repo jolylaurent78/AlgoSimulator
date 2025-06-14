@@ -50,7 +50,7 @@ ALTITUDE_LEVER_STANDARD = -0.566  # degrés, pour simuler la réfraction atmosph
 #
 # des fonctions pour manipuler les notes de musique
 #
-def decalageGamme(note):
+def decalageGamme(note, substitution = True):
     gamme = ["C", "D", "E", "F", "G", "A", "B"]
 
     def substituer(n):
@@ -62,7 +62,7 @@ def decalageGamme(note):
             return n
 
     # Substitution de la note de départ
-    note_substituee = substituer(note)
+    note_substituee = substituer(note) if substitution else note
 
     # Trouver l'index dans la gamme
     index = gamme.index(note_substituee)
@@ -72,8 +72,8 @@ def decalageGamme(note):
     note_moins_2 = gamme[(index - 2) % len(gamme)]
 
     # Substituer les résultats
-    note_plus_2 = substituer(note_plus_2)
-    note_moins_2 = substituer(note_moins_2)
+    note_plus_2 = substituer(note_plus_2) if substitution else note_plus_2
+    note_moins_2 = substituer(note_moins_2) if substitution else note_moins_2
 
     return note_substituee, note_moins_2, note_plus_2
 

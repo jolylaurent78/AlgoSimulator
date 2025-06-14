@@ -274,7 +274,7 @@ class Partition(ModuleAlgo):
         heureObsJD = MyJulianDate.fromString(self.dateSegmentDataset, self.heureUTCCarnac)
         _, self.azimutSoleil = positionSoleil((latCarnac,lonCarnac), heureObsJD)
 
-        listeNotes = decalageGamme(self.lettreChoixSegment)
+        listeNotes = decalageGamme(self.lettreChoixSegment, False)
         self.lettrePartition = listeNotes[2] if self.P2M2 == "+2" else listeNotes[1]
 
         # On doit calculer ici les lignes candidates
@@ -356,9 +356,9 @@ class Partition(ModuleAlgo):
 
         # On parcourt les lignes des partitions
         for ligne, note, azimut in self.listeLignesPartitions:
-            ligne.setTooptips([f"Partiton {nom}",f"Azimut {azimut:.02}"])
-            ligne.ajouterTag("level",niveauPartition(nom, self.lettrePartition))
-            ligne.setCouleur(couleurPartition(nom, self.lettrePartition))
+            ligne.setTooptips([f"Partiton {note}",f"Azimut {azimut:.02}"])
+            ligne.ajouterTag("level",niveauPartition(note, self.lettrePartition))
+            ligne.setCouleur(couleurPartition(note, self.lettrePartition))
             listeObjets.append(ligne)
 
         return listeObjets
@@ -439,7 +439,7 @@ class CercleDistance(ModuleAlgo):
         self.distanceClef = self.pointStylet.distance(pointMetz) if self.clef == "Metz" else self.pointStylet.distance(pointCarignan)
 
         # On sélectionne la hauteur du stylet
-        listeNotes = decalageGamme(self.lettreChoixSegment)
+        listeNotes = decalageGamme(self.lettreChoixSegment, False) # On décale sans susbtition Fa/Sol
         self.lettreHauteur = listeNotes[2] if self.P2M2 == "+2" else listeNotes[1]
         _, longFA = CercleDistance.tableauGamme["F"]
         _, longNote = CercleDistance.tableauGamme[self.lettreHauteur]
