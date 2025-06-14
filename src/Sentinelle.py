@@ -209,6 +209,47 @@ class Sentinelle(dict):
         return selection, candidatHeure, ampm, distKM, azimutHeure        
 
 
+class LieuxObservation:
+
+    # Les magniudes sont dans le sens inverse .. A, B, C => On prendra le décalage avec un principe note+2 C=>E
+    tableauObservation = {
+        "C": "Roncevaux",
+        "B": "Bourges",
+        "A": "Cherbourg",
+        "G": "Dieppe",
+        "F": "Bourges",
+        "E": "Cherbourg",
+        "D": "Dieppe"
+    }
+    tableauObservationDecale = {
+        "C": "Cherbourg",
+        "B": "Dieppe",
+        "A": "Bourges",
+        "G": "Cherbourg",
+        "F": "Dieppe",
+        "E": "Epernay",
+        "D": "Bourges"
+    }
+
+    @staticmethod
+    def getListeLieuxObservation(note:str, date:str=""):
+        ville1 = LieuxObservation.tableauObservation.get(note, "-")
+        ville2 = LieuxObservation.tableauObservationDecale.get(note, "-")
+        solutions = [ville1, ville2]
+
+         # On gère le cas Roncevaux en rajoutant "Gérardmer si présent"
+        if "Roncevaux" in solutions:
+            solutions.append("Gérardmer")  # ou la ville que tu veux
+
+        # Si la date du segment est le 18/05/1152, on rajoute Lampouy
+        if date == "18/05/1152":
+            solutions.append("Lampouy")
+
+        return solutions
+    
+    @staticmethod
+    def getDefautLieuObservation(note:str):
+        return LieuxObservation.tableauObservation.get(note, "-") 
 
 if __name__ == "__main__":
     sentinelle = Sentinelle("data/sentinelle.csv")

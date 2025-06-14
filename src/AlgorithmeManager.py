@@ -129,6 +129,7 @@ class Scenario:
     def __init__(self, nom: str,
         quadruplets: list[tuple[str, str, str, Any]],
         modules: dict,
+        ordreModules : list[str],
         segment: str,
         layerManager: LayerManager,
         couleur: tuple = None,
@@ -150,6 +151,7 @@ class Scenario:
         self.modules = modules
         self.segment = segment
         self.type_scenario = type_scenario
+        self.ordreModules = ordreModules
 
         # On crée un layer dans l'interface'
         nomLayer = self.getDescriptionLisible()
@@ -216,7 +218,8 @@ class Scenario:
         tooltip_scenario = self.genererTooltipScenario()
 
         # 2. Générer et ajouter les nouveaux
-        for module_id, module in self.modules.items():
+        for module_id in self.ordreModules:
+            module = self.modules.get(module_id)
             objets = module.construireRepresentationCarte()
             if objets != []:
                 # On inclut automatiquement le tag du modue
@@ -318,7 +321,8 @@ class AlgorithmeManager:
 ## Gesion des templates
 
     def enregistrerTemplatesModules(self, liste_modules):
-        for module_id, version, module_algo in liste_modules:
+        for module_id, _, module_algo in liste_modules:
+            version = "default"
             if module_id not in self._templates_modules :
                 self._templates_modules [module_id] = {}
             if version not in self._templates_modules [module_id]:
@@ -757,6 +761,7 @@ class AlgorithmeManager:
             nom=nom_scenario,
             quadruplets=[],
             modules=modules,
+            ordreModules=self.ordreModules,
             segment=segment,
             layerManager=layerManager,
             type_scenario=TypeScenario.DEFAULT
@@ -796,7 +801,8 @@ class AlgorithmeManager:
             nom,
             quadruplets,
             modules,
-            self.segment_actif,
+            ordreModules=self.ordreModules,
+            segment=self.segment_actif,
             layerManager=layerManager,
             couleur=couleur,
             type_scenario=TypeScenario.AUTOMATIQUE
@@ -833,6 +839,7 @@ class AlgorithmeManager:
             nom=nom,
             quadruplets=[],
             modules=modules,
+            ordreModules=self.ordreModules,
             segment=segment,
             layerManager=layerManager,
             type_scenario=TypeScenario.UTILISATEUR,
@@ -986,14 +993,15 @@ class AlgorithmeManager:
 
     def getModulesAvecAffichage(self) -> list[str]:
         """
-        Retourne la liste des modules template ayant redéfini construireRepresentationCarte()
+        Retourne la liste des labels des modules ayant redéfini construireRepresentationCarte(),
         donc susceptibles de produire des objets graphiques.
         """
         modules = []
-        for module_id, template in self.getModulesTemplate().items():
-            if type(template).construireRepresentationCarte is not ModuleAlgo.construireRepresentationCarte:
-                modules.append(module_id)
+        for module_id, label, module in self.getListeModulesInitiale():
+            if type(module).construireRepresentationCarte is not ModuleAlgo.construireRepresentationCarte:
+                modules.append((module_id,label))
         return modules
+
 
 
 

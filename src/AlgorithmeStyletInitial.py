@@ -5,7 +5,7 @@ from collections import OrderedDict
 # Moteur Algo générique
 from src.AlgorithmeManager import ModuleAlgo, AlgorithmeManager
 from src.ListeSegmentsDataSet import ListeSegmentsDataSet
-from src.Sentinelle import Sentinelle
+from src.Sentinelle import Sentinelle, LieuxObservation
 
 # Librairie calcul astronomique
 from src.calculAstronomique import positionSoleil, positionAstre, calculLeverAstre, calculLeverSoleil, calculCoucherSoleil, ASTRES
@@ -34,12 +34,12 @@ class AlgorithmeStyletInitial(AlgorithmeManager):
 
     def getListeModulesInitiale(self):
             return [
-                ("soleil", "default", Soleil()),
-                ("carte", "default", Carte()),
-                ("planete", "default", Planete()),
-                ("etoile", "default", Etoile()),
-                ("sentinelle", "default", SentinelleAlgo()),
-                ("candidats", "default", Candidats())
+                ("soleil", "Soleil", Soleil()),
+                ("carte", "Carte", Carte()),
+                ("planete", "Planète", Planete()),
+                ("etoile", "Etoile", Etoile()),
+                ("sentinelle", "Sentinelle", SentinelleAlgo()),
+                ("candidats", "Candidat", Candidats())
             ]
 
     def appliquerParametresDepuisStructure(self):
@@ -72,26 +72,6 @@ class Soleil(ModuleAlgo):
         super().__init__()
 
 
-    # Les magniudes sont dans le sens inverse .. A, B, C => On prendra le décalage avec un principe note+2 C=>E
-    tableauObservation = {
-        "C": "Roncevaux",
-        "B": "Bourges",
-        "A": "Cherbourg",
-        "G": "Dieppe",
-        "F": "Bourges",
-        "E": "Cherbourg",
-        "D": "Dieppe"
-    }
-    tableauObservationDecale = {
-        "C": "Cherbourg",
-        "B": "Dieppe",
-        "A": "Bourges",
-        "G": "Cherbourg",
-        "F": "Dieppe",
-        "E": "Epernay",
-        "D": "Bourges"
-    }
-
     def setup(self):
         """
         Initialise la valeur par défaut de lieuObservation à partir de la lettre dominicale.
@@ -119,27 +99,12 @@ class Soleil(ModuleAlgo):
 
         self.dateObservation = self.dateObservationJD.jourSemaine() +" " + self.dateObservationJD.toString("JJ/MM/AAAA")
         self.lettreObs = self.dateObservationJD.lettreDominicale()
-        self.lieuObservation = Soleil.tableauObservation.get(self.lettreSeg, "-")
+        self.lieuObservation = LieuxObservation.getDefautLieuObservation(self.lettreSeg)
 
         self.decalage6mois = "6 mois plus tard"
 
     def getValeursLieuObservation(self):
-        ville1 = Soleil.tableauObservation.get(self.lettreSeg, "-")
-        ville2 = Soleil.tableauObservationDecale.get(self.lettreSeg, "-")
-
-        # On gère le cas Roncevaux en rajoutant "Gérardmer si présent"
-        if ville1 ==  Soleil.tableauObservation.get("C"):
-            solution = [ville1, "Gérardmer", ville2]
-        elif ville2 == Soleil.tableauObservation.get("C"):
-            solution = [ville1, ville2, "Gérardmer"]
-        else:
-            solution =[ville1, ville2]
-
-        # Si la date du segment est le 18/05/1152, on rajoute Lampouy
-        if self.dateDataset == "18/05/1152":
-            solution.append("Lampouy")
-
-        return solution
+        return LieuxObservation.getListeLieuxObservation(self.lettreSeg, self.dateDataset)
     
     def calculer(self):
 

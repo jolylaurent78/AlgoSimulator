@@ -588,12 +588,12 @@ class InterfaceCarte(tk.Tk):
 
         self.varModulesFiltres = {}  # dict[module_id: tk.IntVar]
         modules = self.moteurAlgo.getModulesAvecAffichage()
-        for module_id in modules:
+        for (module_id, label) in modules:
             var = tk.IntVar(value=1)  # 1 = visible par défaut
             self.varModulesFiltres[module_id] = var
             cb = tk.Checkbutton(
                 ligne_niveau_module,
-                text=module_id.capitalize(),
+                text=label.capitalize(),
                 variable=var,
                 command=self.mettreAJourFiltrageModules
             )

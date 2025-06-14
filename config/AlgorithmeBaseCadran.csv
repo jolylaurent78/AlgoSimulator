@@ -32,17 +32,43 @@
 #12. Attribut      : Méthode de lecture
 
 Section,Categorie,Ligne,Widget,FieldType,Alignement,Label,ShortLabel,Hauteur,Type,Style,Module,Attribut
-Date et Lettre,Global,1,field,date,right,Date Transposé,LS,1,data,std,dataset,date
-Date et Lettre,Global,1,text,date,right,<->,LS,1,data,std
-Date et Lettre,Global,1,field,date,left,Date Segment,LS,1,data,std,dataset,dateSegment
-Date et Lettre,Global,2,field,lettre,right,Lettre Dom,LS,1,data,std,segment,lettreDom
-Date et Lettre,Global,2,field,lettre,right,Lettre Decl,LS,1,data,std,dataset,lettreDecl
-Date et Lettre,Global,2,checkboxH,lettre,left,Type calendrier,O,1,input_multiple,std,segment,choixCalendrier
-Concervation Angles,Global,1,PointVille,shortext,left,Position Stylet,PO,1,data,std,cercleHoraire,stylet
-Concervation Angles,Global,1,field,heure,left,Heure,HO,1,data,std,cercleHoraire,heureStylet
-Concervation Angles,Global,1,field,heure,left,AM/PM,SC,1,data,std,cercleHoraire,styletAMPM
-Concervation Angles,Global,2,field,shortext,left,Calendrier,PO,1,data,std,segment,choixCalendrier
-Concervation Angles,Global,2,checkboxH,shorttext,left,Période,O,1,input_multiple,std,cercleHoraire,heureAMPM
-Concervation Angles,Global,3,checkboxH,shorttext,left,Heure Substitution,O,1,input_multiple,std,cercleHoraire,heureSubstitution
-Concervation Angles,Global,4,field,heure,left,Heure Observation,HO,1,data,std,cercleHoraire,heureSentinelle
-Concervation Angles,Global,4,field,angle,left,Angle Horaire,A,1,data,std,cercleHoraire,angleHoraire
+Date et Lettre,Global,1,field,date,right,Date Transposé,,1,data,std,dataset,date
+Date et Lettre,Global,1,text,date,right,<->,,1,data,std
+Date et Lettre,Global,1,field,date,left,Date Segment,,1,data,std,dataset,dateSegment
+Date et Lettre,Global,2,field,lettre,right,Lettre Dom,,1,data,std,segment,lettreDom
+Date et Lettre,Global,2,field,lettre,right,Lettre Decl,,1,data,std,dataset,lettreDecl
+Date et Lettre,Global,2,checkboxH,lettre,left,Type calendrier,C,1,input_multiple,std,segment,choixCalendrier
+Date et Lettre,Global,3,checkboxH,shorttext,left,Ville d'observation,O,2,input_multiple,std,segment,lieuObservation
+Concervation Angles,Global,1,PointVille,shortext,left,Position Stylet,,1,data,std,cercleHoraire,stylet
+Concervation Angles,Global,1,field,heure,left,Heure,,1,data,std,cercleHoraire,heureStylet
+Concervation Angles,Global,1,field,heure,left,AM/PM,,1,data,std,cercleHoraire,styletAMPM
+Concervation Angles,Global,2,field,shortext,left,Calendrier,,1,data,std,cercleHoraire,choixCalendrierSegment
+Concervation Angles,Global,2,checkboxH,shorttext,left,Période,AP,1,input_multiple,std,cercleHoraire,heureAMPM
+Concervation Angles,Global,3,checkboxH,shorttext,left,Heure Substitution,H,1,input_multiple,std,cercleHoraire,heureSubstitution
+Concervation Angles,Global,4,field,heure,left,Heure Observation,,1,data,std,cercleHoraire,heureSentinelle
+Concervation Angles,Global,4,field,angle,left,Angle Horaire,,1,data,std,cercleHoraire,angleHoraire
+Concervation Angles,Global,5,checkboxH,shorttext,left,Choix du cercle,NS,1,input_multiple,std,cercleHoraire,cercleAMPM
+Partition,Global,1,field,date,left,Date,,1,data,std,dataset,dateSegment
+Partition,Global,1,field,shorttext,left,Lieu,,1,data,std,segment,lieuObservation
+Partition,Global,1,field,heure,left,Lever UTC,,1,data,std,partition,leverSoleilUTC
+Partition,Global,1,field,heure,left,Locale,,1,data,std,partition,leverSoleilLocale
+Partition,Global,2,field,heure,left,Locale+6H,,1,data,std,partition,leverlLocaleP6
+Partition,Global,2,field,heure,left,UTC Carnac,,1,data,std,partition,heureUTCCarnac
+Partition,Global,2,field,angle,left,Azimut,HO,1,data,std,partition,azimutSoleil
+Partition,Global,3,field,lettre,right,Lettre date,,1,data,std,segment,lettreChoix
+Partition,Global,3,checkboxH,lettre,right,Choix:,NP,1,input_multiple,std,partition,P2M2
+Partition,Global,3,field,lettre,right,Note,,1,data,std,partition,lettrePartition
+Concervation Distance,Global,1,checkboxH,shorttext,right,Référence,RC,1,input_multiple,std,cercleDistance,centreCercle
+Concervation Distance,Global,1,field,heure,right,Heure,,1,data,std,cercleDistance,heureReference
+Concervation Distance,Global,2,checkboxH,shorttext,right,Clef,C,1,input_multiple,std,cercleDistance,clef
+Concervation Distance,Global,2,field,distance,right,Distance % Clef,,1,data,std,cercleDistance,distanceClef
+Concervation Distance,Global,3,field,lettre,right,Lettre date,,1,data,std,segment,lettreChoix
+Concervation Distance,Global,3,checkboxH,lettre,right,Choix,ND,1,input_multiple,std,cercleDistance,P2M2
+Concervation Distance,Global,3,field,lettre,right,Note,,1,data,std,cercleDistance,lettreHauteur
+Concervation Distance,Global,3,field,distance,right,Hauteur stylet,,1,data,std,cercleDistance,hauteurStylet
+Concervation Distance,Global,4,checkboxH,lettre,right,Octave,OG,1,input_multiple,std,cercleDistance,octave
+Concervation Distance,Global,5,field,angle,right,Hauteur Soleil,,1,data,std,cercleDistance,hauteurSoleil
+Concervation Distance,Global,5,field,distance,right,Dist % Référence,,1,data,std,cercleDistance,distanceRef
+
+
+

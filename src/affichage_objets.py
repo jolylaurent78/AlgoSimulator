@@ -49,6 +49,9 @@ class ObjetGraphique:
     def getNom(self):
         return self.nom
 
+    def setAfficherNom(self, visible):
+        self.afficherNom = visible
+
     # Pour les attributs de l'objet, on prend ceux du layer ou ceux de l'objet si ils sont surchargés
     def setVisible(self, visible: bool):
         self._etatVisible = visible
@@ -87,6 +90,9 @@ class ObjetGraphique:
     def estSelectionne(self) -> bool:
         return self.etatSelection
 
+    def setTooptips(self, tooltips):
+        self.tooltips = tooltips
+
     def ajouterTag(self, cle: str, valeur: Any):
         self.tags[cle] = valeur
 
@@ -119,7 +125,7 @@ class ObjetGraphique:
         raise NotImplementedError("La méthode distance() doit être surchargée dans les sous-classes.")
 
 
-    def afficherTexte(self, canvas, texte: str, x: int, y: int, fontScale=0.5, thickness=1):
+    def afficherTexte(self, canvas, texte: str, x: int, y: int, fontScale=0.4, thickness=1):
         """
         Affiche du texte centré horizontalement sur x, avec y correspondant au haut du texte.
         """
@@ -129,7 +135,7 @@ class ObjetGraphique:
         # Centrage horizontal : x - moitié largeur
         x_text = int(x - text_width / 2)
         # Alignement vertical : y + hauteur (car OpenCV place à partir du bas)
-        y_text = int(y + text_height)
+        y_text = int(y + text_height+8 +self.getEpaisseur()/2)
 
         couleur = self.getCouleur()
         cv2.putText(canvas, texte, (x_text, y_text), fontFace, fontScale, couleur, thickness, cv2.LINE_AA)
@@ -297,7 +303,7 @@ class PointGraphique(ObjetGraphique):
 
     def distanceLigne(self, ligneGraphique: "LigneGraphique") -> float:
         """
-        Distance orthogonale (en mètres) entre ce point et une ligne graphique.
+        Distance orthogonale (en km) entre ce point et une ligne graphique.
         """
         if ligneGraphique.lignePixelImage is None:
             return None
@@ -317,7 +323,7 @@ class PointGraphique(ObjetGraphique):
         x2_l93, y2_l93 = carteConfig.pixels_to_lambert93(px + 1, py)
         m_par_pixel = math.hypot(x2_l93 - x1_l93, y2_l93 - y1_l93)
 
-        return d_pix * m_par_pixel
+        return d_pix * m_par_pixel/1000
 
     def afficher(self, canvas, transformerAffichagePixel):
         """
@@ -558,6 +564,61 @@ class CercleGraphique(ObjetGraphique):
 
         points_px = ligneGraphique.lignePixelImage.intersections_avec_cercle(self.cercle)
         return [carteConfig.pixels_to_lambert93(px, py) for px, py in points_px]
+
+
+    def intersectionCercle(self, autreCercle: "CercleGraphique") -> list[PointGraphique]:
+        """
+        Retourne la liste des intersections (0, 1 ou 2) avec un autre CercleGraphique.
+        Calcul fait en pixels image, résultat retourné en PointGraphique (coordonnées Lambert93).
+        """
+        # Centres et rayons en pixels
+        (x0, y0), r0 = self.cercle.centre, self.cercle.rayon
+        (x1, y1), r1 = autreCercle.cercle.centre, autreCercle.cercle.rayon
+
+        # Distance entre centres
+        dx = x1 - x0
+        dy = y1 - y0
+        d = math.hypot(dx, dy)
+
+        # Cas sans intersection
+        if d > r0 + r1 or d < abs(r0 - r1) or d == 0:
+            return []
+
+        # Distance a depuis centre 1 vers le point de projection sur la ligne joignant les centres
+        a = (r0**2 - r1**2 + d**2) / (2 * d)
+
+        # Hauteur h de l’intersection par rapport à cette ligne
+        h = math.sqrt(max(r0**2 - a**2, 0))
+
+        # Point de base le long de la ligne centre1 -> centre2
+        x2 = x0 + a * dx / d
+        y2 = y0 + a * dy / d
+
+        # Calcul des points d’intersection
+        rx = -dy * (h / d)
+        ry = dx * (h / d)
+
+        # Premier point
+        px1 = x2 + rx
+        py1 = y2 + ry
+
+        # Second point
+        px2 = x2 - rx
+        py2 = y2 - ry
+
+        # Conversion pixels → Lambert93
+        points = []
+        for i, (px, py) in enumerate([(px1, py1), (px2, py2)]):
+            x_l93, y_l93 = carteConfig.pixels_to_lambert93(px, py)
+            nom = "Intersection"
+            pt = PointGraphique(nom, x_l93, y_l93)
+            points.append(pt)
+
+        # Si cercles tangents : les deux points sont identiques → n’en renvoyer qu’un
+        if abs(h) < 1e-6:
+            return [points[0]]
+
+        return points
 
     def estVisibledansImage(self) -> bool:
         """
@@ -1067,6 +1128,11 @@ class LigneGraphique(ObjetGraphique):
             tooltips=self.tooltips
         )
 
+    def pointEtvecteur(self):
+        px, py = self.pointReference
+        (x_l93, y_l93) = carteConfig.pixels_to_lambert93(px, py)
+        azimut = self.getAzimutCarte()
+        return x_l93, y_l93, azimut
 
     def afficher(self, canvas, transformerAffichage):
         if not self.estVisible():
@@ -1221,36 +1287,102 @@ class LigneGraphique(ObjetGraphique):
             layer=self.layer)
 
 
-    def pointsLateraux(self, point: "PointGraphique", distance_m: float) -> tuple["PointGraphique", "PointGraphique"]:
+    def pointsEquidistants(self, point: "PointGraphique", distance_km: float) -> tuple["PointGraphique", "PointGraphique"]:
         """
-        Calcule deux points situés orthogonalement à la ligne à la distance donnée (en mètres Lambert93),
+        Calcule deux points situés le long de la ligne, à la distance donnée (en kilomètres),
         à partir du PointGraphique donné (position centrale).
-        """
-        # Coordonnées Lambert du point de départ
-        x0_l93, y0_l93 = point.coordonneesLambert()
 
-        # Vecteur directeur (en pixels image)
+        Tous les calculs sont effectués en pixels image pour assurer une cohérence géométrique.
+
+        Le résultat est retourné sous forme (p1, p2), où :
+        - p1 est toujours le point le plus au Nord (y_l93 le plus grand)
+        - p2 est le point le plus au Sud.
+        """
+        if self.lignePixelImage is None:
+            raise ValueError("LignePixelImage non définie : impossible de créer les points.")
+
+        # 1️⃣ Projection du point de départ sur la ligne en pixel
+        px_proj, py_proj = self.lignePixelImage.projection(*point.coordonneesPixelAbs())
+
+        # 2️⃣ Calcul du déplacement en pixel équivalent à la distance_km
+        metresParPixel = point.pixelsVersMetres()
+        pixelsDeplacement = distance_km * 1000.0 / metresParPixel
+
+        # 3️⃣ Vecteur directeur normalisé
         dx, dy = self.vecteur
         norme = math.hypot(dx, dy)
         if norme == 0:
-            raise ValueError("Impossible de créer des points latéraux avec un vecteur nul")
+            raise ValueError("Vecteur nul : impossible de créer des points equidistants.")
 
-        # Vecteur orthogonal unitaire en L93 (car dx/dy sont en pixels image, mais direction OK)
-        # On ne convertit pas, on réutilise la direction uniquement
+        vx_unit = dx / norme
+        vy_unit = dy / norme
+
+        # 4️⃣ Calcul des positions en pixels image
+        px1 = px_proj + pixelsDeplacement * vx_unit
+        py1 = py_proj + pixelsDeplacement * vy_unit
+        px2 = px_proj - pixelsDeplacement * vx_unit
+        py2 = py_proj - pixelsDeplacement * vy_unit
+
+        # 5️⃣ Conversion vers Lambert93
+        x1_l93, y1_l93 = carteConfig.pixels_to_lambert93(px1, py1)
+        x2_l93, y2_l93 = carteConfig.pixels_to_lambert93(px2, py2)
+
+        # 6️⃣ Création des PointGraphique
+        pt1 = PointGraphique(x_l93=x1_l93, y_l93=y1_l93, nom=f"{point.nom}_+{int(distance_km)}km", source="custom", layer=self.layer)
+        pt2 = PointGraphique(x_l93=x2_l93, y_l93=y2_l93, nom=f"{point.nom}_-{int(distance_km)}km", source="custom", layer=self.layer)
+
+        # 7️⃣ Ordre : p1 au Nord, p2 au Sud
+        if y1_l93 >= y2_l93:
+            return pt1, pt2
+        else:
+            return pt2, pt1
+
+
+
+    def pointsLateraux(self, point: "PointGraphique", distance_km: float) -> tuple["PointGraphique", "PointGraphique"]:
+        """
+        Calcule deux points situés orthogonalement à la ligne, à la distance donnée (en mètres),
+        à partir du PointGraphique donné (position centrale).
+
+        Tous les calculs sont effectués en pixels image pour assurer une cohérence géométrique.
+
+        Retourne (p1, p2) sans ordre particulier.
+        """
+        if self.lignePixelImage is None:
+            raise ValueError("LignePixelImage non définie : impossible de créer les points.")
+
+        # 1️⃣ Coordonnées pixels du point de référence
+        px0, py0 = point.coordonneesPixelAbs()
+
+        # 2️⃣ Conversion m → pixels
+        metresParPixel = point.pixelsVersMetres()
+        pixelsDeplacement = distance_km * 1000 / metresParPixel
+
+        # 3️⃣ Vecteur orthogonal unitaire en pixel image
+        dx, dy = self.vecteur
+        norme = math.hypot(dx, dy)
+        if norme == 0:
+            raise ValueError("Vecteur nul : impossible de créer des points lateraux.")
+
         vx_ortho = dy / norme
-        vy_ortho = dx / norme
+        vy_ortho = -dx / norme   # attention : inversion de l'axe Y
 
-        # Déplacement en Lambert93
-        x1_l93 = x0_l93 + distance_m * vx_ortho * 1000
-        y1_l93 = y0_l93 + distance_m * vy_ortho * 1000
-        x2_l93 = x0_l93 - distance_m * vx_ortho * 1000
-        y2_l93 = y0_l93 - distance_m * vy_ortho * 1000
+        # 4️⃣ Calcul des positions en pixels
+        px1 = px0 + pixelsDeplacement * vx_ortho
+        py1 = py0 + pixelsDeplacement * vy_ortho
+        px2 = px0 - pixelsDeplacement * vx_ortho
+        py2 = py0 - pixelsDeplacement * vy_ortho
 
-        # Création des points projetés
-        p1 = PointGraphique(x_l93=x1_l93, y_l93=y1_l93, nom=f"{point.nom}_+{int(distance_m)}m", source="custom", layer=self.layer)
-        p2 = PointGraphique(x_l93=x2_l93, y_l93=y2_l93, nom=f"{point.nom}_-{int(distance_m)}m", source="custom", layer=self.layer)
+        # 5️⃣ Conversion vers Lambert93
+        x1_l93, y1_l93 = carteConfig.pixels_to_lambert93(px1, py1)
+        x2_l93, y2_l93 = carteConfig.pixels_to_lambert93(px2, py2)
+
+        # 6️⃣ Création des PointGraphique
+        p1 = PointGraphique(x_l93=x1_l93, y_l93=y1_l93, nom=f"{point.nom}_+{int(distance_km)}m", source="custom", layer=self.layer)
+        p2 = PointGraphique(x_l93=x2_l93, y_l93=y2_l93, nom=f"{point.nom}_-{int(distance_km)}m", source="custom", layer=self.layer)
 
         return p1, p2
+
 
     def parallelesDecalees(self, distance: float) -> tuple["LigneAzimut", "LigneAzimut"]:
         """

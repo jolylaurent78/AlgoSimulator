@@ -5,7 +5,7 @@ from collections import OrderedDict
 # Moteur Algo générique
 from src.AlgorithmeManager import ModuleAlgo, AlgorithmeManager
 from src.ListeSegmentsDataSet import ListeSegmentsDataSet
-from src.Sentinelle import Sentinelle
+from src.Sentinelle import Sentinelle, LieuxObservation
 
 
 # Librairie calcul astronomique
@@ -32,8 +32,8 @@ class AlgorithmeLumiereStyletInitial(AlgorithmeManager):
 
     def getListeModulesInitiale(self):
             return [
-                ("soleil", "default", Soleil()),
-                ("stylet", "default", Stylet())
+                ("soleil", "Soleil", Soleil()),
+                ("stylet", "Stylet", Stylet())
             ]
 
     def appliquerParametresDepuisStructure(self):
@@ -76,47 +76,12 @@ class Soleil(ModuleAlgo):
 
         self.sentinelle = Sentinelle("data/sentinelle.csv")
         super().__init__()
-
-
-    # Les magniudes sont dans le sens inverse .. A, B, C => On prendra le décalage avec un principe note+2 C=>E
-    tableauObservation = {
-        "C": "Roncevaux",
-        "B": "Bourges",
-        "A": "Cherbourg",
-        "G": "Dieppe",
-        "F": "Bourges",
-        "E": "Cherbourg",
-        "D": "Dieppe"
-    }
-    tableauObservationDecale = {
-        "C": "Cherbourg",
-        "B": "Dieppe",
-        "A": "Bourges",
-        "G": "Cherbourg",
-        "F": "Dieppe",
-        "E": "Epernay",
-        "D": "Bourges"
-    }
-
-    tableauHeures = ["09:43", "11:36", "11:42", "12:00", "10:22", "08:00", "08:12", "10:55" ]
   
     def getValeursChoixHeure(self):
         return ["Même heure", "Symétrique", "10:05", "13:55"]
 
     def getValeursLieuObservation(self):
-        ville1 = Soleil.tableauObservation.get(self.lettreDom, "-")
-        ville2 = Soleil.tableauObservationDecale.get(self.lettreDom, "-")
-        solutions = [ville1, ville2]
-
-         # On gère le cas Roncevaux en rajoutant "Gérardmer si présent"
-        if "Roncevaux" in solutions:
-            solutions.append("Gérardmer")  # ou la ville que tu veux
-
-        # Si la date du segment est le 18/05/1152, on rajoute Lampouy
-        if self.dateDataset == "18/05/1152":
-            solutions.append("Lampouy")
-
-        return solutions
+        return LieuxObservation.getListeLieuxObservation(self.lettreDom, self.dateDataset)
 
     def setup(self):
         """
@@ -138,7 +103,7 @@ class Soleil(ModuleAlgo):
         self.rotationCarte = 90 - self.azimutLeverSoleil
 
         # On initialise le lieu d'observation
-        self.lieuObservation = Soleil.tableauObservation.get(self.lettreDom, "-")
+        self.lieuObservation = LieuxObservation.getDefautLieuObservation(self.lettreDom)
 
         self.choixHeure = "Même heure"
         self.stylet = self.styletDataset
