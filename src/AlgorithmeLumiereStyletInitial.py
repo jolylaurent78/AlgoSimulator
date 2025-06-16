@@ -48,6 +48,8 @@ class AlgorithmeLumiereStyletInitial(AlgorithmeManager):
 # Pas de calcul à proprement parlé, juste l'initialsation de la lettre Dominicale et lieu d'observation'
 #
 class Soleil(ModuleAlgo):
+    HEURE_LAMPOUY = "10:26"
+
     def getEntreesModules(self):
         return ["dataset.date",
                 "dataset.stylet"]
@@ -78,7 +80,7 @@ class Soleil(ModuleAlgo):
         super().__init__()
   
     def getValeursChoixHeure(self):
-        return ["Même heure", "Symétrique", "10:05", "13:55"]
+        return ["Même heure", "Symétrique", Soleil.HEURE_LAMPOUY, heureSymetrique(Soleil.HEURE_LAMPOUY)]
 
     def getValeursLieuObservation(self):
         return LieuxObservation.getListeLieuxObservation(self.lettreDom, self.dateDataset)
@@ -123,10 +125,10 @@ class Soleil(ModuleAlgo):
         if selection:
             self.heureAMPM = ampm
             self.validite = "Valide"
-            if self.choixHeure  == "10:05":
-                self.heureSentinelle = "10:05:00"        
-            elif self.choixHeure  == "13:55":
-                self.heureSentinelle = "13:55:00"       
+            if self.choixHeure  == Soleil.HEURE_LAMPOUY:
+                self.heureSentinelle = Soleil.HEURE_LAMPOUY+":00"     
+            elif self.choixHeure  == heureSymetrique(Soleil.HEURE_LAMPOUY):
+                self.heureSentinelle = heureSymetrique(Soleil.HEURE_LAMPOUY)+":00"    
             else:
                 symetrique = (ampm == "PM" and self.choixHeure == "Même heure") or  (ampm == "AM" and self.choixHeure == "Symétrique")
                 self.heureSentinelle = heureSymetrique(heure) if symetrique else heure
@@ -156,6 +158,7 @@ class Stylet(ModuleAlgo):
                 "soleil.validite"
                 ]
 
+    
     def __init__(self):
 # Variables input des autres modules
         self.dateDataset = ""
@@ -178,6 +181,7 @@ class Stylet(ModuleAlgo):
         self.sensCarte = "Endroit"
         self.formuleAxeCarte = None
         self.axeCarte = None
+        self.octave = "x1"
 
         super().__init__()
 
@@ -195,20 +199,10 @@ class Stylet(ModuleAlgo):
 
     def getValeursSensCarte(self):
         return ["Endroit", "Envers"]
-    """   
-    def getRegles(self):
-        return [
-            ["Si l'heure du stylet est AM, carte à l'envers et  si PM, carte à l'endroit", "sensCarte", self._regleSensCarte]
-        ]
-        
-    def _regleSensCarte(self):
 
-        if self.heureAMPMSoleil == "PM":
-            return "Endroit"
-        else:
-            return "Envers"
-    """
-
+    def getValeursOctave(self):
+        return "x1", "x2", "/2"
+    
     def setup(self):
         """
         Initialise la valeur par défaut de lieuObservation à partir de la lettre dominicale.
@@ -233,12 +227,15 @@ class Stylet(ModuleAlgo):
             self.formuleDistance =f"{float(self.distanceMetz):.0f} / {faLongueurStr} * {noteLongueurStr}"
             self.hauteurStylet = self.distanceMetz / faLongueur * noteLongueur
 
+            # On prend en compte l'octave
+            tableauOctave = {"x1": 1, "x2": 2, "/2": 0.5}
+
             #On calcule la position du soleil
             coordObservation = villes_dict[self.lieuObservationSoleil].getCoordonneesGPS()
             (lat, lon) = coordObservation
             heureObservationJD = MyJulianDate.fromString(self.dateDataset, self.heureUTCSoleil)
             self.hauteurSoleil, self.azimutSoleil = positionSoleil((lat, lon), heureObservationJD)
-            self.distanceStylet =  self.hauteurStylet / math.tan(math.radians(self.hauteurSoleil))
+            self.distanceStylet =  tableauOctave[self.octave] * self.hauteurStylet / math.tan(math.radians(self.hauteurSoleil))
 
             # On calcule l'axe final de la lumière
             if self.sensCarte == "Endroit":

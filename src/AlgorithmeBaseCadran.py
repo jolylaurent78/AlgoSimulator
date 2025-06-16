@@ -49,6 +49,8 @@ class AlgorithmeBaseCadran(AlgorithmeManager):
 # Pas de calcul à proprement parlé, juste l'initialsation de la lettre Dominicale et lieu d'observation'
 #
 class Segment(ModuleAlgo):
+    HEURE_LAMPOUY = "10:26"
+
     def getEntreesModules(self):
         return ["dataset.date",
                 "dataset.lettreDecl"]
@@ -99,9 +101,9 @@ class CercleHoraire(ModuleAlgo):
         return ["AM", "PM"]
     
     def getValeursHeureSubstitution(self):
-        liste = ["Non", "11:00"]
+        liste = ["=", "+2", "-2", "11:00"]
         if self.dateDataset=="18/05/1152":
-            liste.append("10:05")
+            liste.append(Segment.HEURE_LAMPOUY)
         return liste 
          
     def __init__(self):
@@ -117,11 +119,11 @@ class CercleHoraire(ModuleAlgo):
         self.styletAMPM = None
         self.heureSentinelle = None
         self.heureAMPM = "AM"
-        self.heureSubstitution = "Non"
+        self.heureSubstitution = "="
         self.angleHoraire = None
-        self.sentinelle = Sentinelle("data/sentinelle.csv")
         self.cercleAMPM = "AM"
         self.cercleHoraire = None
+        self.sentinelle = Sentinelle("data/sentinelle.csv")
 # Output
         self.coordPointChoix = (0,0)  
 
@@ -132,15 +134,22 @@ class CercleHoraire(ModuleAlgo):
         # On récupère l'heure associée au stylet
         self.pointStylet = PointGraphique(villes_dict[self.stylet])
         px, py = self.pointStylet.coordonneesPixelAbs()
-        selection, self.heureStylet, self.styletAMPM, _, _ = self.sentinelle.surLigneHoraire(px, py)
+
+        _, self.heureStylet, self.styletAMPM, _, _ = self.sentinelle.surLigneHoraire(px, py)
 
         # On prend en compte les heures de substitution
         if self.heureSubstitution == "11:00":
             self.heureSentinelle = self.sentinelle["J"]["HeureLocale"]
-        elif self.heureSubstitution == "10:05":
-            self.heureSentinelle = "10:05"
+        elif self.heureSubstitution == Segment.HEURE_LAMPOUY:
+            self.heureSentinelle = Segment.HEURE_LAMPOUY
+        elif self.choixCalendrierSegment == "Standard":
+            self.heureSentinelle = self.heureStylet 
         else:
-            self.heureSentinelle = self.heureStylet if self.choixCalendrierSegment == "Standard" else self.sentinelle[self.lettreChoixSegment]["HeureLocale"]
+            tabDec = {"=":0,"+2":2,"-2":1}
+            listeNotes = decalageGamme(self.lettreChoixSegment, False) # On décale sans susbtition Fa/Sol
+            choixNote = listeNotes[tabDec[self.heureSubstitution]] 
+            self.heureSentinelle = self.sentinelle[choixNote]["HeureLocale"]
+
 
         # On prend l'heure du matin ou de l'apres midi      
         self.heureSentinelle = heureSymetrique(self.heureSentinelle) if self.heureAMPM == "PM" else self.heureSentinelle
@@ -223,7 +232,10 @@ class Partition(ModuleAlgo):
                ]
 
     def getValeursP2M2(self):
-        return "+2", "-2"
+        return "=", "+2", "-2"
+
+    def getValeursTypeSymetrie(self):
+        return "Flip vertical", "Flip horizontal" 
     
     def __init__(self):
 # Variables input des autres modules
@@ -243,6 +255,7 @@ class Partition(ModuleAlgo):
         self.azimutSoleil = None
         self.P2M2 = "+2"
         self.lettrePartition = ""
+        self.typeSymetrie = "Flip vertical"
         self.candidats = []
 
     def setup(self):
@@ -274,8 +287,9 @@ class Partition(ModuleAlgo):
         heureObsJD = MyJulianDate.fromString(self.dateSegmentDataset, self.heureUTCCarnac)
         _, self.azimutSoleil = positionSoleil((latCarnac,lonCarnac), heureObsJD)
 
-        listeNotes = decalageGamme(self.lettreChoixSegment, False)
-        self.lettrePartition = listeNotes[2] if self.P2M2 == "+2" else listeNotes[1]
+        tabDec = {"=":0,"+2":2,"-2":1}
+        listeNotes = decalageGamme(self.lettreChoixSegment, False) # On décale sans susbtition Fa/Sol
+        self.lettrePartition = listeNotes[tabDec[self.P2M2]] 
 
         # On doit calculer ici les lignes candidates
         self.pointCarignan = PointGraphique(villes_dict["Carignan"], epaisseur = 4, afficherNom=True)
@@ -297,7 +311,11 @@ class Partition(ModuleAlgo):
                     self.candidats.append(lignePartition)
 
        # On recree le cercle pour filtrage
-        cercleFiltrage = CercleGraphique.depuisTroisPoints(self.pointBourges, self.pointStylet, self.pointChoix)      
+        cercleHeure = CercleGraphique.depuisTroisPoints(self.pointBourges, self.pointStylet, self.pointChoix)      
+        centre = cercleHeure.getCentre()
+        rayon = cercleHeure.getRayonKm()
+        # On crée un cercle de filtrage plus grand pour garder les lignes de partition qui frolent le cercle
+        cercleFiltrage = CercleGraphique(centre,rayon+20)
 
         # On initialise les 2 lignes de partitions pour le Sol
         for azimut in [ self.azimutSoleil, 360- self.azimutSoleil]:
@@ -314,7 +332,11 @@ class Partition(ModuleAlgo):
             indexSud = (4 - i) % len(note)
 
             for j in range(0,4):
-                nom = note[indexNord] if j % 2 ==0 else note[indexSud]
+                if self.typeSymetrie == "Flip vertical":
+                    nom = note[indexNord] if j in [0, 2] else note[indexSud]
+                else:
+                    nom = note[indexNord] if j in [0, 3] else note[indexSud]
+
                 self.listeNotesPartition.append((ptList[j], nom))                      
                 azimut = 360- self.azimutSoleil if j in [0, 1] else self.azimutSoleil
                 lignePartition = LigneAzimut(ptList[j], azimut, nom = f"{nom}")
@@ -375,16 +397,15 @@ class CercleDistance(ModuleAlgo):
     
     def getValeursCentreCercle(self):
         return "Ouverture", "Stylet"
-
-    def getValeursClef(self):
-        return "Metz", "Carignan"   
-    
+   
     def getValeursP2M2(self):
-        return "+2", "-2"
+        return "=", "+2", "-2"
 
     def getValeursOctave(self):
         return "x1", "x2", "/2"
-        
+
+
+    
     tableauGamme = {
         "C": ("2**-12/12", 2**(-12/12)),
         "B": ("2**-10/12", 2**(-10/12)),
@@ -414,13 +435,13 @@ class CercleDistance(ModuleAlgo):
         self.centre = None
         self.heureReference = ""
         self.hauteurSoleil = None
-        self.clef = "Metz"
         self.distanceClef = None
         self.P2M2 = "+2"
         self.lettreHauteur = ""
         self.hauteurStylet = None
         self.distanceRef = None
         self.octave = "x1"
+
 
     def setup(self):
         self.pointBourges = PointGraphique(villes_dict["Bourges"])
@@ -434,13 +455,13 @@ class CercleDistance(ModuleAlgo):
         self.heureReference = "12:00" if self.centreCercle == "Ouverture" else self.heureSentinelleCerclehoraire
         self.centre = self.pointBourges if self.centreCercle == "Ouverture" else self.pointStylet
         #On calculde la distance de référence % Metz ou % Carignan
-        pointMetz = PointGraphique(villes_dict["Metz"])
-        pointCarignan = PointGraphique(villes_dict["Carignan"]) 
-        self.distanceClef = self.pointStylet.distance(pointMetz) if self.clef == "Metz" else self.pointStylet.distance(pointCarignan)
+        self.distanceClef = self.pointStylet.distance(PointGraphique(villes_dict["Metz"]))
 
         # On sélectionne la hauteur du stylet
+        tabDec = {"=":0,"+2":2,"-2":1}
         listeNotes = decalageGamme(self.lettreChoixSegment, False) # On décale sans susbtition Fa/Sol
-        self.lettreHauteur = listeNotes[2] if self.P2M2 == "+2" else listeNotes[1]
+        self.lettreHauteur = listeNotes[tabDec[self.P2M2]] 
+
         _, longFA = CercleDistance.tableauGamme["F"]
         _, longNote = CercleDistance.tableauGamme[self.lettreHauteur]
         self.hauteurStylet = self.distanceClef / longFA * longNote
@@ -502,9 +523,26 @@ class CandidatBase(ModuleAlgo):
         listePoints = cercleDistance.intersectionCercle(cercleHoraire)
         
         self.listeCandidats = []
-        # Pas de points d'intersection, pas de candidats!
+
+        # Pas de points d'intersection, on calcule l'intersection entre les lignes partitions et les deux cercles.
         if len(listePoints)==0:
-            return
+            for ligne in self.candidatsPartition:
+                listePoints1 = ligne.intersectionCercle(cercleHoraire)
+                listePoints2 = ligne.intersectionCercle(cercleDistance)
+                # On regarde ensuite la distance entre les deux points. Si ils sont assez proches l'un de l'autre,
+                # c'est que les 2 cercles sont en fait assez proches sans se toucher 
+                distMin = 1000
+                for p1 in listePoints1:
+                    for p2 in listePoints2:
+                        d = p1.distance(p2)
+                        if d<distMin:
+                            distMin = d
+                            p1_ref = p1
+                            p2_ref = p2
+                if distMin < 20:
+                    centreCandidat = PointGraphique.depuisDeuxPoints(p1_ref, p2_ref)
+                    self.listeCandidats.append(centreCandidat)                    
+
 
         # On parcourt la liste des points
         for pt in listePoints:

@@ -559,6 +559,8 @@ class CercleGraphique(ObjetGraphique):
         x_l93, y_l93 = carteConfig.pixels_to_lambert93(*self.pointReference)
         return PointGraphique("Centre", x_l93, y_l93)
 
+    def getRayonKm(self) -> float:
+        return self.rayon_km
 
     def distanceDepuis(self, x_pix: float, y_pix: float) -> float:
         """

@@ -53,3 +53,4 @@ Ombre sur la carte,Global,3,field,angle,left,Azimut Soleil,H,1,data,std,stylet,a
 Ombre sur la carte,Global,3,checkboxH,shorttext,left,Sens Carte,SC,1,input_multiple,std,stylet,sensCarte
 Ombre sur la carte,Global,4,field,longtext,left,Axe sur carte,DM,1,data,std,stylet,formuleAxeCarte
 Ombre sur la carte,Global,4,field,angle,left,=,AX,1,data,std,stylet,axeCarte
+Ombre sur la carte,Global,5,checkboxH,lettre,right,Octave,OG,1,input_multiple,std,stylet,octave

@@ -182,6 +182,10 @@ class Sentinelle(dict):
             azimut_corrige_am = (self.azimutMidi + delta) % 360
             azimut_corrige_sym = (self.azimutMidi - delta) % 360
 
+
+            pt1x, pt1y = self.pointCoetquidan.coordonneesPixelAbs()
+            pt2x, pt2y = self.pointGolfeJuan.coordonneesPixelAbs()
+            ligneRef = Ligne(pt1x, pt1y, pt2x, pt2y )
             ligneAM = Ligne.depuisPointEtAzimut(self.pointCoetquidan.coordonneesPixelAbs(), azimut_corrige_am)
             lignePM = Ligne.depuisPointEtAzimut(self.pointCoetquidan.coordonneesPixelAbs(), azimut_corrige_sym)
             distAM = ligneAM.distanceAuPoint(px, py)
