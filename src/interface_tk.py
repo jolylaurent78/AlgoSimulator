@@ -107,13 +107,13 @@ class InterfaceCarte(tk.Tk):
 
         self._refresh_images()
 
+        # Applique la visibilité initiale des panneaux
         if not self.varAfficherLayers.get():
-            self.frameFiltrageLayers.pack_forget()
+            self.paneGauche.forget(self.frameLayers)
             self.frameSegment.pack_forget()
-
-        if not self.varAfficherLayers.get():
-            self.frameFiltrageLayers.pack_forget()
-            self.frameSegment.pack_forget()
+        if not self.varAfficherAlgo.get():
+            self.paneGauche.forget(self.frameIHMAlgo)
+        self._adjust_side_panel_visibility()
 
     def sauvegarderEtatComplet(self, chemin: str):
         with open(chemin, "wb") as f:
@@ -370,24 +370,34 @@ class InterfaceCarte(tk.Tk):
     def toggle_affichage_algo(self):
         if self.varAfficherAlgo.get():
             if self.frameIHMAlgo not in self.paneGauche.panes():
+                # Réinsère l'IHM algorithme en bas
                 self.paneGauche.add(self.frameIHMAlgo)
+            # Hauteur réduite de la zone Layers pour laisser la place
             self.paneGauche.paneconfig(self.frameLayers, height=200)
         else:
             if self.frameIHMAlgo in self.paneGauche.panes():
                 self.paneGauche.forget(self.frameIHMAlgo)
+            # Les layers prennent tout l'espace restant
             self.paneGauche.update_idletasks()
             self.paneGauche.paneconfig(self.frameLayers, height=self.paneGauche.winfo_height())
         self._adjust_side_panel_visibility()
 
     def toggle_affichage_layers(self):
         if self.varAfficherLayers.get():
-            self.frameSegment.pack(side="top", fill="x", padx=0, pady=5)
-            if hasattr(self, "frameFiltrageLayers") and self.frameFiltrageLayers:
-                self.frameFiltrageLayers.pack(fill="x", padx=5, pady=5)
+            # Réaffichage : la sélection de date et la frame Layers reprennent place
+            if self.frameSegment not in self.sidePanel.pack_slaves():
+                self.frameSegment.pack(side="top", fill="x", padx=0, pady=5)
+            if self.frameLayers not in self.paneGauche.panes():
+                self.paneGauche.add(self.frameLayers, before=self.frameIHMAlgo, minsize=100)
+            # Hauteur selon la présence de l'algo
+            hauteur = 200 if self.varAfficherAlgo.get() else self.paneGauche.winfo_height()
+            self.paneGauche.paneconfig(self.frameLayers, height=hauteur)
         else:
-            self.frameSegment.pack_forget()
-            if hasattr(self, "frameFiltrageLayers") and self.frameFiltrageLayers:
-                self.frameFiltrageLayers.pack_forget()
+            # Masquage complet
+            if self.frameSegment.winfo_ismapped():
+                self.frameSegment.pack_forget()
+            if self.frameLayers in self.paneGauche.panes():
+                self.paneGauche.forget(self.frameLayers)
         self._adjust_side_panel_visibility()
 
 
@@ -1134,8 +1144,11 @@ class InterfaceCarte(tk.Tk):
                 self.updaterScenarioActif()
 
         if not self.varAfficherLayers.get():
-            self.frameFiltrageLayers.pack_forget()
-            self.frameSegment.pack_forget()
+            if self.frameLayers in self.paneGauche.panes():
+                self.paneGauche.forget(self.frameLayers)
+            if self.frameSegment.winfo_ismapped():
+                self.frameSegment.pack_forget()
+            self._adjust_side_panel_visibility()
         self._refresh_images()
 
 
