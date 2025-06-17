@@ -79,6 +79,10 @@ class InterfaceCarte(tk.Tk):
         self.varPOICategorie = tk.StringVar(value="Standard")
         self.varPOISujet = tk.StringVar()
 
+        # États d'affichage pour le panneau gauche
+        self.varAfficherAlgo = tk.BooleanVar(value=True)
+        self.varAfficherLayers = tk.BooleanVar(value=True)
+
         self._setup_main_split(largeur, hauteur )
         self._setup_menu()
 
@@ -100,8 +104,16 @@ class InterfaceCarte(tk.Tk):
             )
         self.ihm_algo.pack(fill="both", expand=True)
 
+
         self._refresh_images()
 
+        if not self.varAfficherLayers.get():
+            self.frameFiltrageLayers.pack_forget()
+            self.frameSegment.pack_forget()
+
+        if not self.varAfficherLayers.get():
+            self.frameFiltrageLayers.pack_forget()
+            self.frameSegment.pack_forget()
 
     def sauvegarderEtatComplet(self, chemin: str):
         with open(chemin, "wb") as f:
@@ -179,8 +191,6 @@ class InterfaceCarte(tk.Tk):
         self.creerLayerControle(self.frameLayers)
         self._refresh_images()
 
-
-
 ### Mise en place des panels, menu, mini-carte
 
     def _setup_menu(self):
@@ -249,6 +259,20 @@ class InterfaceCarte(tk.Tk):
         menu_wiki.add_command(label="Importer un fichier P31...", command=self.importerFichierP31)
 
         menubar.add_cascade(label="Wikipedia", menu=menu_wiki)
+
+        # Menu Fenêtre
+        menu_fenetre = tk.Menu(menubar, tearoff=0)
+        menu_fenetre.add_checkbutton(
+            label="Afficher l'algorithme",
+            variable=self.varAfficherAlgo,
+            command=self.toggle_affichage_algo,
+        )
+        menu_fenetre.add_checkbutton(
+            label="Afficher les layers",
+            variable=self.varAfficherLayers,
+            command=self.toggle_affichage_layers,
+        )
+        menubar.add_cascade(label="Fenêtre", menu=menu_fenetre)
 
         # === Menu Carte ===
         menu_carte = tk.Menu(menubar, tearoff=0)
@@ -335,6 +359,37 @@ class InterfaceCarte(tk.Tk):
         label = self.moteurAlgo.getScenario().getDescriptionLisible()
         self.frameIHMAlgo.config(text=f"Scénario : {label}")
 
+    def _adjust_side_panel_visibility(self):
+        if not self.varAfficherAlgo.get() and not self.varAfficherLayers.get():
+            if self.sidePanel in self.main_pane.panes():
+                self.main_pane.forget(self.sidePanel)
+        else:
+            if self.sidePanel not in self.main_pane.panes():
+                self.main_pane.add(self.sidePanel, before=self.canvas_image, minsize=200)
+
+    def toggle_affichage_algo(self):
+        if self.varAfficherAlgo.get():
+            if self.frameIHMAlgo not in self.paneGauche.panes():
+                self.paneGauche.add(self.frameIHMAlgo)
+            self.paneGauche.paneconfig(self.frameLayers, height=200)
+        else:
+            if self.frameIHMAlgo in self.paneGauche.panes():
+                self.paneGauche.forget(self.frameIHMAlgo)
+            self.paneGauche.update_idletasks()
+            self.paneGauche.paneconfig(self.frameLayers, height=self.paneGauche.winfo_height())
+        self._adjust_side_panel_visibility()
+
+    def toggle_affichage_layers(self):
+        if self.varAfficherLayers.get():
+            self.frameSegment.pack(side="top", fill="x", padx=0, pady=5)
+            if hasattr(self, "frameFiltrageLayers") and self.frameFiltrageLayers:
+                self.frameFiltrageLayers.pack(fill="x", padx=5, pady=5)
+        else:
+            self.frameSegment.pack_forget()
+            if hasattr(self, "frameFiltrageLayers") and self.frameFiltrageLayers:
+                self.frameFiltrageLayers.pack_forget()
+        self._adjust_side_panel_visibility()
+
 
     def creerSelectionSegments(self, parent):
         segments = self.moteurAlgo.getListeSegments()
@@ -420,7 +475,6 @@ class InterfaceCarte(tk.Tk):
         valeur = self.comboFiltrageNiveau.get()
         self.layerManager.setFiltreTag("level", valeur.lower())
         self._refresh_images()
-
 
     def selectionnerUniquementScenarioActif(self, nom_scenario_lisible: str):
         """
@@ -510,6 +564,7 @@ class InterfaceCarte(tk.Tk):
         # === Frame principale de filtrage ===
         frame_filtrage = ttk.Frame(parent)
         frame_filtrage.pack(fill="x", padx=5, pady=5)
+        self.frameFiltrageLayers = frame_filtrage
 
         # === Ligne de configuration des POIs ===
         ligne_poi = ttk.Frame(frame_filtrage)
@@ -969,6 +1024,7 @@ class InterfaceCarte(tk.Tk):
         # on crée une troisième ligne dans laquelle on affichera la Tree View + liste de boutons  de commande
         frameLigneLayer = ttk.Frame(parent)
         frameLigneLayer.pack(fill="x", padx=5, pady=2)
+        self.frameLigneLayer = frameLigneLayer
 
 
         def onDoubleClickLayer(event):
@@ -1077,6 +1133,9 @@ class InterfaceCarte(tk.Tk):
                 # Et on applique explicitement
                 self.updaterScenarioActif()
 
+        if not self.varAfficherLayers.get():
+            self.frameFiltrageLayers.pack_forget()
+            self.frameSegment.pack_forget()
         self._refresh_images()
 
 
@@ -1494,6 +1553,11 @@ class InterfaceCarte(tk.Tk):
         # 4. Applique le scénario dans l’IHM
 
         self._refresh_images()
+
+        # Réaffiche les layers si cachés
+        if not self.varAfficherLayers.get():
+            self.varAfficherLayers.set(True)
+            self.toggle_affichage_layers()
         return
 
 ### Menu Wikipedia'
