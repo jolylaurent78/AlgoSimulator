@@ -263,12 +263,12 @@ class InterfaceCarte(tk.Tk):
         # Menu Fenêtre
         menu_fenetre = tk.Menu(menubar, tearoff=0)
         menu_fenetre.add_checkbutton(
-            label="Afficher l'algorithme",
+            label="Affichage de l'algorithme",
             variable=self.varAfficherAlgo,
             command=self.toggle_affichage_algo,
         )
         menu_fenetre.add_checkbutton(
-            label="Afficher les layers",
+            label="Affichage les layers",
             variable=self.varAfficherLayers,
             command=self.toggle_affichage_layers,
         )
@@ -359,36 +359,7 @@ class InterfaceCarte(tk.Tk):
         label = self.moteurAlgo.getScenario().getDescriptionLisible()
         self.frameIHMAlgo.config(text=f"Scénario : {label}")
 
-    def _adjust_side_panel_visibility(self):
-        if not self.varAfficherAlgo.get() and not self.varAfficherLayers.get():
-            if self.sidePanel in self.main_pane.panes():
-                self.main_pane.forget(self.sidePanel)
-        else:
-            if self.sidePanel not in self.main_pane.panes():
-                self.main_pane.add(self.sidePanel, before=self.canvas_image, minsize=200)
 
-    def toggle_affichage_algo(self):
-        if self.varAfficherAlgo.get():
-            if self.frameIHMAlgo not in self.paneGauche.panes():
-                self.paneGauche.add(self.frameIHMAlgo)
-            self.paneGauche.paneconfig(self.frameLayers, height=200)
-        else:
-            if self.frameIHMAlgo in self.paneGauche.panes():
-                self.paneGauche.forget(self.frameIHMAlgo)
-            self.paneGauche.update_idletasks()
-            self.paneGauche.paneconfig(self.frameLayers, height=self.paneGauche.winfo_height())
-        self._adjust_side_panel_visibility()
-
-    def toggle_affichage_layers(self):
-        if self.varAfficherLayers.get():
-            self.frameSegment.pack(side="top", fill="x", padx=0, pady=5)
-            if hasattr(self, "frameFiltrageLayers") and self.frameFiltrageLayers:
-                self.frameFiltrageLayers.pack(fill="x", padx=5, pady=5)
-        else:
-            self.frameSegment.pack_forget()
-            if hasattr(self, "frameFiltrageLayers") and self.frameFiltrageLayers:
-                self.frameFiltrageLayers.pack_forget()
-        self._adjust_side_panel_visibility()
 
 
     def creerSelectionSegments(self, parent):
@@ -556,6 +527,10 @@ class InterfaceCarte(tk.Tk):
 
 
     def creerLayerControle(self, parent, scenario_a_selectionner=None):
+
+        # Ne rien crer si le layer control est invisible
+        if not self.varAfficherLayers.get():
+            return
 
         # 🧹 Nettoyage avant recréation
         for widget in parent.winfo_children():
@@ -2061,6 +2036,56 @@ class InterfaceCarte(tk.Tk):
 
         # Redraw en mode normal
         self._refresh_images()
+
+    #
+    #
+    # Menu Fenetre
+    def toggle_affichage_algo(self):
+        def estAfficheDansPane(widget, pane):
+            return str(widget) in [str(p) for p in pane.panes()]
+        
+        if self.varAfficherAlgo.get():
+            if not estAfficheDansPane(self.frameIHMAlgo, self.paneGauche):
+                self.paneGauche.add(self.frameIHMAlgo)
+            self.paneGauche.paneconfig(self.frameLayers, height=200)
+        else:
+            if estAfficheDansPane(self.frameIHMAlgo, self.paneGauche):
+                self.paneGauche.forget(self.frameIHMAlgo)
+            self.paneGauche.update_idletasks()
+            self.paneGauche.paneconfig(self.frameLayers, height=self.paneGauche.winfo_height())
+        self._adjust_side_panel_visibility()
+    
+    def toggle_affichage_layers(self):
+        def estAfficheDansPane(widget, pane):
+            return str(widget) in [str(p) for p in pane.panes()]
+
+        if self.varAfficherLayers.get():
+            if not self.sidePanel.winfo_ismapped():
+                self.sidePanel.pack(side="left", fill="y", padx=10, pady=10)
+
+            # self.frameSegment.pack(side="top", fill="x", padx=0, pady=5)
+            if not estAfficheDansPane(self.frameLayers, self.paneGauche):
+                self.paneGauche.add(self.frameLayers, before=self.paneGauche.panes()[0])
+                self.paneGauche.paneconfig(self.frameLayers, height=200)
+ 
+        else:
+
+            # self.frameSegment.pack_forget()
+
+            if estAfficheDansPane(self.frameLayers, self.paneGauche):
+                self.paneGauche.forget(self.frameLayers)
+
+        self._adjust_side_panel_visibility()
+
+
+    def _adjust_side_panel_visibility(self):
+        if not self.varAfficherAlgo.get() and not self.varAfficherLayers.get():
+            if self.sidePanel in self.main_pane.panes():
+                self.main_pane.forget(self.sidePanel)
+        else:
+            if self.sidePanel not in self.main_pane.panes():
+                self.main_pane.add(self.sidePanel, before=self.canvas_image, minsize=200)
+
 
 
 if __name__ == "__main__":
