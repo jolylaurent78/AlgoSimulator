@@ -22,7 +22,7 @@ from src.affichage_fenetre import pan_x, pan_y, zoom_factor, frame_width, frame_
 
 # Gestion des coordonnées / projection
 from src.carte_config import carteConfig, charger_icone, hexVersBGR, bgrVersHex
-from src.configGlobale import ConfigGlobale  
+from src.configGlobale import ConfigGlobale
 
 # Affichage des objects graphiques
 from src.affichage_objets import *
@@ -72,7 +72,7 @@ class InterfaceCarte(tk.Tk):
         self.comboSegmentAffiche = None
         self.pointReferenceMesureDistance = None
         self.modeCalibration = False
-        
+
         # Variable d'affichage pour la gestion des POIs
         self.varPOIVisible = tk.BooleanVar(value=False)
         self.varPOIPertinence = tk.StringVar(value="Elevée")
@@ -565,7 +565,7 @@ class InterfaceCarte(tk.Tk):
             textvariable=self.varPOISujet,
             state="readonly",
             width=15
-        )   
+        )
         if sujets and not self.varPOISujet.get():
             self.varPOISujet.set(sujets[0])
         self.varPOISujet.trace_add("write", lambda *args: self._refresh_images())
@@ -1210,7 +1210,7 @@ class InterfaceCarte(tk.Tk):
             texte = "\n".join(lignes)
 
         if not hasattr(self, "tooltip_overlay"):
-            self.tooltip_overlay = self.tooltip_overlay = tk.Label(
+            self.tooltip_overlay = tk.Label(
                 self.canvas_image,
                 text="",
                 background="white",
@@ -1218,12 +1218,19 @@ class InterfaceCarte(tk.Tk):
                 borderwidth=1,
                 font=("TkDefaultFont", 9),
                 justify="left",
-                wraplength=200  # largeur max en pixels
+                wraplength=200,
+                takefocus=0,
+                highlightthickness=0
             )
+            self.tooltip_overlay.bind("<Button-1>", lambda e: "break")  # empêche le tooltip de consommer l'événement
+            self.tooltip_overlay.bind("<Button-3>", lambda e: "break")  # empêche aussi le clic droit d’être bloqué
+
 
         if texte:
             self.tooltip_overlay.config(text=texte)
             self.tooltip_overlay.place(x=event.x + 10, y=event.y + 10)
+            self.tooltip_overlay.lift()
+
         else:
             self.tooltip_overlay.place_forget()
 
@@ -1830,7 +1837,7 @@ class InterfaceCarte(tk.Tk):
 
         # On recalcule toutes les coordonnées absolues des objets graphiques
         self.layerManager.recalculerCoordonneesPixelAbsTous()
-        
+
         # Important : forcer le redraw complet
         self._refresh_images()
 

@@ -10,6 +10,7 @@ from tkinter import filedialog
 
 # Base de données des villes
 from src.data_loader import villes_dict
+from src.utils import cheminRelatif
 
 # Affichage des objects graphiques
 from src.affichage_objets import ObjetGraphique, PointGraphique, COULEURS, SymboleWiki
@@ -132,9 +133,9 @@ class ListePOIs:
 
                 tooltips = [source_backlink, url, summary]
                 icone = icone if icone is not None else self.icone_par_defaut
-                icone_path = os.path.join("images", icone)
+                icone_path = cheminRelatif(os.path.join("images", icone))
                 if not os.path.exists(icone_path):
-                    icone_path = os.path.join("images", self.icone_par_defaut)
+                    icone_path = cheminRelatif(os.path.join("images", self.icone_par_defaut))
                 objets.append(
                     SymboleWiki(
                         url,
@@ -396,7 +397,7 @@ def sauvegarder_carte_complete(filepath="sauvegarde.png"):
         obj.afficher(carte_complete, transformer_complet)
 
     # Enregistrement
-    success = cv2.imwrite(filepath, carte_complete)
+    success = cv2.imwrite(cheminRelatif(filepath), carte_complete)
     if success:
         print(f"✅ Carte complète enregistrée dans : {filepath}")
     else:

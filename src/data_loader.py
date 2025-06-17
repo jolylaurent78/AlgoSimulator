@@ -1,4 +1,5 @@
 import pandas as pd
+from src.utils import cheminRelatif
 
 # Gestion des coordonnées / projection
 from src.carte_config import carteConfig
@@ -8,7 +9,7 @@ from src.affichage_objets import *
 
 class VillesDict(dict):
     def __init__(self, csv_path):
-        self.csv_path = csv_path
+        self.csv_path = cheminRelatif(csv_path)
         self.recharger()
 
     @staticmethod
