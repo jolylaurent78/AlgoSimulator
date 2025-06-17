@@ -1,14 +1,15 @@
 import pandas as pd
+from src.utils import cheminRelatif
 
 # Gestion des coordonnées / projection
-from src.carte_config import gps_to_lambert93
+from src.carte_config import carteConfig
 
 # Affichage des objects graphiques
 from src.affichage_objets import *
 
 class VillesDict(dict):
     def __init__(self, csv_path):
-        self.csv_path = csv_path
+        self.csv_path = cheminRelatif(csv_path)
         self.recharger()
 
     @staticmethod
@@ -25,7 +26,7 @@ class VillesDict(dict):
             nom = row["Nom"]
             lat = self.dms_to_decimal(row["Latitude"])
             lon = self.dms_to_decimal(row["Longitude"])
-            x_l93, y_l93 = gps_to_lambert93(lon, lat)
+            x_l93, y_l93 = carteConfig.gps_to_lambert93(lon, lat)
             self[nom] = PointGraphique(nom, x_l93, y_l93, lat=lat, lon=lon)
 
 

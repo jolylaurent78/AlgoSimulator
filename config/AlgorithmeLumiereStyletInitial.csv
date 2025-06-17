@@ -1,0 +1,56 @@
+# Format CSV de définition d'une IHM algorithmique dynamique
+# Chaque ligne décrit un composant graphique de l’interface utilisateur
+#
+# Colonnes du fichier :
+# 1. Section     : Nom du groupe logique (ex : 'Observation', 'Axe des planètes')
+# 2. Categorie   : Type de bloc. Valeurs possibles :
+#                 - Global : Données générales d'observation (ex: lieu, date, orientation)
+#                 - Construction : Composants liés à des constructions graphiques
+#                 - Resultat : Résultats affichés à l’utilisateur après calcul
+# 3. Ligne       : Position verticale (entier)
+# 4. Widget      : Type d’élément graphique (field, combo, checkbox, text, spacer)
+# 5. FieldType   : Format de donnée :
+#                 - shorttext : texte court (10 caractères)
+#                 - longtext  : texte long (40 caractères)
+#                 - date      : jj/mm/aaaa
+#                 - heure     : hh:mm:ss
+#                 - angle     : xxx.xx°
+#                 - distance  : xxxx km (entier arrondi)
+#                 - lettre    : 1 caractère majuscule
+#                 - int       : entier (5 chiffres)
+# 6. Alignement  : Position du bloc dans la ligne : left, right
+# 7. Label       : Libellé affiché dans l'IHM
+# 8. Hauteur     : Nombre de lignes visibles (utile pour checkbox)
+# 9. Type        : Rôle fonctionnel :
+#                 - data           : donnée non modifiable
+#                 - input_single   : choix unique (radio)
+#                 - input_multiple : choix multiples (checkbox)
+#                 - dataSet        : source d’une liste
+#                 - static         : texte informatif uniquement
+#10. Style       : Apparence du texte : std, bold, italic
+#11. Module          : Identifiant métier (clé liée à l'objet)
+#12. Attribut      : Méthode de lecture
+
+Section,Categorie,Ligne,Widget,FieldType,Alignement,Label,ShortLabel,Hauteur,Type,Style,Module,Attribut
+Observation,Global,1,field,date,left,Date Observation,D,1,data,std,dataset,date
+Observation,Global,2,field,lettre,right,Lettre Dom,LS,1,data,std,soleil,lettreDom
+Observation,Global,3,field,heure,left,Lever soleil Strasbourg,LS,1,data,std,soleil,heureLeverSoleilStrasbourg
+Observation,Global,3,field,angle,left,Azimut,A,1,data,std,soleil,azimutLeverSoleil
+Observation,Global,3,field,angle,left,Rotation%E,R,1,data,std,soleil,rotationCarte
+Observation,Global,4,checkboxH,shorttext,left,Ville d'observation,O,2,input_multiple,std,soleil,lieuObservation
+Point d'Observation et Heure,Global,1,PointVille,shortext,left,Position Stylet,PO,1,data,std,soleil,stylet
+Point d'Observation et Heure,Global,1,field,shorttext,left,Validité,A,1,data,std,soleil,validite
+Point d'Observation et Heure,Global,2,field,heure,left,Heure stylet,HO,1,data,std,soleil,heureSentinelle
+Point d'Observation et Heure,Global,2,field,heure,left,AM/PM,SC,1,data,std,soleil,heureAMPM
+Point d'Observation et Heure,Global,3,checkboxH,heure,left,Heure Observation,SC,1,input_multiple,std,soleil,choixHeure
+Point d'Observation et Heure,Global,4,field,heure,left,Heure UTC,DE,1,data,std,soleil,heureUTC
+Hauteur du stylet, Global,1,field,distance,left,Distance depuis Metz,DM,1,data,std,stylet,distanceMetz
+Hauteur du stylet, Global,2,field,longtext,left,Calcul,DM,1,data,std,stylet,formuleDistance
+Hauteur du stylet, Global,2,field,distance,left,=,DM,1,data,std,stylet,hauteurStylet
+Ombre sur la carte,Global,2,field,angle,left,Hauteur Soleil,H,1,data,std,stylet,hauteurSoleil
+Ombre sur la carte,Global,2,field,distance,left,Distance depuis stylet,H,1,data,std,stylet,distanceStylet
+Ombre sur la carte,Global,3,field,angle,left,Azimut Soleil,H,1,data,std,stylet,azimutSoleil
+Ombre sur la carte,Global,3,checkboxH,shorttext,left,Sens Carte,SC,1,input_multiple,std,stylet,sensCarte
+Ombre sur la carte,Global,4,field,longtext,left,Axe sur carte,DM,1,data,std,stylet,formuleAxeCarte
+Ombre sur la carte,Global,4,field,angle,left,=,AX,1,data,std,stylet,axeCarte
+Ombre sur la carte,Global,5,checkboxH,lettre,right,Octave,OG,1,input_multiple,std,stylet,octave

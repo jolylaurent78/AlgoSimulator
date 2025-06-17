@@ -10,12 +10,13 @@ from tkinter import filedialog
 
 # Base de données des villes
 from src.data_loader import villes_dict
+from src.utils import cheminRelatif
 
 # Affichage des objects graphiques
 from src.affichage_objets import ObjetGraphique, PointGraphique, COULEURS, SymboleWiki
 
 # Gestion des coordonnées / projection
-from src.carte_config import lambert93_to_pixels, pixels_to_lambert93, image_size, img
+from src.carte_config import carteConfig
 
 # Gestion des variables globales de l'affichge pan, zoom...'
 from src.configGlobale import ConfigGlobale
@@ -117,8 +118,8 @@ class ListePOIs:
 
             for qid, titre, source_backlink, summary, x_l93, y_l93, icone, url in lignes:
                 # On regarde d'abord si le POI est déjà proche d'un autre
-                px, py = lambert93_to_pixels(x_l93, y_l93)
-                x2_l93, y2_l93 = pixels_to_lambert93(px + 1, py)
+                px, py = carteConfig.lambert93_to_pixels(x_l93, y_l93)
+                x2_l93, y2_l93 = carteConfig.pixels_to_lambert93(px + 1, py)
                 metres_par_pixel = math.hypot(x2_l93 - x_l93, y2_l93 - y_l93)
                 distance_seuil = metres_par_pixel * 16 / zoom_val
 
@@ -132,9 +133,9 @@ class ListePOIs:
 
                 tooltips = [source_backlink, url, summary]
                 icone = icone if icone is not None else self.icone_par_defaut
-                icone_path = os.path.join("images", icone)
+                icone_path = cheminRelatif(os.path.join("images", icone))
                 if not os.path.exists(icone_path):
-                    icone_path = os.path.join("images", self.icone_par_defaut)
+                    icone_path = cheminRelatif(os.path.join("images", self.icone_par_defaut))
                 objets.append(
                     SymboleWiki(
                         url,
@@ -161,7 +162,7 @@ class ListePOIs:
 def clamp_pan(crop_w, crop_h):
     global pan_x, pan_y
 
-    (w_img, h_img) = image_size
+    (w_img, h_img) = carteConfig.image_size
     pan_x = min(max(pan_x, 0), w_img - crop_w)
     pan_y = min(max(pan_y, 0), h_img - crop_h)
 
@@ -184,7 +185,7 @@ def transformer_affichage_pixel(px, py):
     et du ratio d’aspect.
     """
 
-    (w_img, h_img) = image_size
+    (w_img, h_img) = carteConfig.image_size
     # Taille de l’image affichée en pixels image (après zoom, mais limitée à l’image réelle)
     souhaiteAfficher_w = frame_width / zoom_factor
     souhaiteAfficher_h = frame_height / zoom_factor
@@ -221,7 +222,7 @@ def transformer_pixel_affichage_vers_image(x_ecran, y_ecran):
     en coordonnées image absolues (pixels de l’image source),
     en tenant compte du zoom, pan, centrage, bords gris, etc.
     """
-    (w_img, h_img) = image_size
+    (w_img, h_img) = carteConfig.image_size
 
     # Taille de l’image affichée en pixels image (après zoom)
     souhaiteAfficher_w = frame_width / zoom_factor
@@ -259,12 +260,12 @@ def transformer_pixel_affichage_vers_image(x_ecran, y_ecran):
 
 
 def display(layerManager:LayerManager, listePOIs:ListePOIs, retourner_image=False, afficherPOIsUniquement=False):
-    global img, pan_x, pan_y, zoom_factor, canvasDisplay
+    global pan_x, pan_y, zoom_factor, canvasDisplay
 
 
     # Dans le cas de base, on crée un canvas.. mais pour afficher les POIs, on le réutilise
     if not afficherPOIsUniquement:
-        h_img, w_img = img.shape[:2]
+        w_img, h_img = carteConfig.image_size
         crop_w = int(frame_width / zoom_factor)
         crop_h = int(frame_height / zoom_factor)
 
@@ -276,7 +277,7 @@ def display(layerManager:LayerManager, listePOIs:ListePOIs, retourner_image=Fals
         x2 = min(pan_x + crop_w, w_img)
         y2 = min(pan_y + crop_h, h_img)
 
-        cropped = img[y1:y2, x1:x2]
+        cropped = carteConfig.img[y1:y2, x1:x2]
         target_w = int((x2 - x1) * zoom_factor)
         target_h = int((y2 - y1) * zoom_factor)
         resized = cv2.resize(cropped, (target_w, target_h), interpolation=cv2.INTER_AREA)
@@ -290,8 +291,8 @@ def display(layerManager:LayerManager, listePOIs:ListePOIs, retourner_image=Fals
 
         # On lance un thread pour calculer en parallèle la liste des POIs à afficher
         if (listePOIs.layer.estVisible() == True):
-            x1_l93, y1_l93 = pixels_to_lambert93(x1, y1)
-            x2_l93, y2_l93 = pixels_to_lambert93(x2, y2)
+            x1_l93, y1_l93 = carteConfig.pixels_to_lambert93(x1, y1)
+            x2_l93, y2_l93 = carteConfig.pixels_to_lambert93(x2, y2)
             # Correction du sens Y (axe inversé écran vs Lambert)
             xmin = min(x1_l93, x2_l93)
             xmax = max(x1_l93, x2_l93)
@@ -385,7 +386,7 @@ def selectionObjet(x_pix: float, y_pix: float, layerManager:LayerManager, typeOb
 def sauvegarder_carte_complete(filepath="sauvegarde.png"):
 
     # Copie de l'image complète d’origine
-    carte_complete = img.copy()
+    carte_complete = carteConfig.img.copy()
 
     # Fonction d'affichage sans zoom ni pan (pixels bruts)
     def transformer_complet(x, y):
@@ -396,7 +397,7 @@ def sauvegarder_carte_complete(filepath="sauvegarde.png"):
         obj.afficher(carte_complete, transformer_complet)
 
     # Enregistrement
-    success = cv2.imwrite(filepath, carte_complete)
+    success = cv2.imwrite(cheminRelatif(filepath), carte_complete)
     if success:
         print(f"✅ Carte complète enregistrée dans : {filepath}")
     else:

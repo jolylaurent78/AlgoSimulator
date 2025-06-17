@@ -63,6 +63,10 @@ class Layer:
     def getListeObjetsGraphiques(self) -> list:
         return self.objets
 
+    def recalculerCoordonneesPixelAbs(self):
+        for obj in self.objets:
+            obj.recalculerCoordonneesPixelAbs()
+
 
 class LayerManager:
     def __init__(self):
@@ -200,4 +204,8 @@ class LayerManager:
             if self.estObjetVisible(obj)
         ]
 
+    def recalculerCoordonneesPixelAbsTous(self):
+        for segment in self._layers:
+            for layer in self._layers[segment].values():
+                layer.recalculerCoordonneesPixelAbs()
 

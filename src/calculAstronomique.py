@@ -1,13 +1,16 @@
-from skyfield.api import load, wgs84
+from skyfield.api import load, wgs84, Star
 from skyfield.toposlib import Topos
 from skyfield.units import Angle
-from skyfield.almanac import sunrise_sunset, find_discrete
-import numpy as np
+from skyfield.almanac import sunrise_sunset, find_discrete, meridian_transits
+from skyfield.positionlib import ICRF
+from skyfield.framelib import ecliptic_frame
+from skyfield import almanac
+
 from functools import total_ordering
 from math import floor
-
+from numpy import arctan2, sqrt, degrees
 # === Dictionnaire des astres ===
-from skyfield.api import Star
+
 
 #eph = load('de406.bsp')
 eph = load('data/ephemeride/de406.bsp')
@@ -47,6 +50,36 @@ ALTITUDE_LEVER_STANDARD = -0.566  # degrés, pour simuler la réfraction atmosph
 #
 # des fonctions pour manipuler les notes de musique
 #
+def decalageGamme(note, substitution = True):
+    gamme = ["C", "D", "E", "F", "G", "A", "B"]
+
+    def substituer(n):
+        if n == "F":
+            return "G"
+        elif n == "G":
+            return "F"
+        else:
+            return n
+
+    # Substitution de la note de départ
+    note_substituee = substituer(note) if substitution else note
+
+    # Trouver l'index dans la gamme
+    index = gamme.index(note_substituee)
+
+    # Calcul des décalages
+    note_plus_2 = gamme[(index + 2) % len(gamme)]
+    note_moins_2 = gamme[(index - 2) % len(gamme)]
+
+    # Substituer les résultats
+    note_plus_2 = substituer(note_plus_2) if substitution else note_plus_2
+    note_moins_2 = substituer(note_moins_2) if substitution else note_moins_2
+
+    return note_substituee, note_moins_2, note_plus_2
+
+
+
+
 def decalage2Notes(note, code):
     notesMusique = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
     if note not in notesMusique:
@@ -113,29 +146,53 @@ def getIndexesPourNote(note, heures):
 #
 # des fonctions de manipulation des heures
 #
-def convertirHeureLocaleVersUTC(heure: str, longitude_deg: float) -> str:
+def convertirHeureLocaleVersUTC(heure: str, longitude_deg: float, inverse=False):
     """
     Convertit une heure locale vraie (HH:MM:SS) en heure UTC, 
-    en tenant compte de la longitude du lieu.
+    ou l'inverse si inverse=True.
 
     Chaque degré de longitude = 4 minutes d'avance locale sur UTC.
     Exemple : longitude 3°05′ → 3.0833 × 4 min = 12 min 20 s → 740 s
+
+    - inverse=False (par défaut) : Locale → UTC (comportement actuel)
+    - inverse=True : UTC → Locale
     """
-    hh, mm, ss = map(int, heure.split(":"))
+    def parseHeure(heure: str):
+        """
+        Parse une heure au format 'HH:MM' ou 'HH:MM:SS' et retourne (hh, mm, ss).
+        Si SS est absent, ss = 0.
+        """
+        parties = heure.strip().split(":")
+        if len(parties) == 2:
+            hh, mm = map(int, parties)
+            ss = 0
+        elif len(parties) == 3:
+            hh, mm, ss = map(int, parties)
+        else:
+            raise ValueError(f"Format d'heure invalide : {heure}")
+
+        return hh, mm, ss
+
+    hh, mm, ss = parseHeure(heure)
     total_seconds = hh * 3600 + mm * 60 + ss
 
     # Écart horaire dû à la longitude (en secondes)
     decalage_sec = round(longitude_deg * 4 * 60)
 
-    total_seconds -= decalage_sec
-    if total_seconds < 0:
-        total_seconds += 86400  # wrap-around minuit
+    if not inverse:
+        total_seconds -= decalage_sec
+    else:
+        total_seconds += decalage_sec
 
-    hh_utc = total_seconds // 3600
-    mm_utc = (total_seconds % 3600) // 60
-    ss_utc = total_seconds % 60
+    # Normalisation sur 0..86400
+    total_seconds %= 86400
 
-    return f"{hh_utc:02}:{mm_utc:02}:{ss_utc:02}"
+    hh_res = total_seconds // 3600
+    mm_res = (total_seconds % 3600) // 60
+    ss_res = total_seconds % 60
+
+    return f"{hh_res:02}:{mm_res:02}:{ss_res:02}"
+
 
 
 def heureSymetrique(heure: str) -> str:
@@ -143,15 +200,14 @@ def heureSymetrique(heure: str) -> str:
     Calcule l'heure symétrique (locale) par rapport à midi solaire.
     Ex: 09:43:00 → 14:17:00
     """
-    hh, mm, ss = map(int, heure.split(":"))
-    total_seconds = hh * 3600 + mm * 60 + ss
+    hh, mm = map(int, heure.split(":"))
+    total_seconds = hh * 3600 + mm * 60
     total_sym = 86400 - total_seconds
 
     hh_sym = total_sym // 3600
     mm_sym = (total_sym % 3600) // 60
-    ss_sym = total_sym % 60
 
-    return f"{hh_sym:02}:{mm_sym:02}:{ss_sym:02}"
+    return f"{hh_sym:02}:{mm_sym:02}"
 
 
 
@@ -292,6 +348,16 @@ class MyJulianDate:
             return f"{d:02d} {moisNom(m)} {y} à {hh:02d}:{mm:02d}:{ss:02d}"
         elif format == "HH:MM:SS":
             return f"{hh:02d}:{mm:02d}:{ss:02d}"
+        elif format == "HH:MM":
+            # On arrondit la minute en fonction des secondes
+            if ss >= 30:
+                mm += 1
+                if mm == 60:
+                    mm = 0
+                    hh += 1
+                    if hh == 24:
+                        hh = 0
+            return f"{hh:02d}:{mm:02d}"
         elif format == "ISO":
             return f"{y:04d}-{m:02d}-{d:02d}T{hh:02d}:{mm:02d}:{ss:02d}"
         else:
@@ -448,6 +514,72 @@ def positionAstre(coord_tuple, jd, astre):
         
     return float(alt.degrees), float(az.degrees)
 
+
+def calculHeurePourAzimutSoleil(coord_tuple, jd, azimut_cible, altitude_min=0.0, precision_deg=0.5):
+    latitude, longitude = coord_tuple
+    lieu = Topos(latitude_degrees=latitude, longitude_degrees=longitude)
+    jd_lever = calculLeverSoleil(coord_tuple, jd)
+    jd_coucher = calculCoucherSoleil(coord_tuple, jd)
+    t0 = float(jd_lever)
+    t1 = float(jd_coucher)
+    dt = DEFAULT_INTERVAL
+
+    previous_azimut = None
+    previous_alt = None
+
+    def azimut_et_altitude(jd_local):
+        t = ts.ut1_jd(jd_local)
+        astrometric = (earth + lieu).at(t).observe(sun).apparent()
+        alt, az, _ = astrometric.altaz()
+        return az.degrees, alt.degrees
+
+    # Première passe : détection du passage autour de l'azimut cible, en étant au-dessus de altitude_min
+    t = t0
+    while t < t1:
+        az, alt = azimut_et_altitude(t)
+
+        if previous_azimut is not None and previous_alt is not None:
+            # On cherche un passage autour de l'azimut cible
+            delta1 = (az - azimut_cible + 360) % 360
+            delta2 = (previous_azimut - azimut_cible + 360) % 360
+            # On vérifie que les deux points successifs sont au-dessus de altitude_min
+            if (alt > altitude_min and previous_alt > altitude_min) and \
+                ((delta1 < 180 and delta2 > 180) or (delta2 < 180 and delta1 > 180)):
+                # Passage détecté
+                t_before = t - dt
+                t_after = t
+                break
+
+        previous_azimut = az
+        previous_alt = alt
+        t += dt
+    else:
+        raise RuntimeError("Aucun passage de l'azimut cible détecté ce jour-là avec le Soleil levé.")
+
+    # Recherche binaire
+    while (t_after - t_before) > DEFAULT_PRECISION:
+        t_mid = (t_before + t_after) / 2
+        az, alt = azimut_et_altitude(t_mid)
+
+        if alt < altitude_min:
+            # Si on passe sous l'horizon, on rétrécit l'intervalle
+            t_before = t_mid
+            continue
+
+        delta = (az - azimut_cible + 360) % 360
+        if delta > 180:
+            delta = 360 - delta
+
+        if az < azimut_cible:
+            t_before = t_mid
+        else:
+            t_after = t_mid
+
+    return MyJulianDate.fromJD((t_before + t_after) / 2)
+
+
+
+
 # === Calcul du lever d’un astre ===
 def calculLeverAstre(coord_tuple, jd, astre, altitude_lever=ALTITUDE_LEVER_STANDARD):
     latitude, longitude = coord_tuple
@@ -512,29 +644,101 @@ def calculCoucherSoleil(coord_tuple, jd):
             return MyJulianDate.fromJD(ti.ut1)
     raise RuntimeError("Aucun coucher trouvé avec find_discrete pour ce jour.")
 
-def declinaisonSoleil(jd):
-    t = ts.ut1_jd(float(jd))
-    astrometric = earth.at(t).observe(sun).apparent()
-    ra, dec, distance = astrometric.radec()
-    return float(dec.degrees)
+def calculZenithSoleil(coord_tuple, jd):
+    """
+    Calcule l'heure du midi solaire (transit du Soleil au méridien).
+    Retourne un MyJulianDate.
+    """
+    latitude, longitude = coord_tuple
+    observateur = wgs84.latlon(latitude, longitude)
 
+    t0 = ts.ut1_jd(float(jd) - 0.5)
+    t1 = ts.ut1_jd(float(jd) + 0.5)
+
+    # Fonction événement de transit
+    f = meridian_transits(eph, sun, observateur)
+    t, y = find_discrete(t0, t1, f)
+
+    for ti, yi in zip(t, y):
+        if yi == 1:  # Passage supérieur (midi solaire)
+            return MyJulianDate.fromJD(ti.ut1)
+
+    raise RuntimeError("Aucun transit trouvé avec find_discrete pour ce jour.")
 
 
 from skyfield.positionlib import ICRF
-from numpy import arctan2, sqrt, degrees
+from skyfield.constants import AU_KM
+
+
+from numpy import sin, cos, radians, degrees, arcsin
+
+def declinaisonSoleil(jd):
+    """
+    Déclinaison géométrique du Soleil calculée depuis sa longitude écliptique
+    et l'obliquité vraie de l'écliptique. C'est LA valeur physique recherchée.
+    """
+    t = ts.ut1_jd(float(jd))
+
+    # Formule officielle IAU 2000 pour obliquité vraie (en degrés)
+    def obliquity_IAU2000(jd):
+        T = (jd - 2451545.0) / 36525.0  # siècles juliens depuis J2000.0
+        epsilon_deg = 23.43929111 \
+                    - (46.8150 / 3600) * T \
+                    - (0.00059 / 3600) * T**2 \
+                    + (0.001813 / 3600) * T**3
+        return radians(epsilon_deg)
+  
+    # Obliquité vraie de l'écliptique en radians
+    epsilon = obliquity_IAU2000(float(jd))
+
+    
+    # Longitude écliptique du Soleil
+    astrometric = earth.at(t).observe(sun).apparent()  # ici apparent ok pour la position géométrique
+    lon_deg = astrometric.frame_latlon(ecliptic_frame)[1].degrees
+    lon_rad = radians(lon_deg)
+    
+    # Calcul de la déclinaison
+    decl_rad = arcsin(sin(epsilon) * sin(lon_rad))
+    decl_deg = degrees(decl_rad)
+    
+    return decl_deg
+
 
 def longitudeEcliptiqueSoleil(jd):
     t = ts.ut1_jd(float(jd))
     astrometric = earth.at(t).observe(sun).apparent()
-
-    # Position en coordonnées héliocentriques (HCRS)
-    x, y, z = astrometric.position.au
-
-    # Calcul longitude écliptique (sans inclinaison)
-    lon_rad = arctan2(y, x)
-    lon_deg = degrees(lon_rad) % 360
+    ecliptic_pos = astrometric.frame_latlon(ecliptic_frame)
+    lon_deg = ecliptic_pos[1].degrees % 360
     return lon_deg
-    
+
+
+# === Trouver le solstice d'été avec Skyfield Almanac ===
+
+
+def trouverSolsticeEteAvecAlmanac(annee):
+    """
+    Trouve le moment exact du solstice d'été pour l'année donnée.
+    Retourne (MyJulianDate du solstice, déclinaison max du Soleil à cet instant).
+    """
+    # On définit une fenêtre autour de fin juin
+    t0 = ts.utc(annee, 6, 1)
+    t1 = ts.utc(annee, 7, 15)
+
+    # Récupère la fonction événement saisons
+    f = almanac.seasons(eph)
+
+    # Cherche les instants des événements
+    times, events = almanac.find_discrete(t0, t1, f)
+
+    for t, e in zip(times, events):
+        if e == 1:  # e == 1 → solstice d'été
+            jd_solstice = MyJulianDate.fromJD(t.ut1)
+            decl_max = declinaisonSoleil(jd_solstice)
+            return jd_solstice, decl_max
+
+    raise RuntimeError("Pas de solstice trouvé dans la période donnée.")
+
+
 
 # === Exemple de test ===
 if __name__ == "__main__":
