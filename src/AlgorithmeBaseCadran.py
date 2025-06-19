@@ -61,7 +61,6 @@ class Segment(ModuleAlgo):
         self.lettreDom = ""
         self.lettreChoix = ""
         self.lettreDeclDataset = ""
-        self.lieuObservation = ""
 
 # Affiché
         self.choixCalendrier = None
@@ -69,19 +68,13 @@ class Segment(ModuleAlgo):
 
     def getValeursChoixCalendrier(self):
         return ["Standard", "Déclinaison"]
-
-    def getValeursLieuObservation(self):
-        return LieuxObservation.getListeLieuxObservation(self.lettreDom, self.dateDataset)
-    
+   
     def setup(self):
         # On calcule la déclinaison du soleil pour savoir si nous sommes au Printemps / Ete ou Automne / Hivers
         self.dateSegmentJD = MyJulianDate.fromString(self.dateDataset)
         self.lettreDom = self.dateSegmentJD.lettreDominicale()
         self.lettreChoix = self.lettreDom       
         self.choixCalendrier = "Standard"
-
-        # On initialise le lieu d'observation
-        self.lieuObservation = LieuxObservation.getDefautLieuObservation(self.lettreDom)
 
     def calculer(self):
         self.lettreChoix = self.lettreDom if self.choixCalendrier == "Standard" else self.lettreDeclDataset
@@ -108,7 +101,7 @@ class CercleHoraire(ModuleAlgo):
          
     def __init__(self):
 # Variables input des autres modules
-        self.choixCalendrierSegment = None
+        self.choixCalendrierSegment = None    
         self.styletDataset = None
         self.lettreChoixSegment = None
         self.dateDataset = None
@@ -118,6 +111,7 @@ class CercleHoraire(ModuleAlgo):
         self.heureStylet = None
         self.styletAMPM = None
         self.heureSentinelle = None
+        self.lieuObservation = "Carnac"
         self.heureAMPM = "AM"
         self.heureSubstitution = "="
         self.angleHoraire = None
@@ -154,10 +148,9 @@ class CercleHoraire(ModuleAlgo):
         # On prend l'heure du matin ou de l'apres midi      
         self.heureSentinelle = heureSymetrique(self.heureSentinelle) if self.heureAMPM == "PM" else self.heureSentinelle
 
-        # On se place à Carnac
-        villeCarnac = villes_dict["Carnac"]
-        coordCarnac = villeCarnac.getCoordonneesGPS()
-        (lat, lon) = coordCarnac
+        # On se place au lieu d'observation
+        coordObs = villes_dict[self.lieuObservation].getCoordonneesGPS()
+        (lat, lon) = coordObs
         self.heureUTC = convertirHeureLocaleVersUTC(self.heureSentinelle, lon)
         heureObservationJD = MyJulianDate.fromString(self.dateDataset, self.heureUTC)        
         # On calcule l'angle entre la droite de Midi Solaire et la droite Stylet - ST Cyr
@@ -224,13 +217,16 @@ class Partition(ModuleAlgo):
     def getEntreesModules(self):
         return ["dataset.dateSegment",
                 "dataset.lettreDecl",
+                "dataset.date",
                 "segment.lettreDom",
-                "segment.lieuObservation",
                 "segment.lettreChoix",
                 "cercleHoraire.stylet",
                 "cercleHoraire.coordPointChoix",
                ]
 
+    def getValeursLieuObservation(self):
+        return LieuxObservation.getListeLieuxObservation(self.lettreDomSegment, self.dateDataset)
+    
     def getValeursP2M2(self):
         return "=", "+2", "-2"
 
@@ -240,8 +236,9 @@ class Partition(ModuleAlgo):
     def __init__(self):
 # Variables input des autres modules
         self.dateSegmentDataset = ""
+        self.dateDataset = ""
         self.lettreDomSegment = ""
-        self.lieuObservationSegment = ""
+        self.lieuObservation = ""
         self.lettreDeclDataset = ""
         self.lettreChoixSegment = ""  
         self.styletCerclehoraire = None
@@ -260,6 +257,8 @@ class Partition(ModuleAlgo):
 
     def setup(self):
         self.pointBourges = PointGraphique(villes_dict["Bourges"])
+        # On initialise le lieu d'observation
+        self.lieuObservation = LieuxObservation.getDefautLieuObservation(self.lettreDomSegment)
 
     def calculer(self):
         # On recalcule les points graphiques
@@ -269,7 +268,7 @@ class Partition(ModuleAlgo):
 
         # On calcule l'heure de lever  du soleil dans la ville d'observation (ex: Roncevaux)
         self.dateSegmentJD = MyJulianDate.fromString(self.dateSegmentDataset)
-        coordObs = villes_dict[self.lieuObservationSegment].getCoordonneesGPS()
+        coordObs = villes_dict[self.lieuObservation].getCoordonneesGPS()
         self.heureLeverSoleilJD = calculLeverSoleil(coordObs, self.dateSegmentJD)
         self.leverSoleilUTC = self.heureLeverSoleilJD.toString("HH:MM:SS")
         
@@ -351,12 +350,12 @@ class Partition(ModuleAlgo):
         listeObjets.append(self.pointCarignan)
         
         # On crée la ligne Carigan - Metz
-        self.ligneMetzCarignan.setTooptips([f"Axe Carignan - Metz"])
+        self.ligneMetzCarignan.setTooltips([f"Axe Carignan - Metz"])
         self.ligneMetzCarignan.ajouterTag("level","design")
         listeObjets.append(self.ligneMetzCarignan)
 
         # On rajoute sa symétrique
-        self.ligneMetzCarignanSymetrique.setTooptips( [f"Axe symétrique Carignan - Metz"])
+        self.ligneMetzCarignanSymetrique.setTooltips( [f"Axe symétrique Carignan - Metz"])
         self.ligneMetzCarignan.ajouterTag("level","design")        
         listeObjets.append(self.ligneMetzCarignanSymetrique)
 
@@ -378,7 +377,7 @@ class Partition(ModuleAlgo):
 
         # On parcourt les lignes des partitions
         for ligne, note, azimut in self.listeLignesPartitions:
-            ligne.setTooptips([f"Partiton {note}",f"Azimut {azimut:.02}"])
+            ligne.setTooltips([f"Partiton {note}",f"Azimut {azimut:.02}"])
             ligne.ajouterTag("level",niveauPartition(note, self.lettrePartition))
             ligne.setCouleur(couleurPartition(note, self.lettrePartition))
             listeObjets.append(ligne)
@@ -390,8 +389,8 @@ class CercleDistance(ModuleAlgo):
         return ["dataset.date",
                 "dataset.lettreDecl",
                 "segment.lettreDom",
-                "cercleHoraire.heureSentinelle",
                 "segment.lettreChoix",
+                "cercleHoraire.heureSentinelle",
                 "cercleHoraire.stylet"
         ]
     
@@ -424,10 +423,10 @@ class CercleDistance(ModuleAlgo):
     def __init__(self):
         # Variables input des autres modules
         self.dateDataset = ""
-        self.lettreDomSegment = ""
-        self.heureSentinelleCerclehoraire = ""
         self.lettreDeclDataset = ""
+        self.lettreDomSegment = ""
         self.lettreChoixSegment = ""  
+        self.heureSentinelleCerclehoraire = ""
         self.styletCerclehoraire = ""
 
         # variables calculées / affichage
@@ -441,7 +440,7 @@ class CercleDistance(ModuleAlgo):
         self.hauteurStylet = None
         self.distanceRef = None
         self.octave = "x1"
-
+        self.lieuObservation = "Carnac"
 
     def setup(self):
         self.pointBourges = PointGraphique(villes_dict["Bourges"])
@@ -467,10 +466,10 @@ class CercleDistance(ModuleAlgo):
         self.hauteurStylet = self.distanceClef / longFA * longNote
 
         # On calcule la position du soleil
-        (latCarnac,lonCarnac) = villes_dict["Carnac"].getCoordonneesGPS()
-        heureUTCCarnac = convertirHeureLocaleVersUTC(self.heureReference, lonCarnac )
-        heureReferenceJD = MyJulianDate.fromString(self.dateDataset, heureUTCCarnac)
-        self.hauteurSoleil, _ = positionSoleil((latCarnac,lonCarnac), heureReferenceJD)
+        (lat,lon) = villes_dict[self.lieuObservation].getCoordonneesGPS()
+        heureUTC = convertirHeureLocaleVersUTC(self.heureReference, lon )
+        heureReferenceJD = MyJulianDate.fromString(self.dateDataset, heureUTC)
+        self.hauteurSoleil, _ = positionSoleil((lat,lon), heureReferenceJD)
 
         # On calcule la distance 
         self.distanceRef = self.hauteurStylet * CercleDistance.tableauOctave[self.octave] / math.tan(radians(self.hauteurSoleil))

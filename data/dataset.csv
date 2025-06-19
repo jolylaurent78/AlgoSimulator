@@ -1,10 +1,10 @@
-DateSegment,Date,LettreDecl,Evènement,Stylet
-26/07/778,15/08/778,F,15 Aout 778 : Bataille de Roncevaux,Roncevaux
-25/05/1815,20/03/1815,E,20 Mars 1815 : Début des 100 jours,Golfe-Juan
-19/04/1431,30/05/1431,A,30 Mai 1431 : Mort de Jeanne d’Arc,Sainte-Catherine-de-Fierbois
-09/08/1365,12/04/1365,D,12 Avril 1365 : Traité de Guérande,Alise-Sainte-Reine
-29/03/1214,27/07/1214,D,27 Juillet 1214 : Bataille des Bouvines,Vouneuil-sur-Vienne
-02/09/1066,15/06/1066,F,15 Juin 1066 : Guillaume le conquérant,Nouaillé-Maupertuis
-19/05/933,19/07/933,F,19 Juillet 933 : Hommage de Guillaume Longue Epée,Saint-Valentin
-02/09/1066,28/09/1066,D,28 Septembre 1066: Débarquement de Guillaume le Conquérant,3RDV
-19/08/1152,18/05/1152,G,18 Mai 1152 : Mariage d’Aliénor d’Aquitaine,Loudun
+DateSegment,Date,LettreDecl,Evènement,Stylet,Base1,Base2
+26/07/778,15/08/778,F,15 Aout 778 : Bataille de Roncevaux,Roncevaux,Saint-Amour,Rocamadour
+25/05/1815,20/03/1815,E,20 Mars 1815 : Début des 100 jours,Golfe-Juan,Aléria,Île-d'Aix
+19/04/1431,30/05/1431,A,30 Mai 1431 : Mort de Jeanne d’Arc,Sainte-Catherine-de-Fierbois,Domrémy,Coetquidan
+09/08/1365,12/04/1365,D,12 Avril 1365 : Traité de Guérande,Alise-Sainte-Reine,Bouvines,Reims
+29/03/1214,27/07/1214,D,27 Juillet 1214 : Bataille des Bouvines,Vouneuil-sur-Vienne,Metz,Château-Gaillard
+02/09/1066,15/06/1066,F,15 Juin 1066 : Guillaume le conquérant,Nouaillé-Maupertuis,Gergovie,Carignan
+19/05/933,19/07/933,F,19 Juillet 933 : Hommage de Guillaume Longue Epée,Saint-Valentin,Châlus,Fontevraud
+02/09/1066,28/09/1066,D,28 Septembre 1066: Débarquement de Guillaume le Conquérant,3RDV,,
+19/08/1152,18/05/1152,G,18 Mai 1152 : Mariage d’Aliénor d’Aquitaine,Loudun,Le Goulet,Pont de Noirmoutier

@@ -1,0 +1,68 @@
+# Format CSV de définition d'une IHM algorithmique dynamique
+# Chaque ligne décrit un composant graphique de l’interface utilisateur
+#
+# Colonnes du fichier :
+# 1. Section     : Nom du groupe logique (ex : 'Observation', 'Axe des planètes')
+# 2. Categorie   : Type de bloc. Valeurs possibles :
+#                 - Global : Données générales d'observation (ex: lieu, date, orientation)
+#                 - Construction : Composants liés à des constructions graphiques
+#                 - Resultat : Résultats affichés à l’utilisateur après calcul
+# 3. Ligne       : Position verticale (entier)
+# 4. Widget      : Type d’élément graphique (field, combo, checkbox, text, spacer)
+# 5. FieldType   : Format de donnée :
+#                 - shorttext : texte court (10 caractères)
+#                 - longtext  : texte long (40 caractères)
+#                 - date      : jj/mm/aaaa
+#                 - heure     : hh:mm:ss
+#                 - angle     : xxx.xx°
+#                 - distance  : xxxx km (entier arrondi)
+#                 - lettre    : 1 caractère majuscule
+#                 - int       : entier (5 chiffres)
+# 6. Alignement  : Position du bloc dans la ligne : left, right
+# 7. Label       : Libellé affiché dans l'IHM
+# 8. Hauteur     : Nombre de lignes visibles (utile pour checkbox)
+# 9. Type        : Rôle fonctionnel :
+#                 - data           : donnée non modifiable
+#                 - input_single   : choix unique (radio)
+#                 - input_multiple : choix multiples (checkbox)
+#                 - dataSet        : source d’une liste
+#                 - static         : texte informatif uniquement
+#10. Style       : Apparence du texte : std, bold, italic
+#11. Module          : Identifiant métier (clé liée à l'objet)
+#12. Attribut      : Méthode de lecture
+
+Section,Categorie,Ligne,Widget,FieldType,Alignement,Label,ShortLabel,Hauteur,Type,Style,Module,Attribut
+Date et Lettre,Global,1,field,date,right,Date Transposé,,1,data,std,dataset,date
+Date et Lettre,Global,1,text,date,right,<->,,1,data,std
+Date et Lettre,Global,1,field,date,left,Date Segment,,1,data,std,dataset,dateSegment
+Date et Lettre,Global,2,field,lettre,right,Lettre Dom,,1,data,std,segment,lettreDom
+Date et Lettre,Global,2,field,lettre,right,Lettre Decl,,1,data,std,dataset,lettreDecl
+Date et Lettre,Global,3,checkboxH,shorttext,left,Ville d'observation,O,2,input_multiple,std,segment,lieuObservation
+Stylet,Global,1,PointVille,shortext,left,Base 1,,1,data,std,dataset,base1
+Stylet,Global,1,PointVille,shortext,left,Base 2,,1,data,std,dataset,base2
+Stylet,Global,2,checkboxH,shorttext,left,Choix base,B,2,data,std,stylet,choixBase
+Stylet,Global,2,field,shortext,left,Base,,1,data,std,stylet,base
+Stylet,Global,3,checkboxH,lettre,left,Type calendrier,C,1,input_multiple,std,stylet,choixCalendrier
+Stylet,Global,4,field,lettre,right,Lettre,,1,data,std,stylet,lettreChoix
+Stylet,Global,4,checkboxH,lettre,right,Choix,NP,1,input_multiple,std,stylet,P2M2
+Stylet,Global,4,field,lettre,right,Note Stylet,,1,data,std,stylet,lettre
+Stylet,Global,5,checkboxH,lettre,right,Octave,OG,1,input_multiple,std,stylet,octave
+Stylet,Global,5,field,distance,left,FA,,1,data,std,stylet,distanceRef
+Stylet,Global,6,field,distance,left,Hauteur Stylet,,1,data,std,stylet,hauteur
+Stylet,Global,6,field,angle,left,Axe Stylet,,1,data,std,stylet,azimutMidi
+Lumiere,Global,1,checkboxH,lettre,left,Type calendrier,C,1,input_multiple,std,lumiere,choixCalendrier
+Lumiere,Global,2,field,lettre,right,Lettre,,1,data,std,lumiere,lettreChoix
+Lumiere,Global,2,checkboxH,lettre,right,Choix,S,1,input_multiple,std,lumiere,choixHeure
+Lumiere,Global,3,checkboxH,lettre,right,AM/PM,AP,1,input_multiple,std,lumiere,heureAMPM
+Lumiere,Global,4,field,date,right,Date,,1,data,std,dataset,dateSegment
+Lumiere,Global,4,field,heure,right,Heure Locale,,1,data,std,lumiere,heureLocale
+Lumiere,Global,4,field,heure,right,Heure UTC,,1,data,std,lumiere,heureUTC
+Lumiere,Global,5,field,angle,right,Azimut Soleil,,1,data,std,lumiere,azimut
+Lumiere,Global,5,field,angle,right,Hauteur Soleil,,1,data,std,lumiere,hauteur
+Lumiere,Global,6,field,angle,right,Angle % Sud,,1,data,std,lumiere,deltaMidi
+Lumiere,Global,6,field,distance,right,Distance,,1,data,std,lumiere,distance
+Ligne Horaire,Global,1,checkboxH,lettre,left,Type calendrier,C,1,input_multiple,std,ombre,choixCalendrier
+Ligne Horaire,Global,2,field,lettre,right,Lettre,,1,data,std,ombre,lettreChoix
+Ligne Horaire,Global,2,checkboxH,lettre,right,Choix,NP,1,input_multiple,std,ombre,choixHeure
+Ligne Horaire,Global,2,field,heure,right,Heure Locale,,1,data,std,ombre,heureLocale
+Ligne Horaire, Global,3,field,angle,right,Az Midi local,,1,data,std,ombre,azimutMidiLocale

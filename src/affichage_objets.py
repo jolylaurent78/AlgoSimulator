@@ -91,7 +91,7 @@ class ObjetGraphique:
     def estSelectionne(self) -> bool:
         return self.etatSelection
 
-    def setTooptips(self, tooltips):
+    def setTooltips(self, tooltips):
         self.tooltips = tooltips
 
     def ajouterTag(self, cle: str, valeur: Any):
@@ -274,9 +274,13 @@ class PointGraphique(ObjetGraphique):
         """
         Retourne les coordonnées GPS sous forme de tuple lat, lon
         """
- #       return (self.lon, self.lat)
         return (self.lat, self.lon)
 
+    def getCoordonneesPixel(self) -> tuple[float, float]:
+        """
+        Retourne les coordonnées GPS sous forme de tuple lat, lon
+        """
+        return self.pointReference
 
     def distance(self, autre: "PointGraphique") -> float:
         """

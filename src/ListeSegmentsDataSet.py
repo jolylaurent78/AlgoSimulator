@@ -26,6 +26,8 @@ class ListeSegmentsDataSet(ModuleAlgo):
                     "Date": row["Date"],
                     "Stylet": row["Stylet"],
                     "LettreDecl": row["LettreDecl"],
+                    "Base1": row["Base1"],
+                    "Base2": row["Base2"],
                 }
                 if i == 0: # Première ligne pour la valeur par défaut
                     self.segment = cle
@@ -33,6 +35,8 @@ class ListeSegmentsDataSet(ModuleAlgo):
         self.dateSegment = None
         self.lettreDecl = None
         self.stylet = None
+        self.base1 = None
+        self.base2 = None        
         super().__init__()
 
 
@@ -72,3 +76,5 @@ class ListeSegmentsDataSet(ModuleAlgo):
         self.dateSegment = infos["DateSegment"]
         self.stylet = infos["Stylet"]
         self.lettreDecl = infos["LettreDecl"]
+        self.base1 = infos["Base1"]
+        self.base2 = infos["Base2"]
