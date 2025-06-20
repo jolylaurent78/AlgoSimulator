@@ -64,5 +64,6 @@ Lumiere,Global,6,field,distance,right,Distance,,1,data,std,lumiere,distance
 Ligne Horaire,Global,1,checkboxH,lettre,left,Type calendrier,C,1,input_multiple,std,ombre,choixCalendrier
 Ligne Horaire,Global,2,field,lettre,right,Lettre,,1,data,std,ombre,lettreChoix
 Ligne Horaire,Global,2,checkboxH,lettre,right,Choix,NP,1,input_multiple,std,ombre,choixHeure
-Ligne Horaire,Global,2,field,heure,right,Heure Locale,,1,data,std,ombre,heureLocale
-Ligne Horaire, Global,3,field,angle,right,Az Midi local,,1,data,std,ombre,azimutMidiLocale
+Ligne Horaire,Global,3,field,heure,right,Heure Locale,,1,data,std,ombre,heureLocale
+Ligne Horaire, Global,4,field,angle,right,Az Midi local,,1,data,std,ombre,azimutMidiLocale
+Ligne Horaire,Global,4,checkboxH,lettre,left,Sens Carte,SC,1,input_multiple,std,ombre,sensCarte

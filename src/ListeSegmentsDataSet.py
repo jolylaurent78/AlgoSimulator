@@ -22,6 +22,10 @@ class ListeSegmentsDataSet(ModuleAlgo):
             for i, row in enumerate(reader):
                 cle = row["Evènement"]
                 self.evenements[cle] = {
+                    "LettreSegment": row["LettreSegment"],
+                    "Extremite1": row["Extremite1"],
+                    "MilieuSegment": row["MilieuSegment"],
+                    "Extremite2": row["Extremite2"],
                     "DateSegment": row["DateSegment"],
                     "Date": row["Date"],
                     "Stylet": row["Stylet"],
@@ -31,12 +35,16 @@ class ListeSegmentsDataSet(ModuleAlgo):
                 }
                 if i == 0: # Première ligne pour la valeur par défaut
                     self.segment = cle
+        self.lettreSegment = None
         self.date = None
         self.dateSegment = None
         self.lettreDecl = None
         self.stylet = None
         self.base1 = None
-        self.base2 = None        
+        self.base2 = None    
+        self.extremite1 = None
+        self.milieuSegment = None    
+        self.extremite2 = None
         super().__init__()
 
 
@@ -72,6 +80,10 @@ class ListeSegmentsDataSet(ModuleAlgo):
             raise ValueError(f"Le segment '{self.segment}' n'existe pas dans le dataset.")
 
         infos = self.evenements[self.segment]
+        self.lettreSegment = infos["LettreSegment"]
+        self.extremite1 = infos["Extremite1"]
+        self.milieuSegment = infos["MilieuSegment"]    
+        self.extremite2 = infos["Extremite2"]
         self.date = infos["Date"]
         self.dateSegment = infos["DateSegment"]
         self.stylet = infos["Stylet"]

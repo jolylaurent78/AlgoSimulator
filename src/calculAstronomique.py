@@ -738,6 +738,70 @@ def trouverSolsticeEteAvecAlmanac(annee):
 
     raise RuntimeError("Pas de solstice trouvé dans la période donnée.")
 
+def trouverDatesPourDeclinaison(delta_cible, annee):
+    """
+    Trouve deux dates (printemps et été) où la déclinaison solaire atteint la valeur cible,
+    avec balayage par jour puis raffinement sur 2 jours autour du minimum trouvé.
+
+    :param delta_cible: déclinaison cible en degrés
+    :param annee: année considérée
+    :return: tuple de deux MyJulianDate (printemps, été)
+    """
+    def balayageJourParJour(jd_deb, jd_fin):
+        meilleur_jd = None
+        meilleur_ecart = float("inf")
+        t = float(jd_deb)
+        while t <= float(jd_fin):
+            d = declinaisonSoleil(t)
+            ecart = abs(d - delta_cible)
+            if ecart < meilleur_ecart:
+                meilleur_ecart = ecart
+                meilleur_jd = t
+            t += 1  # pas d’un jour
+        return meilleur_jd
+
+    def raffinementHeureParHeure(jd_centre):
+        t = jd_centre - 1
+        t_fin = jd_centre + 1
+        pas = 1 / 24  # 1h
+        meilleur_jd = None
+        meilleur_ecart = float("inf")
+        while t <= t_fin:
+            d = declinaisonSoleil(t)
+            ecart = abs(d - delta_cible)
+            if ecart < meilleur_ecart:
+                meilleur_ecart = ecart
+                meilleur_jd = t
+            t += pas
+        return MyJulianDate.fromJD(meilleur_jd)
+
+    # Printemps
+    jd_deb1 = MyJulianDate(10, 3, annee)
+    jd_fin1 = MyJulianDate(10, 6, annee)
+    jd1 = balayageJourParJour(jd_deb1, jd_fin1)
+    date1 = raffinementHeureParHeure(jd1)
+
+    # Été
+    jd_deb2 = MyJulianDate(10, 6, annee)
+    jd_fin2 = MyJulianDate(10, 9, annee)
+    jd2 = balayageJourParJour(jd_deb2, jd_fin2)
+    date2 = raffinementHeureParHeure(jd2)
+
+    return date1, date2
+
+
+    # Fenêtre de printemps : 10 mars → 10 juin
+    jd_printemps_debut = MyJulianDate(10, 3, annee)
+    jd_printemps_fin   = MyJulianDate(10, 6, annee)
+
+    # Fenêtre d’été : 10 juin → 10 septembre
+    jd_ete_debut = MyJulianDate(10, 6, annee)
+    jd_ete_fin   = MyJulianDate(10, 9, annee)
+
+    date1 = meilleurMatch(jd_printemps_debut, jd_printemps_fin)
+    date2 = meilleurMatch(jd_ete_debut, jd_ete_fin)
+
+    return date1, date2
 
 
 # === Exemple de test ===

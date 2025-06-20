@@ -31,6 +31,7 @@ from src.affichage_objets import *
 from src.IHMAlgorithme import IHMAlgorithme
 
 # Gestion de l'algo
+from src.AlgorithmeSegment import AlgorithmeSegment
 from src.AlgorithmeStyletInitial import AlgorithmeStyletInitial
 from src.AlgorithmeLumiereStyletInitial import AlgorithmeLumiereStyletInitial
 from src.AlgorithmeBaseCadran import AlgorithmeBaseCadran
@@ -64,7 +65,7 @@ class InterfaceCarte(tk.Tk):
         # On crée le layer Manager
         self.layerManager = LayerManager()
 
-        self.moteurAlgo = AlgorithmeCadranFinal(self.layerManager)
+        self.moteurAlgo = AlgorithmeSegment(self.layerManager)
         largeur, hauteur = self.moteurAlgo.getLargeurHauteurIHM()
 
 
@@ -202,6 +203,10 @@ class InterfaceCarte(tk.Tk):
         menu_fichier = tk.Menu(menubar, tearoff=0)
 
         menu_nouveau = tk.Menu(menu_fichier, tearoff=0)
+        menu_nouveau.add_command(
+            label="Algorithme Segment",
+            command=lambda: self.actionNouveauProjet(AlgorithmeSegment),
+        )        
         menu_nouveau.add_command(
             label="Algorithme Stylet Initial",
             command=lambda: self.actionNouveauProjet(AlgorithmeStyletInitial),

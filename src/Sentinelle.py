@@ -44,6 +44,7 @@ class Sentinelle(dict):
                 self.fichierSentinelles[cle] = {
                     "Note": row["Note"],
                     "Azimut": row["Azimut"],
+                    "AzimutGeant": row["AzimutGeant"],
                     "Ville": row["Ville"],
                     "AzimutCalibre": None,
                     "HeureLocale": None
@@ -111,7 +112,8 @@ class Sentinelle(dict):
             note = sentinelle["Note"].strip()
             dict_notes[note] = {
                 "HeureLocale": sentinelle["HeureLocale"],
-                "AzimutCalibre": sentinelle["AzimutCalibre"]
+                "AzimutCalibre": sentinelle["AzimutCalibre"],
+                "AzimutGeant": float(sentinelle["AzimutGeant"]),
             }
 
         # On met à jour le dict interne (puisque Sentinelle hérite de dict)

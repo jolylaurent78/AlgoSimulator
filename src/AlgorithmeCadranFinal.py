@@ -85,7 +85,7 @@ class StyletFinal(ModuleAlgo):
                 "dataset.base1",
                 "dataset.base2",
                 "dataset.lettreDecl",
-                "segment.lettreDom"
+                "segment.lettreDom",
             ]
     
     def getValeursChoixBase(self):
@@ -95,7 +95,7 @@ class StyletFinal(ModuleAlgo):
         return "=", "+2", "-2"
 
     def getValeursOctave(self):
-        return "x1", "x2", "/2", "/4"
+        return "x1", "x2", "/2", "/4", "/8"
     
     def getValeursChoixCalendrier(self):
         return ["Standard", "Déclinaison"]
@@ -113,7 +113,8 @@ class StyletFinal(ModuleAlgo):
         "x1": 1,
         "x2": 2,
         "/2": 0.5,
-        "/4": 0.25
+        "/4": 0.25,
+        "/8": 0.125
     }
     def __init__(self):
 # Variables input des autres modules
@@ -209,6 +210,7 @@ class LumiereFinal(ModuleAlgo):
                 "dataset.lettreDecl",
                 "dataset.date",
                 "dataset.dateSegment",
+                "stylet.choixCalendrier",
                 "stylet.hauteur",
                 "stylet.azimutMidi",                
             ]
@@ -225,16 +227,28 @@ class LumiereFinal(ModuleAlgo):
     
     def getValeursHeureAMPM(self):
         return ["AM", "PM"]   
+
+    def getRegles(self):
+        return [
+            ["Si le stylet est standard, la lumière est est déclinaison", "choixCalendrier", self._regleChoixCalendrier]
+        ]   
     
+    def _regleChoixCalendrier(self):
+        if self.choixCalendrierStylet == "Standard":
+            return "Déclinaison"
+        else:
+            return "Standard"
+        
     def __init__(self):
         # Import des classes précédentes
-        self.lieuObservationSegment = ""
-        self.lettreDomSegment =""
         self.dateDataset = ""
         self.dateSegmentDataset = ""
         self.lettreDeclDataset = ""
+        self.lieuObservationSegment = ""
+        self.lettreDomSegment = ""
         self.hauteurStylet = None
         self.azimutMidiStylet = None
+        self.choixCalendrierStylet = ""
 
         # Input User
         self.choixHeure = "="
@@ -337,7 +351,9 @@ class LigneHoraireFinal(ModuleAlgo):
                 "dataset.date",
                 "stylet.azimutMidi",  
                 "stylet.base",                      
-                "lumiere.sentinelle",                 
+                "lumiere.sentinelle",    
+                "lumiere.heureAMPM", 
+                "lumiere.choixCalendrier", 
             ]
 
     def getValeursChoixCalendrier(self):
@@ -349,6 +365,27 @@ class LigneHoraireFinal(ModuleAlgo):
             list.append(LumiereFinal.HEURE_LAMPOUY)
         return list
         
+    def getValeursSensCarte(self):
+        return ["Endroit", "Envers"]
+
+    def getRegles(self):
+        return [
+            ["Le sens de la carte est lié à l'heure AM/PM de la lumière", "sensCarte", self._regleSensCarte],
+            ["Si la lumiere est standard, l'ombre est déclinaison", "choixCalendrier", self._regleChoixCalendrier] 
+        ]
+
+    def _regleSensCarte(self):
+        if self.heureAMPMLumiere == "AM":
+            return "Endroit"
+        else:
+            return "Envers"
+
+    def _regleChoixCalendrier(self):
+        if self.choixCalendrierLumiere == "Standard":
+            return "Déclinaison"
+        else:
+            return "Standard"
+            
     def __init__(self):
         # Import des classes précédentes
         self.lieuObservationSegment = ""
@@ -358,15 +395,19 @@ class LigneHoraireFinal(ModuleAlgo):
         self.dateDataset = ""
         self.azimutMidiStylet = None    
         self.baseStylet = None    
-   
+        self.sentinelleLumiere = None
+        self.heureAMPMLumiere = None
+        self.choixCalendrierLumiere = ""
+
         # calculé
         self.choixCalendrier = "Standard" 
         self.lettreChoix = ""
         self.choixHeure = "="
         self.azimutMidiLocale = None
-        self.sentinelleLumiere = None
+
         self.heureLocale = ""
         self.listeCandidatsHeure = []
+        self.sensCarte = "Endroit"
 
     def setup(self):
         self.pointBourges = PointGraphique(villes_dict["Bourges"])        
@@ -403,10 +444,14 @@ class LigneHoraireFinal(ModuleAlgo):
         for note in tableauNotes:
             heureLocaleAM =self.sentinelleLumiere[note]["HeureLocale"]
             # Les lignes horaires sont positionnées sur l'axe de Midi local
-            delta_azimut = self.azimutMidiLocale - self.sentinelleLumiere[note]["AzimutCalibre"]
-            ligneHoraireAM = LigneAzimut(self.pointBase, self.azimutMidiStylet -delta_azimut)        
+            deltaAzimutMidiLocale = 180 - self.azimutMidiLocale
+            deltaAzimutMidiLocale = deltaAzimutMidiLocale if self.sensCarte == "Endroit" else -deltaAzimutMidiLocale
+            delta_azimutSenstinelle = 180 - self.sentinelleLumiere[note]["AzimutCalibre"]
+            azimutAM = self.azimutMidiStylet - delta_azimutSenstinelle + deltaAzimutMidiLocale
+            azimutPM = self.azimutMidiStylet + delta_azimutSenstinelle + deltaAzimutMidiLocale
+            ligneHoraireAM = LigneAzimut(self.pointBase, azimutAM)        
             heureLocalePM = heureSymetrique(heureLocaleAM)
-            ligneHorairePM = LigneAzimut(self.pointBase, self.azimutMidiStylet + delta_azimut)
+            ligneHorairePM = LigneAzimut(self.pointBase, azimutPM)
  
             if self.heureLocale == heureLocaleAM:
                 self.listeCandidatsHeure.append((heureLocaleAM, ligneHoraireAM))
@@ -415,8 +460,9 @@ class LigneHoraireFinal(ModuleAlgo):
             else:
                 candidat = False
 
-            self.listeLigneHoraire.append((heureLocaleAM, -delta_azimut, "AM", candidat, ligneHoraireAM ))              
-            self.listeLigneHoraire.append((heureLocalePM, delta_azimut, "PM", candidat, ligneHorairePM ))   
+            self.listeLigneHoraire.append((heureLocaleAM, - delta_azimutSenstinelle + deltaAzimutMidiLocale, "AM", candidat, ligneHoraireAM ))              
+            self.listeLigneHoraire.append((heureLocalePM, delta_azimutSenstinelle + deltaAzimutMidiLocale, "PM", candidat, ligneHorairePM ))   
+
 
     COULEUR_TRAIT_HEURE = (255, 193, 132)
     COULEUR_TRAIT_CANDIDAT = (164, 82, 0) 
@@ -474,28 +520,39 @@ class CandidatFinal(ModuleAlgo):
                 ptsCercleHeure = ligneHeure.intersectionCercle(cercleLumiere) 
                 ptsInter = ligneHeure.intersectionLigne(ligneLumiere)  
                 
-                # Si pas d'intersection ou pas dans l'image, on skip
-                if ptsInter is None:
-                    continue
-                pt3x_l93, pt3y_l93 = ptsInter
-                pt3 = PointGraphique("Lumière x Horaire", pt3x_l93, pt3y_l93)
-                if not pt3.estVisibledansImage():
-                    continue
+                # Si pas d'intersection ou pas dans l'image, on garde un pt3 None
+                pt3 = None
+                if ptsInter is not None:
+                    pt3x_l93, pt3y_l93 = ptsInter
+                    pt3 = PointGraphique("Lumière x Horaire", pt3x_l93, pt3y_l93)
+                    if not pt3.estVisibledansImage():
+                        pt3 = None
 
                 for pt1 in ptsCercleLumiere:
                     pt1x_l93, pt1y_l93 = pt1.coordonneesLambert()
 
                     for pt2 in ptsCercleHeure:
                         pt2x_l93, pt2y_l93 = pt2.coordonneesLambert()
+                        distance12 = pt1.distance(pt2)
+                        triplet_valide = False
 
-                        # Calcul barycentre
-                        xb_l93 = (pt1x_l93+pt2x_l93+pt3x_l93)/3
-                        yb_l93 = (pt1y_l93+pt2y_l93+pt3y_l93)/3   
-                        ptb = PointGraphique("Barycentre", xb_l93, yb_l93) 
+                        #Si nous avons un pt3, on calcle le barycentre
+                        if pt3:
+                            xb_l93 = (pt1x_l93+pt2x_l93+pt3x_l93)/3
+                            yb_l93 = (pt1y_l93+pt2y_l93+pt3y_l93)/3   
+                            ptb = PointGraphique("Barycentre", xb_l93, yb_l93) 
 
-                        # On vérifie les distanes
-                        if all(p.distance(ptb) <= 20 for p in [pt1, pt2, pt3]):
-                            triplets.append(ptb)                   
+                            # On vérifie les distanes
+                            if all(p.distance(ptb) <= CandidatFinal.RAYON_CANDIDAT for p in [pt1, pt2, pt3]):
+                                triplets.append(ptb)                   
+                                triplet_valide = True
+
+                        # On gère le cas des droites pratiquement parallèles avec pt1 et pt2 < 10km
+                        if not triplet_valide and distance12 <= CandidatFinal.RAYON_CANDIDAT/2:
+                            xb_l93 = (pt1x_l93 + pt2x_l93) / 2
+                            yb_l93 = (pt1y_l93 + pt2y_l93) / 2
+                            ptb = PointGraphique("Barycentre", xb_l93, yb_l93)
+                            triplets.append(ptb)
 
         for pt in triplets:
             cercleCandidat = CercleGraphique(

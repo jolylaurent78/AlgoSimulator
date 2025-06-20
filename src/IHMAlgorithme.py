@@ -292,7 +292,8 @@ class IHMAlgorithme(tk.Frame):
             elif widget_type == 'field':
                 container = ttk.Frame(frame_ligne)
                 container.grid(row=0, column=col_idx, sticky="e" if align == "right" else "w", padx=5)
-                lbl = tk.Label(container, text=label + ":", font=font)
+                labelAffichee = label if len(label) == 0 else label + ":" 
+                lbl = tk.Label(container, text=labelAffichee, font=font)
                 lbl.pack(side="left")
                 readonly = champ_type == 'data'
                 var = tk.StringVar()
@@ -332,7 +333,8 @@ class IHMAlgorithme(tk.Frame):
             elif widget_type == 'combo':
                 container = ttk.Frame(frame_ligne)
                 container.grid(row=0, column=col_idx, sticky="e" if align == "right" else "w", padx=5)
-                tk.Label(container, text=label + ":", font=font).pack(side="left")
+                labelAffichee = label if len(label) == 0 else label + ":" 
+                tk.Label(container, text=labelAffichee, font=font).pack(side="left")
                 var = tk.StringVar()
 
                 # On affiche la valeur par défaut
@@ -360,7 +362,8 @@ class IHMAlgorithme(tk.Frame):
                 container.grid(row=0, column=col_idx, sticky="w", padx=5)
 
                 # Label
-                tk.Label(container, text=label + ":", font=font).pack(side="left", padx=(0, 5))
+                labelAffichee = label if len(label) == 0 else label + ":" 
+                tk.Label(container, text=labelAffichee, font=font).pack(side="left", padx=(0, 5))
 
                 # Valeur actuelle
                 valeur_actuelle = self.moteurAlgo.getParametre(module, attribut)
@@ -443,7 +446,8 @@ class IHMAlgorithme(tk.Frame):
                 var_dict = {}
                 if est_horizontal:
                     # ✅ Label + cases sur la même ligne
-                    tk.Label(container, text=label + ":", font=font).pack(side="left", padx=(0, 5))
+                    labelAffichee = label if len(label) == 0 else label + ":" 
+                    tk.Label(container, text=labelAffichee, font=font).pack(side="left", padx=(0, 5))
                     for val in valeurs:
                         var = tk.BooleanVar()
                         var.set(val in valeur_actuelle)
