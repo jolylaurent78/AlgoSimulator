@@ -393,6 +393,14 @@ class AlgorithmeManager:
         module = self.getModulesTemplate().get(module_id)
         return hasattr(module, attribut) if module else False
 
+    
+    def estMethodeDisponible(self, module_id: str, nom_methode: str)-> bool:
+        """
+        Vérifie si le module possède bien une méthode callable du nom spécifié.
+        """
+        module = self.getModulesTemplate().get(module_id)
+        return hasattr(module, nom_methode) and callable(getattr(module, nom_methode))
+
 
     def construireGrapheDependances(self) -> dict[str, list[str]]:
         """
@@ -722,6 +730,21 @@ class AlgorithmeManager:
         layer = layerManager.getLayer(nomLayer, segment=segment)
         scenario.construireRepresentationCarte(layer)
 
+    def executerMethode(self, module_id: str, nom_methode, init: bool, nomScenario: str = None, segment: str = None):
+        """
+        Exécute dynamiquement une méthode du module si elle est disponible.
+        Retourne la valeur de retour de la méthode, ou None en cas d'erreur.
+        """
+        segment = segment or self.segment_actif
+        scenario = self.getScenario(nomScenario, segment)
+        module = scenario.modules.get(module_id)
+        if module is None:
+            raise ValueError(
+                f"Module '{module_id}' introuvable dans le scénario '{nomScenario or self.scenario_actif}' "
+                f"du segment '{segment or self.segment_actif}'"
+            )
+        methode = getattr(module, nom_methode)
+        return methode(init)
 
 
     def getValeursParametre(self, module_id: str, attribut: str, nomScenario: str = None, segment: str = None):

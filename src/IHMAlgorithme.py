@@ -169,7 +169,8 @@ class IHMAlgorithme(tk.Frame):
                     erreurs.append("Champ 'Widget' manquant.")
 
                 # Vérification module/attribut seulement si nécessaire
-                widgets_requérant_module = {"field", "combo", "checkbox"}
+                widgets_requérant_module = {"field", "combo", "checkbox", "list"}
+                widgets_requérant_methode = {"bouton"}
                 if widget_type in widgets_requérant_module:
                     module = donnees.get('Module', '').strip()
                     attribut = donnees.get('Attribut', '').strip()
@@ -182,7 +183,20 @@ class IHMAlgorithme(tk.Frame):
                         erreurs.append(f"Attribut '{attribut}' non défini dans le module '{module}'.")
                     else:
                         self.attributsModulesAffichés.append((module, attribut, None, None)) # On garde en mémore la liste des modules/attributs
+                
+                elif widget_type in widgets_requérant_methode:
+                    module = donnees.get('Module', '').strip()
+                    methode = donnees.get('Attribut', '').strip()
 
+                    if not module or not methode:
+                        erreurs.append("Champs 'Module' ou 'Méthode' manquants ou vides.")
+                    elif not self.moteurAlgo.estModuleDisponible(module):
+                        erreurs.append(f"Module '{module}' non reconnu.")
+                    else:
+                        # Vérifie que la méthode existe dans l'objet module
+                        if not self.moteurAlgo.estMethodeDisponible(module, methode):
+                            erreurs.append(f"Méthode '{methode}' non trouvée dans le module '{module}'.")
+            
                 if erreurs:
                     logging.warning(f"Ligne {num_ligne} ignorée : {' | '.join(erreurs)} → {ligne}")
                     continue
@@ -206,11 +220,18 @@ class IHMAlgorithme(tk.Frame):
             if var is not None:
                 valeur = self.moteurAlgo.getParametre(module, attribut)
                 if valeur is not None:
-                    if field_type == "angle":
+                    if field_type == "table":
+                        var.delete(*var.get_children())
+                        for ligne in valeur:
+                            var.insert("", "end", values=ligne)                        
+                    elif field_type == "angle":
                         valeur = f"{float(valeur):.2f}"
+                        var.set(valeur)  
                     elif field_type == "distance":
                         valeur = f"{float(valeur):.1f}"
-                    var.set(valeur)  #
+                        var.set(valeur)  
+                    else:
+                        var.set(valeur)  
 
         # 🔁 Mise à jour explicite des checkboxes
         for id_objet, var_dict in self.parametres_widgets.items():
@@ -244,6 +265,29 @@ class IHMAlgorithme(tk.Frame):
         self.moteurAlgo.setParametre(module, attribut, valeur, self.layerManager)
         self.rafraichir_valeurs_modules()
 
+    def executerMethodeIteratif(self, module: str, methode: str):
+        """
+        Méthode appelée à chaque changement de paramètre dans l’IHM.
+
+            - Execute la fonction
+            - Relance le calcul
+            - Met à jour dynamiquement l’IHM si besoin
+        """
+        self.enCoursDeCalcul = True
+
+        def iterer(init=False):
+            if not self.enCoursDeCalcul:
+                return  # stop demandé
+
+            resultat = self.moteurAlgo.executerMethode(module, methode, init)
+            if resultat is True:
+                self.enCoursDeCalcul = False
+            else:
+                # Relance après un délai court (IHM non bloquée)
+                self.rafraichir_valeurs_modules()
+                self.after(50, iterer)
+
+        iterer(init=True)
 
 
     def ajouter_ligne_widgets(self, frame_ligne, champs, lectureSeuleGlobal=False):
@@ -422,7 +466,64 @@ class IHMAlgorithme(tk.Frame):
                 self.parametres_widgets[id_objet] = var_nom_ville
                 col_idx += 1
 
+            elif widget_type == "list":
+                # Le get paramètre renvoie une liste de tuple (size, label) pour chaque colonne
+                colonnes_def  = self.moteurAlgo.getValeursParametre(module, attribut)
+                colonnes_labels = [label for (_, label) in colonnes_def]
 
+                # Frame sur 2 lignes
+                ttk.Label(frame_ligne, text=label, anchor="w").grid(row=0, column=col_idx, sticky="w", padx=5)
+
+                frame_tableau = ttk.Frame(frame_ligne)
+                frame_tableau.grid(row=1, column=col_idx, sticky="nsew", columnspan=999)
+                frame_ligne.grid_columnconfigure(col_idx, weight=1)
+                frame_ligne.grid_rowconfigure(1, weight=1)
+
+                tableau = ttk.Treeview(frame_tableau, columns=colonnes_labels, show="headings", height=hauteur)
+                # Création de la scrollbar verticale
+                scrollbar_y = ttk.Scrollbar(frame_tableau, orient="vertical", command=tableau.yview)
+                tableau.configure(yscrollcommand=scrollbar_y.set)
+                
+                # Placement du tableau et de la scrollbar
+                tableau.grid(row=0, column=0, sticky="nsew")
+                scrollbar_y.grid(row=0, column=1, sticky="ns")
+                
+                # Configurer la frame_tableau pour s'étirer proprement
+                frame_tableau.grid_rowconfigure(0, weight=1)
+                frame_tableau.grid_columnconfigure(0, weight=1)
+                
+                # On size les colonnes
+                for (colSize, colLabel) in colonnes_def:
+                    tableau.heading(colLabel, text=colLabel)
+                    tableau.column(colLabel, width=colSize, anchor="center")
+
+                # Remplissage du tableau
+                tableau.delete(*tableau.get_children())
+                tab = self.moteurAlgo.getParametre(module, attribut)
+                for ligne in tab:
+                    tableau.insert("", "end", values=ligne)
+
+                # on complète la liaison dans attributsModulesAffichés
+                for i, (mod, attr, _, _) in enumerate(self.attributsModulesAffichés):
+                    if mod == module and attr == attribut:
+                        self.attributsModulesAffichés[i] = (module, attribut, tableau, field_type)
+                        break
+
+                self.parametres_widgets[id_objet] = tableau
+                col_idx += 1
+
+            elif widget_type == 'bouton':
+                def executer_bouton(module_courant=module, attribut_courant=attribut):
+                    self.executerMethodeIteratif(module_courant, attribut_courant)
+
+                container = ttk.Frame(frame_ligne)
+                container.grid(row=0, column=col_idx, sticky="e" if align == "right" else "w", padx=5)
+
+                texte_bouton = label or "Exécuter"
+                bouton = ttk.Button(container, text=texte_bouton, command=executer_bouton)
+                bouton.pack()
+
+                col_idx += 1
 
             elif widget_type in ('checkbox', 'checkboxv', 'checkboxh'):
 
@@ -463,6 +564,8 @@ class IHMAlgorithme(tk.Frame):
                         )
                         cb.config(state="disabled" if lecture_seule else "normal")
                         cb.pack(side="left", padx=2)
+
+
                 else:
                     # ✅ Label sur sa propre ligne + cases en colonne
                     tk.Label(container, text=label + ":", font=font).grid(row=0, column=0, sticky="w")

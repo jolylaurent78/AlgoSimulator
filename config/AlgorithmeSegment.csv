@@ -58,3 +58,6 @@ Planete,Global,6,field,angle,left,Angle Segment,H,1,data,std,planete,angle
 Planete,Global,6,field,angle,left,Analysé,H,1,data,std,planete,angleAnalyse
 Planete,Global,7,combo,shorttext,left,Année,O,2,input_multiple,std,planete,borneMin
 Planete,Global,7,combo,shorttext,right,Période,O,2,input_multiple,std,planete,periode
+Planete,Global,8,bouton,shorttext,right,Rechercher les années,,1,method,std,planete,calculerAnnees
+Planete,Global,8,field,shorttext,left,En cours,H,1,data,std,planete,annee
+Planete,Global,9,list,table,right,Liste des années candidates,,6,data,std,planete,listeAnnees

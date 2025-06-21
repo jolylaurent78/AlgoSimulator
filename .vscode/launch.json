@@ -22,10 +22,10 @@
       }
     }
     {
-      "name": "Tester Calendrier180j",
+      "name": "Tester calcul Astronomique",
       "type": "python",
       "request": "launch",
-      "program": "${workspaceFolder}/src/Calendrier180j.py",
+      "program": "${workspaceFolder}/src/calculAstronomique.py",
       "console": "integratedTerminal",
       "env": {
         "PYTHONPATH": "${workspaceFolder}"

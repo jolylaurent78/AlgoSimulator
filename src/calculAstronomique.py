@@ -1,14 +1,15 @@
 from skyfield.api import load, wgs84, Star
 from skyfield.toposlib import Topos
-from skyfield.units import Angle
+
 from skyfield.almanac import sunrise_sunset, find_discrete, meridian_transits
-from skyfield.positionlib import ICRF
+
 from skyfield.framelib import ecliptic_frame
 from skyfield import almanac
 
 from functools import total_ordering
 from math import floor
 from numpy import arctan2, sqrt, degrees
+
 # === Dictionnaire des astres ===
 
 
@@ -16,6 +17,7 @@ from numpy import arctan2, sqrt, degrees
 eph = load('data/ephemeride/de406.bsp')
 
 ASTRES = {
+    'Terre': eph['earth'],
     'Lune': eph['moon'],
     'Mercure': eph['mercury'],
     'Venus': eph['venus'],
@@ -273,7 +275,9 @@ class MyJulianDate:
         elif isinstance(other, (int, float)):
             return MyJulianDate.fromJD(self.jd - other)
         return NotImplemented
-
+    
+    def __truediv__(self, scalar):
+        return MyJulianDate(float(self) / scalar)
 
     def jourSemaine(self):
         """
@@ -293,23 +297,7 @@ class MyJulianDate:
         return float(self.jd)
 
     def __str__(self):
- 
-        def moisNom(mois):
-            noms = ["janvier", "février", "mars", "avril", "mai", "juin",
-                    "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
-            return noms[mois - 1]
-        
-        t = ts.ut1_jd(self.jd)
-        y, m, d, h, mi, s = t.utc
-        if self.jd < 2299160.5:
-            y, m, d = self.enTuple()
-        # Calcul manuel de l'heure depuis la fraction de jour
-        fraction = (self.jd + 0.5) % 1  # JD commence à midi, on corrige en ajoutant 0.5
-        total_seconds = fraction * 86400
-        hh = int(total_seconds // 3600)
-        mm = int((total_seconds % 3600) // 60)
-        ss = int(total_seconds % 60)
-        return f"{d:02d} {moisNom(m)} {y} {hh:02d}:{mm:02d}:{ss:02d}"
+        return self.toString("JJ/MM/AAAA") + " - " + self.toString("HH:MM:SS")
 
 
     def __repr__(self):
@@ -790,50 +778,193 @@ def trouverDatesPourDeclinaison(delta_cible, annee):
     return date1, date2
 
 
-    # Fenêtre de printemps : 10 mars → 10 juin
-    jd_printemps_debut = MyJulianDate(10, 3, annee)
-    jd_printemps_fin   = MyJulianDate(10, 6, annee)
+# Cache pour éviter de recalculer plusieurs fois l’équinoxe d’une même année
+memo_equinoxes = {}
+def azimutHeliocentrique(jd, nom_planete, annee=None):
+    """
+    Azimut héliocentrique d'une planète à la date donnée,
+    dans un repère où 0° correspond à la direction de la Terre lors de l’équinoxe de printemps
+    de la même année que la date jd.
+    """
+    # Étape 1 : retrouver l’équinoxe de printemps de l’année de jd
+    if not annee:
+        annee, _, _ = jd.enTuple()
+    if annee not in memo_equinoxes:
+        memo_equinoxes[annee], _ = trouverDatesPourDeclinaison(0.0, annee)
+    jd_equinoxe = memo_equinoxes[annee]
 
-    # Fenêtre d’été : 10 juin → 10 septembre
-    jd_ete_debut = MyJulianDate(10, 6, annee)
-    jd_ete_fin   = MyJulianDate(10, 9, annee)
+    # Étape 2 : position héliocentrique de la Terre à l’équinoxe
+    t_ref = ts.ut1_jd(float(jd_equinoxe))
+    pos_terre_ref = sun.at(t_ref).observe(ASTRES['Terre']).position.km
+    angle_ref = degrees(arctan2(pos_terre_ref[1], pos_terre_ref[0])) % 360
 
-    date1 = meilleurMatch(jd_printemps_debut, jd_printemps_fin)
-    date2 = meilleurMatch(jd_ete_debut, jd_ete_fin)
+    # Étape 3 : position héliocentrique de la planète à la date cible
+    t = ts.ut1_jd(float(jd))
+    pos_planete = sun.at(t).observe(ASTRES[nom_planete]).position.km
+    angle_planete = degrees(arctan2(pos_planete[1], pos_planete[0])) % 360
 
-    return date1, date2
+    # Résultat : azimut relatif à l'équinoxe de printemps de l'année de jd
+    return (angle_planete - angle_ref) % 360
+
+def azimutHeliocentriqueJ2000(jd, nom_planete):
+    """
+    Azimut héliocentrique d'une planète dans le plan XY du repère J2000.
+    Le 0° correspond à la direction de l’équinoxe de printemps J2000 (axe X du repère inertiel ICRF).
+    """
+    t = ts.ut1_jd(float(jd))
+    planete = ASTRES[nom_planete]
+
+    # Position héliocentrique (planète vue depuis le Soleil)
+    pos = sun.at(t).observe(planete).position.km
+    x, y = pos[0], pos[1]
+
+    angle_deg = degrees(arctan2(y, x)) % 360
+    return angle_deg
+
+
+def trouverDatePourAzimut(azimut_cible, annee, planete="Terre", jd_centre=None, marge_jours=30, precision_heures=6):
+    """
+    Recherche la date où la planète est à l’azimut héliocentrique donné (0° = Terre à l’équinoxe de printemps de l’année).
+    """
+    # Déterminer l’intervalle de recherche
+    if jd_centre:
+        jd_centre_float = float(jd_centre)
+        jd_start = jd_centre_float - marge_jours
+        jd_end = jd_centre_float + marge_jours
+    else:
+        jd_start = float(MyJulianDate(1, 1, annee))
+        jd_end = float(MyJulianDate(31, 12, annee))
+
+    def azimut(jd_float):
+        jd_obj = MyJulianDate.fromJD(jd_float)
+        return azimutHeliocentrique(jd_obj, planete, annee)
+
+    # --- Étape 1 : balayage large (4 jour)
+    PAS_ETAPE1 = 4
+    meilleur_jd = jd_start
+    meilleur_azimut = azimut(jd_start)
+    min_ecart = abs(meilleur_azimut - azimut_cible)
+
+    jour = jd_start + PAS_ETAPE1
+
+    while jour <= jd_end:
+        a = azimut(jour)
+        ecart = abs(a - azimut_cible)
+        if ecart < min_ecart:
+            min_ecart = ecart
+            meilleur_jd = jour
+            meilleur_azimut = a
+        jour += PAS_ETAPE1
+
+    myjd = MyJulianDate.fromJD(meilleur_jd)
+    # --- Étape 2 : balayage affiné (6h autour du meilleur jour)
+    pas = 6 / 24  # 6 heures
+    jd1 = meilleur_jd - PAS_ETAPE1
+    jd2 = meilleur_jd + PAS_ETAPE1
+    t = jd1
+    while t <= jd2:
+        a = azimut(t)
+        ecart = abs(a - azimut_cible)
+        if ecart < min_ecart:
+            min_ecart = ecart
+            meilleur_jd = t
+            meilleur_azimut = a
+        t += pas
+
+    # --- Étape 3 : dichotomie finale
+    seuil = precision_heures / 24
+    jd1 = meilleur_jd - pas
+    jd2 = meilleur_jd + pas
+    az1 = azimut(jd1)
+    az2 = azimut(jd2)
+
+    while (jd2 - jd1) > seuil:
+        milieu = (jd1 + jd2) / 2
+        az_milieu = azimut(milieu)
+        if (az1 - azimut_cible) * (az_milieu - azimut_cible) < 0:
+            jd2, az2 = milieu, az_milieu
+        else:
+            jd1, az1 = milieu, az_milieu
+
+    return MyJulianDate.fromJD((jd1 + jd2) / 2)
+
+def trouverAnneesAlignement(planete: str,
+                             azimut_terre: float,
+                             delta_azimut: float,
+                             marge_erreur: float,
+                             annee_min: int,
+                             annee_max: int) -> list[dict]:
+    """
+    Recherche les années pour lesquelles la planète est positionnée à un certain delta d’azimut
+    par rapport à la Terre, lorsque celle-ci est à un azimut donné (dans un repère héliocentrique
+    centré sur l’équinoxe de printemps de chaque année).
+
+    Deux cas sont explorés :
+    - L’azimut donné (cas 'direct')
+    - L’azimut donné + 180° (cas 'opposition')
+
+    Résultat : liste de dictionnaires contenant les années et positions alignées.
+    """
+    resultats = []
+
+    jd_centre_direct = None
+    jd_centre_oppose = None
+
+    for annee in range(annee_min, annee_max + 1):
+        # === CAS DIRECT ===
+  
+        jd_direct = trouverDatePourAzimut(azimut_terre, annee, planete="Terre", jd_centre=jd_centre_direct)
+        print(jd_direct)
+        az_planete = azimutHeliocentrique(jd_direct, planete, annee)
+        az_cible1 = (azimut_terre + delta_azimut) % 360
+        az_cible2 = (azimut_terre - delta_azimut) % 360
+
+        if abs((az_planete - az_cible1 + 180) % 360 - 180) <= marge_erreur or \
+            abs((az_planete - az_cible2 + 180) % 360 - 180) <= marge_erreur:
+            resultats.append({
+                "annee": annee,
+                "cas": "direct",
+                "jd": jd_direct,
+                "azimut_terre": azimut_terre,
+                "azimut_planete": az_planete
+            })
+        y, m, d = jd_direct.enTuple()
+        jd_centre_direct = MyJulianDate(d, m, y+1)
+
+
+        # === CAS OPPOSÉ ===
+        azimut_oppose = (azimut_terre + 180) % 360
+
+        jd_oppose = trouverDatePourAzimut(azimut_oppose, annee, planete="Terre", jd_centre=jd_centre_oppose)
+        az_planete = azimutHeliocentrique(jd_oppose, planete, annee)
+        az_cible1 = (azimut_oppose + delta_azimut) % 360
+        az_cible2 = (azimut_oppose - delta_azimut) % 360
+
+        if abs((az_planete - az_cible1 + 180) % 360 - 180) <= marge_erreur or \
+            abs((az_planete - az_cible2 + 180) % 360 - 180) <= marge_erreur:
+            resultats.append({
+                "annee": annee,
+                "cas": "opposition",
+                "jd": jd_oppose,
+                "azimut_terre": azimut_oppose,
+                "azimut_planete": az_planete
+            })
+        y, m, d = jd_oppose.enTuple()
+        jd_centre_oppose = MyJulianDate(d, m, y+1)
+
+    return resultats
+
+
 
 
 # === Exemple de test ===
 if __name__ == "__main__":
 
 
-    
-    jd_test = MyJulianDate(12, 10, 1365, "04:09:51")
-    print("Julian Day de référence :", jd_test)
-    
-    coord_cherbourg = (49.6389, -1.625)  # 49°38'20" N, 1°37'30" W
-    coord_roncevaux = (43.0203, -1.3239)  # 43°01'13" N, 1°19'26" W
-    coord_dieppe = (49+55/60, 1+4/60)
-    """
-    jd_zeta_lever = calculLeverAstre(coord_roncevaux, jd_test, ASTRES['ZetaPuppis'])
-    print("Date du lever de ZetaPuppis à Roncevaux :", jd_zeta_lever)
-    """
-    
-    alt, az = positionAstre(coord_dieppe, jd_test, ASTRES['EpsilonMajor'])
-    print(f"Position Epsilon : {alt:.4f}°, Azimut : {az:.4f}°")
-    alt, az = positionAstre(coord_dieppe, jd_test, ASTRES['Pluton'])
-    print(f"Position lever Mars : {alt:.4f}°, Azimut : {az:.4f}°")
-    
-    """    
-    coord_strasbourg = (48.5833, 7.7461)
-    jd_lever = calculLeverSoleil(coord_strasbourg, jd_test)
-    print("Date du lever du Soleil :", jd_lever)
-    
-    alt, az = positionSoleil(coord_strasbourg, jd_lever)
-    print(f"Position au lever : {alt:.4f}°, Azimut : {az:.4f}°")
-    
-    longE = longitudeEcliptiqueSoleil(myjd)
-    longE6M = longitudeEcliptiqueSoleil(myjd6M)   
-    print(f"Longitude Ecliptique du soleil : {longE:.4f}°, à 6 mois : {longE6M:.4f}°") 
-    """
+    resultats = trouverAnneesAlignement("Saturne", 0, 128.5, 3, 770, 800)
+    for r in resultats:
+        print(f"Année : {r['annee']}  |  Cas : {r['cas']}")
+        print(f" → Date julienne : {r['jd']}")
+        print(f" → Azimut Terre   : {r['azimut_terre']:.2f}°")
+        print(f" → Azimut {r['cas']} de {r['annee']}   : {r['azimut_planete']:.2f}°")
+        print("-" * 50)

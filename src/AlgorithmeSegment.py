@@ -9,7 +9,7 @@ from src.Sentinelle import Sentinelle, LieuxObservation
 
 
 # Librairie calcul astronomique
-from src.calculAstronomique import trouverDatesPourDeclinaison
+from src.calculAstronomique import trouverDatesPourDeclinaison, azimutHeliocentrique, trouverDatePourAzimut
 from src.calculAstronomique import MyJulianDate, decalage2Notes, decalage2Jours, getIndexesPourNote, convertirHeureLocaleVersUTC, heureSymetrique, decalageGamme
 
 # Affichage des objects graphiques
@@ -181,6 +181,9 @@ class PlaneteChemin(ModuleAlgo):
     def getValeursPeriode(self):
         return list(range(100, 500, 100))
     
+    def getValeursListeAnnees(self):
+        return (50, "Année"), (80, "Jour"), (80, "Sens"), (80,"Az Terre"), (80,"Az Planete"), (80,"Erreur")
+    
     tableauPlanete = {
         "CD" : "Neptune",
         "DE" : "Uranus",
@@ -215,7 +218,9 @@ class PlaneteChemin(ModuleAlgo):
         self.choixAngle = "="    
 
         self.borneMin = 1000
-        self.periode = 100        
+        self.periode = 100     
+        self.annee = None   
+        self.listeAnnees = []
 
         super().__init__()
   
@@ -292,7 +297,64 @@ class PlaneteChemin(ModuleAlgo):
         else:
             self.angleAnalyse = 360 - (180 - self.angle) 
 
-  
+
+
+    def calculerAnnees(self, init):
+        
+        def testerAnnee(annee : int, 
+                        azimut : float, 
+                        jd_centre: float, 
+                        delta_azimut:float, 
+                        sens: str, 
+                        planete:str, 
+                        marge_erreur:float
+                    ):
+            jd_direct = trouverDatePourAzimut(azimut, annee, planete="Terre", jd_centre=jd_centre)
+
+            az_planete = azimutHeliocentrique(jd_direct, planete, annee)
+            az_cible1 = (azimut + delta_azimut) % 360
+            az_cible2 = (azimut - delta_azimut) % 360
+
+            if abs((az_planete - az_cible1 + 180) % 360 - 180) <= marge_erreur or \
+                abs((az_planete - az_cible2 + 180) % 360 - 180) <= marge_erreur:
+                erreurCible = min(abs(az_cible1 -az_planete)  , abs(az_cible2 -az_planete))
+                self.listeAnnees.append((annee, jd_direct, sens, f"{azimut:.2f}°", f"{az_planete:.2f}°", f"{erreurCible:.2f}°"))
+                # print(f"Année: {annee} - Jour: {jd_direct.toString("JJ/MM/AAAA")} - Sens: {sens} - Az Terre: {azimut} - Az Planete {az_planete}")
+            y, m, d = jd_direct.enTuple()
+            return MyJulianDate(d, m, y+1)        
+        
+        if init:
+            self.listeAnnees = []
+            self.jd_centre_direct = None
+            self.jd_centre_oppose = None
+            self.annee = float(self.borneMin)
+
+            return False
+
+        else:
+            self.jd_centre_direct = testerAnnee(self.annee, 
+                                                self.axeTerre, 
+                                                self.jd_centre_direct, 
+                                                self.angleAnalyse, 
+                                                "Identique", 
+                                                self.planete, 
+                                                3
+                                            )
+            
+            self.jd_centre_oppose = testerAnnee(self.annee,
+                                                (self.axeTerre + 180) % 360, 
+                                                self.jd_centre_oppose, 
+                                                self.angleAnalyse, 
+                                                "Opposé", 
+                                                self.planete, 
+                                                3
+                                            )
+            self.annee += 1
+
+        return True if self.annee> float(self.borneMin) + float(self.periode) else False
+
+
+
     def construireRepresentationCarte(self) -> list[ObjetGraphique]:
         listeObjets = []
 
