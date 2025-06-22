@@ -582,6 +582,9 @@ class AlgorithmeManager:
             return
 
         for description, nom_attribut, regle_callable in module.getRegles():
+            cle = f"{module_id}.{nom_attribut}"
+            if self.regles_actives.get(cle) != description:
+                continue  # règle désactivée
             valeur = regle_callable()
             module.setParametre(nom_attribut, valeur)
 
