@@ -419,6 +419,10 @@ class IHMAlgorithme(tk.Frame):
 
                 # Bouton ...
                 def ouvrir_selection_ville(module_courant=module, attribut_courant=attribut):
+                    # Valeur actuelle
+                    valeur_actuelle = self.moteurAlgo.getParametre(module_courant, attribut_courant)
+                    var_nom_ville = tk.StringVar(value=valeur_actuelle or "")
+                    
                     popup = tk.Toplevel()
                     popup.title("Choisir une ville")
                     popup.transient(container)

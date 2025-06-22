@@ -35,6 +35,8 @@ class AlgorithmeSegment(AlgorithmeManager):
                 ("segment", "Segment", SegmentChemin()),
                 ("cadran", "Cadran", cadranSolaire()),
                 ("planete", "Planete", PlaneteChemin()),
+                ("axeterre", "AxeTerre", AxeTerre()),
+                ("annee", "Année", PlaneteAnnee()),
             ]
 
     def appliquerParametresDepuisStructure(self):
@@ -169,21 +171,7 @@ class PlaneteChemin(ModuleAlgo):
                 "dataset.extremite2",
                 ]
 
-    def getValeursChoixSegment(self):
-        return "=","1<->2","2<->3","1->2 2->3 3->1"
-
-    def getValeursChoixAngle(self):
-        return "=","symetrique", "complémentaire", "les deux"
-    
-    def getValeursBorneMin(self):
-        return list(range(700, 1900, 100))
-       
-    def getValeursPeriode(self):
-        return list(range(100, 500, 100))
-    
-    def getValeursListeAnnees(self):
-        return (50, "Année"), (80, "Jour"), (80, "Sens"), (80,"Az Terre"), (80,"Az Planete"), (80,"Erreur")
-    
+  
     tableauPlanete = {
         "CD" : "Neptune",
         "DE" : "Uranus",
@@ -200,52 +188,27 @@ class PlaneteChemin(ModuleAlgo):
         self.extremite2Dataset = None
         self.milieuSegmentDataset = None   
 # Affiché
-        self.choixSegment = "="
         self.sentinelle = Sentinelle("data/sentinelle.csv")      
         self.azimutCible = None
         self.azimutLigne1 = None
         self.planete = None
 
+        # La définition des points du triangle analysé
         self.extremite1 = None
         self.extremite2 = None
         self.milieuSegment = None  
         self.listeLignes = []
 
-        self.axeTerreStr = ""
-        self.axeTerre = None
-        self.angle = None
-        self.angleAnalyse = None    
-        self.choixAngle = "="    
-
-        self.borneMin = 1000
-        self.periode = 100     
-        self.annee = None   
-        self.listeAnnees = []
-
         super().__init__()
   
     def setup(self):
-        pass
+        self.extremite1 = self.extremite1Dataset
+        self.extremite2 = self.extremite2Dataset
+        self.milieuSegment = self.milieuSegmentDataset
 
     def calculer(self):
         # On recalcule le segment
-        if self.choixSegment =="=":
-            self.extremite1 = self.extremite1Dataset
-            self.extremite2 = self.extremite2Dataset
-            self.milieuSegment = self.milieuSegmentDataset
-        elif self.choixSegment =="1<->2":  
-            self.extremite1 = self.milieuSegmentDataset
-            self.extremite2 = self.extremite2Dataset
-            self.milieuSegment = self.extremite1Dataset         
-        elif self.choixSegment =="2<->3":  
-            self.extremite1 = self.extremite1Dataset
-            self.extremite2 = self.milieuSegmentDataset
-            self.milieuSegment = self.extremite2Dataset
-        else:
-            self.milieuSegment = self.extremite1Dataset  
-            self.extremite2 = self.milieuSegmentDataset 
-            self.extremite1 = self.extremite2Dataset
-         
+        
         pointExtremite1 = PointGraphique(villes_dict[self.extremite1])
         pointExtremite2 = PointGraphique(villes_dict[self.extremite2])
         pointMilieuSegment = PointGraphique(villes_dict[self.milieuSegment])
@@ -263,11 +226,22 @@ class PlaneteChemin(ModuleAlgo):
         # On calule l'azimut cible
         self.azimutLigne1= self.ligne1.getAzimutCarte()
         self.azimutLigne2= self.ligne2.getAzimutCarte()
-        # On ne considèfre que des azimuts orientés vers le sud >90
-        self.azimutLigne1= self.azimutLigne1 + 180 if self.azimutLigne1 <=90 else self.azimutLigne1
-        # si l'azimut est inférieur à l'aziùut de Si, on prend le symétriqe
-        self.azimutCible= 360 - self.azimutLigne1 if self.azimutLigne1 < self.sentinelle["B"]["AzimutGeant"] else self.azimutLigne1        
-
+        
+        def dansAngleSelection(azimut):
+            # On calcule la borne inf et sup de l'azimut cible
+            borneCibleInf = self.sentinelle["B"]["AzimutGeant"]
+            borneCibleSup = self.sentinelle["C"]["AzimutGeant"]  
+            return borneCibleInf<azimut<borneCibleSup
+              
+        # Si l'azimut cible n'est pas dans la fenetre de sélection ni son opposé
+        if not dansAngleSelection(self.azimutLigne1) and not dansAngleSelection((self.azimutLigne1+180)%360):
+            self.azimutCible= 360 - self.azimutLigne1
+        else:
+            self.azimutCible= self.azimutLigne1
+        # Si l'azimut cible n'est toujours pas dans la fenetre, on prend son opposé
+        if not dansAngleSelection(self.azimutCible):
+            self.azimutCible = (self.azimutCible + 180) % 360 
+    
         listeNotes = ["C", "D", "E", "F", "G", "A", "B"]        
         previousNote = None
         previousAzimut = None
@@ -280,79 +254,6 @@ class PlaneteChemin(ModuleAlgo):
                 self.planete =  PlaneteChemin.tableauPlanete[f"{previousNote}{note}"]
             previousNote = note
             previousAzimut = azimut
-
-        # On calcule l'axe de la Terre et son azimut
-        self.axeTerreStr = self.milieuSegment + " -> " + self.extremite2
-        self.axeTerre = self.azimutLigne2
-
-        # On calcule l'angle et l'angle complémtentaire pour la recherche de l'année
-        self.angle = (self.azimutLigne1 - self.azimutLigne2) % 180
-
-        if self.choixAngle == "=":
-            self.angleAnalyse = self.angle
-        elif self.choixAngle == "symetrique":    
-            self.angleAnalyse = (- self.angle) % 360
-        elif self.choixAngle == "complémentaire":    
-            self.angleAnalyse = 180 - self.angle
-        else:
-            self.angleAnalyse = 360 - (180 - self.angle) 
-
-
-
-    def calculerAnnees(self, init):
-        
-        def testerAnnee(annee : int, 
-                        azimut : float, 
-                        jd_centre: float, 
-                        delta_azimut:float, 
-                        sens: str, 
-                        planete:str, 
-                        marge_erreur:float
-                    ):
-            jd_direct = trouverDatePourAzimut(azimut, annee, planete="Terre", jd_centre=jd_centre)
-
-            az_planete = azimutHeliocentrique(jd_direct, planete, annee)
-            az_cible1 = (azimut + delta_azimut) % 360
-            az_cible2 = (azimut - delta_azimut) % 360
-
-            if abs((az_planete - az_cible1 + 180) % 360 - 180) <= marge_erreur or \
-                abs((az_planete - az_cible2 + 180) % 360 - 180) <= marge_erreur:
-                erreurCible = min(abs(az_cible1 -az_planete)  , abs(az_cible2 -az_planete))
-                self.listeAnnees.append((annee, jd_direct, sens, f"{azimut:.2f}°", f"{az_planete:.2f}°", f"{erreurCible:.2f}°"))
-                # print(f"Année: {annee} - Jour: {jd_direct.toString("JJ/MM/AAAA")} - Sens: {sens} - Az Terre: {azimut} - Az Planete {az_planete}")
-            y, m, d = jd_direct.enTuple()
-            return MyJulianDate(d, m, y+1)        
-        
-        if init:
-            self.listeAnnees = []
-            self.jd_centre_direct = None
-            self.jd_centre_oppose = None
-            self.annee = float(self.borneMin)
-
-            return False
-
-        else:
-            self.jd_centre_direct = testerAnnee(self.annee, 
-                                                self.axeTerre, 
-                                                self.jd_centre_direct, 
-                                                self.angleAnalyse, 
-                                                "Identique", 
-                                                self.planete, 
-                                                3
-                                            )
-            
-            self.jd_centre_oppose = testerAnnee(self.annee,
-                                                (self.axeTerre + 180) % 360, 
-                                                self.jd_centre_oppose, 
-                                                self.angleAnalyse, 
-                                                "Opposé", 
-                                                self.planete, 
-                                                3
-                                            )
-            self.annee += 1
-
-        return True if self.annee> float(self.borneMin) + float(self.periode) else False
-
 
 
     def construireRepresentationCarte(self) -> list[ObjetGraphique]:
@@ -398,4 +299,211 @@ class PlaneteChemin(ModuleAlgo):
             notePrevious = note
             distance+=20
         return listeObjets
+
+
+class AxeTerre(ModuleAlgo):
+
+    def getEntreesModules(self):
+        return ["dataset.date",
+                "dataset.extremite1",
+                "dataset.milieuSegment",
+                "dataset.extremite2",
+                ]
+
+
+    def getValeursSensCarte(self):
+        return "Bon sens", "Sens Inverse"
+    
+
+    def __init__(self):
+# Variables input des autres modules
+        self.dateDataset = ""
+        self.extremite1Dataset = None
+        self.extremite2Dataset = None
+        self.milieuSegmentDataset = None   
+
+# Affiché
+
+        # La définition des points du triangle analysé
+        self.extremite1 = None
+        self.extremite2 = None
+        self.milieuSegment = None  
+
+        # L'axe de la terre analysé
+        self.axeTerreStr = ""
+        self.axeTerre = None
+        self.sensCarte = "Bon sens" 
+        self.azimut = None
+        
+        super().__init__()
+  
+    def setup(self):
+        self.extremite1 = None
+        self.extremite2 = self.extremite2Dataset
+        self.milieuSegment = self.milieuSegmentDataset
+
+    def calculer(self):
+        # On recalcule le segment
+        pointExtremite2 = PointGraphique(villes_dict[self.extremite2])
+        pointMilieuSegment = PointGraphique(villes_dict[self.milieuSegment])
+
+        # On recalcule la ligne de choix de la planète
+        self.ligne2 = LigneEntreVilles(pointMilieuSegment, pointExtremite2)
+
+
+        # On calule l'azimut cible
+        self.azimutLigne2= self.ligne2.getAzimutCarte()
+        
+        # On calcule l'axe de la Terre et son azimut
+        self.axeTerreStr = self.milieuSegment + " -> " + self.extremite2
+        self.axeTerre = self.azimutLigne2
+        self.azimut = self.axeTerre if  self.sensCarte == "Bon sens" else 360 - self.axeTerre 
+
+
+
+
+class PlaneteAnnee(ModuleAlgo):
+
+    def getEntreesModules(self):
+        return ["dataset.date",
+                "dataset.extremite1",
+                "dataset.milieuSegment",
+                "dataset.extremite2",
+                "planete.planete",
+                "axeterre.azimut"
+                ]
+
+
+
+    
+    def getValeursChoixAngle(self):
+        return "=","complémentaire"
+    
+    def getValeursBorneMin(self):
+        return list(range(700, 1900, 100))
+       
+    def getValeursPeriode(self):
+        return list(range(100, 500, 100))
+    
+    def getValeursListeAnnees(self):
+        return (50, "Année"), (80, "Jour"), (80, "Sens"), (80,"Az Terre"), (80,"Az Planete"), (80,"Erreur")
+    
+    tableauPlanete = {
+        "CD" : "Neptune",
+        "DE" : "Uranus",
+        "EF" : "Saturne",
+        "FG" : "Jupiter",
+        "GA" : "Mars",
+        "AB" : "Pluton",
+    }
+
+    def __init__(self):
+# Variables input des autres modules
+        self.dateDataset = ""
+        self.extremite1Dataset = None
+        self.extremite2Dataset = None
+        self.milieuSegmentDataset = None   
+        self.planetePlanete = None
+        self.azimutAxeterre = None
+# Affiché
+
+        # La définition des points du triangle analysé
+        self.extremite1 = None
+        self.extremite2 = None
+        self.milieuSegment = None  
+
+        
+        self.angle = None
+        self.angleAnalyse = None   
+        self.choixAngle = "="    
+
+        self.borneMin = 1000
+        self.periode = 100     
+        self.annee = None   
+        self.listeAnnees = []
+
+        super().__init__()
+  
+    def setup(self):
+        self.extremite1 = self.extremite1Dataset
+        self.extremite2 = self.extremite2Dataset
+        self.milieuSegment = self.milieuSegmentDataset
+
+    def calculer(self):
+        # On recalcule le segment
+        
+        pointExtremite1 = PointGraphique(villes_dict[self.extremite1])
+        pointExtremite2 = PointGraphique(villes_dict[self.extremite2])
+        pointMilieuSegment = PointGraphique(villes_dict[self.milieuSegment])
+
+        # On recalcule la ligne de choix de la planète
+        self.ligne1 = LigneEntreVilles(pointMilieuSegment, pointExtremite1,)
+        self.ligne2 = LigneEntreVilles(pointMilieuSegment, pointExtremite2)
+
+        # On calule l'azimut cible
+        self.azimutLigne1= self.ligne1.getAzimutCarte()
+        self.azimutLigne2= self.ligne2.getAzimutCarte()
+        
+        # On calcule l'angle et l'angle complémtentaire pour la recherche de l'année
+        self.angle = (self.azimutLigne1 - self.azimutLigne2) % 180
+
+        if self.choixAngle == "=":
+            self.angleAnalyse = self.angle
+        else:
+            self.angleAnalyse = 180 - self.angle
+
+
+    def calculerAnnees(self, init):
+        
+        def testerAnnee(annee : int, 
+                        azimut : float, 
+                        jd_centre: float, 
+                        delta_azimut:float, 
+                        sens: str, 
+                        planete:str, 
+                        marge_erreur:float
+                    ):
+            jd_direct = trouverDatePourAzimut(azimut, annee, planete="Terre", jd_centre=jd_centre)
+
+            az_planete = azimutHeliocentrique(jd_direct, planete, annee)
+            az_cible1 = (azimut + delta_azimut) % 360
+            az_cible2 = (azimut - delta_azimut) % 360
+
+            if abs((az_planete - az_cible1 + 180) % 360 - 180) <= marge_erreur or \
+                abs((az_planete - az_cible2 + 180) % 360 - 180) <= marge_erreur:
+                erreurCible = min(abs(az_cible1 -az_planete)  , abs(az_cible2 -az_planete))
+                self.listeAnnees.append((annee, jd_direct, sens, f"{azimut:.2f}°", f"{az_planete:.2f}°", f"{erreurCible:.2f}°"))
+                # print(f"Année: {annee} - Jour: {jd_direct.toString("JJ/MM/AAAA")} - Sens: {sens} - Az Terre: {azimut} - Az Planete {az_planete}")
+            y, m, d = jd_direct.enTuple()
+            return MyJulianDate(d, m, y+1)        
+        
+        if init:
+            self.listeAnnees = []
+            self.jd_centre_direct = None
+            self.jd_centre_oppose = None
+            self.annee = float(self.borneMin)
+
+            return False
+
+        else:
+            self.jd_centre_direct = testerAnnee(self.annee, 
+                                                self.azimutAxeterre, 
+                                                self.jd_centre_direct, 
+                                                self.angleAnalyse, 
+                                                "Identique", 
+                                                self.planetePlanete, 
+                                                4
+                                            )
+            
+            self.jd_centre_oppose = testerAnnee(self.annee,
+                                                (self.azimutAxeterre + 180) % 360, 
+                                                self.jd_centre_oppose, 
+                                                self.angleAnalyse, 
+                                                "Opposé", 
+                                                self.planetePlanete, 
+                                                4
+                                            )
+            self.annee += 1
+
+        return True if self.annee> float(self.borneMin) + float(self.periode) else False
 

@@ -36,28 +36,34 @@ Segment,Global,1,PointVille,shortext,left,,PO,1,data,std,dataset,extremite1
 Segment,Global,1,PointVille,shortext,left,,PO,1,data,std,dataset,milieuSegment
 Segment,Global,1,PointVille,shortext,left,,PO,1,data,std,dataset,extremite2
 Segment,Global,2,checkboxH,angle,right,Choix Angle:,CA,1,input_multiple,std,segment,choixAngleStr
-Segment,Global,3,field,angle,left,Angle Segment,H,1,data,std,segment,choixAngle
-Observation,Global,1,field,lettre,left,Lettre Segment,H,1,data,std,dataset,lettreSegment
-Observation,Global,2,checkboxH,shorttext,left,Ville d'observation,O,2,input_multiple,std,cadran,lieuObservation
+Observation,Global,1,field,lettre,left,Note Seg,H,1,data,std,dataset,lettreSegment
+Observation,Global,1,checkboxH,shorttext,left,Observation,O,2,input_multiple,std,cadran,lieuObservation
 Observation,Global,3,field,angle,left,Latitude Observation,H,1,data,std,cadran,latitude
 Observation,Global,3,field,angle,left,Déclinaison,H,1,data,std,cadran,declinaison
 Observation,Global,4,field,date,left,Date Printemps,,1,data,std,cadran,datePrintemps
 Observation,Global,4,field,date,left,Date Ete,,1,data,std,cadran,dateEte
 Observation,Global,5,field,date,left,Comparaison avec le Segment actuel,,1,data,std,dataset,dateSegment
-Planete,Global,1,checkboxH,angle,right,Segment:,SP,1,input_multiple,std,planete,choixSegment
-Planete,Global,2,field,shortext,left,,PO,1,data,std,planete,extremite1
-Planete,Global,2,field,shortext,left,,PO,1,data,std,planete,milieuSegment
-Planete,Global,2,field,shortext,left,,PO,1,data,std,planete,extremite2
-Planete,Global,3,field,angle,left,Azimut segment,H,1,data,std,planete,azimutLigne1
-Planete,Global,3,field,angle,left,Utilisé,H,1,data,std,planete,azimutCible
-Planete,Global,3,field,shorttext,left,Planète,H,1,data,std,planete,planete
-Planete,Global,4,field,longtext,left,Axe Terre,H,1,data,std,planete,axeTerreStr
-Planete,Global,4,field,angle,left,Azimut,,1,data,std,planete,axeTerre
-Planete,Global,5,checkboxH,shorttext,left,Choix Angle,O,2,input_multiple,std,planete,choixAngle
-Planete,Global,6,field,angle,left,Angle Segment,H,1,data,std,planete,angle
-Planete,Global,6,field,angle,left,Analysé,H,1,data,std,planete,angleAnalyse
-Planete,Global,7,combo,shorttext,left,Année,O,2,input_multiple,std,planete,borneMin
-Planete,Global,7,combo,shorttext,right,Période,O,2,input_multiple,std,planete,periode
-Planete,Global,8,bouton,shorttext,right,Rechercher les années,,1,method,std,planete,calculerAnnees
-Planete,Global,8,field,shorttext,left,En cours,H,1,data,std,planete,annee
-Planete,Global,9,list,table,right,Liste des années candidates,,6,data,std,planete,listeAnnees
+Sélection de la Planete,Global,2,PointVille,shortext,left,,PO,1,data,std,planete,extremite1
+Sélection de la Planete,Global,2,PointVille,shortext,left,,PO,1,data,std,planete,milieuSegment
+Sélection de la Planete,Global,2,PointVille,shortext,left,,PO,1,data,std,planete,extremite2
+Sélection de la Planete,Global,3,field,angle,left,Azimut segment,H,1,data,std,planete,azimutLigne1
+Sélection de la Planete,Global,3,field,angle,left,Utilisé,H,1,data,std,planete,azimutCible
+Sélection de la Planete,Global,3,field,shorttext,left,Planète,H,1,data,std,planete,planete
+Axe de la Terre,Global,1,PointVille,shortext,left,,PO,1,data,std,axeterre,extremite1
+Axe de la Terre,Global,1,PointVille,shortext,left,,PO,1,data,std,axeterre,milieuSegment
+Axe de la Terre,Global,1,PointVille,shortext,left,,PO,1,data,std,axeterre,extremite2
+Axe de la Terre,Global,2,field,longtext,left,Axe Terre,H,1,data,std,axeterre,axeTerreStr
+Axe de la Terre,Global,2,field,angle,left,Azimut,,1,data,std,axeterre,axeTerre
+Axe de la Terre,Global,3,checkboxH,shorttext,left,Sens Carte,SC,2,input_multiple,std,axeterre,sensCarte
+Axe de la Terre,Global,3,field,angle,left,Azimut Terre Analysé,,1,data,std,axeterre,azimut
+Recherche de l'année,Global,1,PointVille,shortext,left,,PO,1,data,std,annee,extremite1
+Recherche de l'année,Global,1,PointVille,shortext,left,,PO,1,data,std,annee,milieuSegment
+Recherche de l'année,Global,1,PointVille,shortext,left,,PO,1,data,std,annee,extremite2
+Recherche de l'année,Global,6,checkboxH,shorttext,left,Choix Angle,O,2,input_multiple,std,annee,choixAngle
+Recherche de l'année,Global,7,field,angle,left,Angle Segment,H,1,data,std,annee,angle
+Recherche de l'année,Global,7,field,angle,left,Analysé,H,1,data,std,annee,angleAnalyse
+Recherche de l'année,Global,8,combo,shorttext,left,Année,O,2,input_multiple,std,annee,borneMin
+Recherche de l'année,Global,8,combo,shorttext,right,Période,O,2,input_multiple,std,annee,periode
+Recherche de l'année,Global,9,bouton,shorttext,right,Rechercher les années,,1,method,std,annee,calculerAnnees
+Recherche de l'année,Global,9,field,shorttext,left,En cours,H,1,data,std,annee,annee
+Recherche de l'année,Global,10,list,table,right,Liste des années candidates,,6,data,std,annee,listeAnnees
