@@ -49,7 +49,6 @@ class AlgorithmeBaseCadran(AlgorithmeManager):
 # Pas de calcul à proprement parlé, juste l'initialsation de la lettre Dominicale et lieu d'observation'
 #
 class Segment(ModuleAlgo):
-    HEURE_LAMPOUY = "10:26"
 
     def getEntreesModules(self):
         return ["dataset.date",
@@ -61,6 +60,7 @@ class Segment(ModuleAlgo):
         self.lettreDom = ""
         self.lettreChoix = ""
         self.lettreDeclDataset = ""
+
 
 # Affiché
         self.choixCalendrier = None
@@ -96,7 +96,8 @@ class CercleHoraire(ModuleAlgo):
     def getValeursHeureSubstitution(self):
         liste = ["=", "+2", "-2", "11:00"]
         if self.dateDataset=="18/05/1152":
-            liste.append(Segment.HEURE_LAMPOUY)
+            azimutLampouyStr = f"{self.sentinelle["L"]["AzimutCalibre"]}°"
+            liste.append(azimutLampouyStr)
         return liste 
          
     def __init__(self):
@@ -131,31 +132,34 @@ class CercleHoraire(ModuleAlgo):
 
         _, self.heureStylet, self.styletAMPM, _, _ = self.sentinelle.surLigneHoraire(px, py)
 
-        # On prend en compte les heures de substitution
-        if self.heureSubstitution == "11:00":
-            self.heureSentinelle = self.sentinelle["J"]["HeureLocale"]
-        elif self.heureSubstitution == Segment.HEURE_LAMPOUY:
-            self.heureSentinelle = Segment.HEURE_LAMPOUY
-        elif self.choixCalendrierSegment == "Standard":
-            self.heureSentinelle = self.heureStylet 
+        # On a deux cas: Si lampouy, on suppose que l'angle est l'angle des aligmenets de Lampouy
+        azimutLampouyStr = f"{self.sentinelle["L"]["AzimutCalibre"]}°"
+        if self.heureSubstitution == azimutLampouyStr:
+            azimutSoleil = self.sentinelle["L"]["AzimutCalibre"]
         else:
-            tabDec = {"=":0,"+2":2,"-2":1}
-            listeNotes = decalageGamme(self.lettreChoixSegment, False) # On décale sans susbtition Fa/Sol
-            choixNote = listeNotes[tabDec[self.heureSubstitution]] 
-            self.heureSentinelle = self.sentinelle[choixNote]["HeureLocale"]
+            # On prend en compte les heures de substitution
+            if self.heureSubstitution == "11:00":
+                self.heureSentinelle = self.sentinelle["J"]["HeureLocale"]
+            elif self.choixCalendrierSegment == "Standard":
+                self.heureSentinelle = self.heureStylet 
+            else:
+                tabDec = {"=":0,"+2":2,"-2":1}
+                listeNotes = decalageGamme(self.lettreChoixSegment, False) # On décale sans susbtition Fa/Sol
+                choixNote = listeNotes[tabDec[self.heureSubstitution]] 
+                self.heureSentinelle = self.sentinelle[choixNote]["HeureLocale"]
 
+            # On prend l'heure du matin ou de l'apres midi      
+            self.heureSentinelle = heureSymetrique(self.heureSentinelle) if self.heureAMPM == "PM" else self.heureSentinelle
 
-        # On prend l'heure du matin ou de l'apres midi      
-        self.heureSentinelle = heureSymetrique(self.heureSentinelle) if self.heureAMPM == "PM" else self.heureSentinelle
-
-        # On se place au lieu d'observation
-        coordObs = villes_dict[self.lieuObservation].getCoordonneesGPS()
-        (lat, lon) = coordObs
-        self.heureUTC = convertirHeureLocaleVersUTC(self.heureSentinelle, lon)
-        heureObservationJD = MyJulianDate.fromString(self.dateDataset, self.heureUTC)        
-        # On calcule l'angle entre la droite de Midi Solaire et la droite Stylet - ST Cyr
-        hauteurSoleil, azimutSoleil = positionSoleil((lat, lon),heureObservationJD)
-        self.angleHoraire = 180-azimutSoleil
+            # On se place au lieu d'observation
+            coordObs = villes_dict[self.lieuObservation].getCoordonneesGPS()
+            (lat, lon) = coordObs
+            self.heureUTC = convertirHeureLocaleVersUTC(self.heureSentinelle, lon)
+            heureObservationJD = MyJulianDate.fromString(self.dateDataset, self.heureUTC)        
+            # On calcule l'angle entre la droite de Midi Solaire et la droite Stylet - ST Cyr
+            _, azimutSoleil = positionSoleil((lat, lon),heureObservationJD)
+        
+        self.angleHoraire = 180-azimutSoleil 
         self.angleHoraire = self.angleHoraire if self.heureAMPM == "AM" else -self.angleHoraire
 
         # On crée la ligne Bourges - Stylet

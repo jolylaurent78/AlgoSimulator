@@ -48,8 +48,6 @@ class AlgorithmeLumiereStyletInitial(AlgorithmeManager):
 # Pas de calcul à proprement parlé, juste l'initialsation de la lettre Dominicale et lieu d'observation'
 #
 class Soleil(ModuleAlgo):
-    HEURE_LAMPOUY = "10:26"
-
     def getEntreesModules(self):
         return ["dataset.date",
                 "dataset.stylet"]
@@ -80,7 +78,12 @@ class Soleil(ModuleAlgo):
         super().__init__()
   
     def getValeursChoixHeure(self):
-        return ["Même heure", "Symétrique", Soleil.HEURE_LAMPOUY, heureSymetrique(Soleil.HEURE_LAMPOUY)]
+        heureLampouy = self.sentinelle["L"]["HeureLocale"]
+        if self.dateDataset == "18/05/1152":
+            heureLampouy = self.sentinelle["L"]["HeureLocale"]
+            return ["Même heure", "Symétrique", heureLampouy, heureSymetrique(heureLampouy)]
+        else:
+            return ["Même heure", "Symétrique"] 
 
     def getValeursLieuObservation(self):
         return LieuxObservation.getListeLieuxObservation(self.lettreDom, self.dateDataset)
@@ -125,10 +128,11 @@ class Soleil(ModuleAlgo):
         if selection:
             self.heureAMPM = ampm
             self.validite = "Valide"
-            if self.choixHeure  == Soleil.HEURE_LAMPOUY:
-                self.heureSentinelle = Soleil.HEURE_LAMPOUY+":00"     
-            elif self.choixHeure  == heureSymetrique(Soleil.HEURE_LAMPOUY):
-                self.heureSentinelle = heureSymetrique(Soleil.HEURE_LAMPOUY)+":00"    
+            heureLampouy = self.sentinelle["L"]["HeureLocale"]
+            if self.choixHeure  == heureLampouy:
+                self.heureSentinelle = heureLampouy+":00"     
+            elif self.choixHeure  == heureSymetrique(heureLampouy):
+                self.heureSentinelle = heureSymetrique(heureLampouy)+":00"    
             else:
                 symetrique = (ampm == "PM" and self.choixHeure == "Même heure") or  (ampm == "AM" and self.choixHeure == "Symétrique")
                 self.heureSentinelle = heureSymetrique(heure) if symetrique else heure

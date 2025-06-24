@@ -62,7 +62,7 @@ class ListePOIs:
         xmin, ymin, xmax, ymax = bbox
         pertinence = (self.interface.varPOIPertinence.get() or "").lower()
         categorie = (self.interface.varPOICategorie.get() or "").lower()
-        sujet = (self.interface.varPOISujet.get() or "").lower()
+        sujet = (self.interface.varPOISujet.get() or "")
 
         def worker(pertinence: str, categorie: str, sujet: str, zoom_val: float):
             conn = sqlite3.connect(self.chemin_bd)
@@ -77,7 +77,7 @@ class ListePOIs:
                 conditions.append("P31Categorie.visible = 1")
 
             # Condition dynamique si le filtrage par sujet est actif
-            if sujet and sujet != "tous":
+            if sujet and sujet != "Tous":
                 conditions.append("source_backlink = ?")
                 params.append(self.interface.varPOISujet.get())
 

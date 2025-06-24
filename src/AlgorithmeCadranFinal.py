@@ -49,7 +49,6 @@ class AlgorithmeCadranFinal(AlgorithmeManager):
 # Pas de calcul à proprement parlé, juste l'initialsation de la lettre Dominicale et lieu d'observation'
 #
 class Segment(ModuleAlgo):
-    HEURE_LAMPOUY = "10:26"
 
     def getEntreesModules(self):
         return ["dataset.date",
@@ -218,11 +217,12 @@ class LumiereFinal(ModuleAlgo):
     def getValeursChoixCalendrier(self):
         return ["Standard", "Déclinaison"]    
     
-    HEURE_LAMPOUY = "10:26"
+
     def getValeursChoixHeure(self):
         list =["=", "+2", "-2", "11:00"] 
         if self.dateDataset == "18/05/1152":
-            list.append(LumiereFinal.HEURE_LAMPOUY)
+            heureLampouy = self.sentinelle["L"]["HeureLocale"]
+            list.append(heureLampouy)
         return list
     
     def getValeursHeureAMPM(self):
@@ -277,10 +277,11 @@ class LumiereFinal(ModuleAlgo):
         (lat, lon) = coordObs
 
         # On prend en compte les heures de substitution
+        heureLampouy = self.sentinelle["L"]["HeureLocale"]
         if self.choixHeure == "11:00":
             self.heureLocale = self.sentinelle["J"]["HeureLocale"]
-        elif self.choixHeure == LumiereFinal.HEURE_LAMPOUY:
-            self.heureLocale = LumiereFinal.HEURE_LAMPOUY
+        elif self.choixHeure == heureLampouy:
+            self.heureLocale = heureLampouy
         else:
             tabDec = {"=":0,"+2":2,"-2":1}
             listeNotes = decalageGamme(self.lettreChoix, False) # On décale sans susbtition Fa/Sol
@@ -362,7 +363,8 @@ class LigneHoraireFinal(ModuleAlgo):
     def getValeursChoixHeure(self):
         list =["=", "+2", "-2", "11:00"] 
         if self.dateDataset == "18/05/1152":
-            list.append(LumiereFinal.HEURE_LAMPOUY)
+            heureLampouy = self.sentinelleLumiere["L"]["HeureLocale"]
+            list.append(heureLampouy)
         return list
         
     def getValeursSensCarte(self):
@@ -417,10 +419,11 @@ class LigneHoraireFinal(ModuleAlgo):
         self.lettreChoix = self.lettreDomSegment if self.choixCalendrier == "Standard" else self.lettreDeclDataset
 
         # On prend en compte les heures de substitution
+        heureLampouy = self.sentinelleLumiere["L"]["HeureLocale"]
         if self.choixHeure == "11:00":
             self.heureLocale = self.sentinelleLumiere["J"]["HeureLocale"]
-        elif self.choixHeure == LumiereFinal.HEURE_LAMPOUY:
-            self.heureLocale = LumiereFinal.HEURE_LAMPOUY
+        elif self.choixHeure == heureLampouy:
+            self.heureLocale = heureLampouy
         else:
             tabDec = {"=":0,"+2":2,"-2":1}
             listeNotes = decalageGamme(self.lettreChoix, False) # On décale sans susbtition Fa/Sol
@@ -439,8 +442,11 @@ class LigneHoraireFinal(ModuleAlgo):
         self.listeLigneHoraire = []
         self.listeCandidatsHeure = []
         self.pointBase = PointGraphique(villes_dict[self.baseStylet])
-        # On crée les lignes horaires
+        # On crée les lignes horaires et on rajoute Lampouy si nous sommes le 18/05/1152
         tableauNotes = ["C", "B", "A", "G", "F", "E", "D", "J"]
+        if self.dateDataset == "18/05/1152":
+            tableauNotes.append("L")   
+
         for note in tableauNotes:
             heureLocaleAM =self.sentinelleLumiere[note]["HeureLocale"]
             # Les lignes horaires sont positionnées sur l'axe de Midi local

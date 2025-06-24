@@ -553,10 +553,11 @@ class Candidats(ModuleAlgo):
     RAYON_CANDIDAT = 20
 
     def getEntreesModules(self):
-        return ["planete.axeFinal","etoile.axeFinal","etoile.origineTrait" ]
+        return ["dataset.date", "planete.axeFinal","etoile.axeFinal","etoile.origineTrait" ]
 
     def __init__(self):
         # Variable input des autres modules
+        self.dateDataset = None
         self.axeFinalPlanete = None
         self.axeFinalEtoile = None
         self.origineTraitEtoile = None
@@ -598,7 +599,8 @@ class Candidats(ModuleAlgo):
             return
 
         # On calcule la distance avec la ligne horaire la pllus proche
-        selection, self.heureSentinelle, self.ampm, self.distKM, self.azimutHeure = self.sentinelle.surLigneHoraire(x, y)
+        inclureLampouy = (self.dateDataset == "18/05/1152")
+        selection, self.heureSentinelle, self.ampm, self.distKM, self.azimutHeure = self.sentinelle.surLigneHoraire(x, y, inclureLampouy)
 
 
         if not selection:
@@ -636,10 +638,11 @@ class Candidats(ModuleAlgo):
 #
 class SentinelleAlgo(ModuleAlgo):
     def getEntreesModules(self):
-        return ["candidats.selection","candidats.heureSentinelle", "candidats.ampm"]
+        return ["dataset.date","candidats.selection","candidats.heureSentinelle", "candidats.ampm"]
 
     def __init__(self):
 # Variable input des autres modules
+        self.dateDataset = None
         self.selectionCandidats = None
         self.heureSentinelleCandidats = None
         self.ampmCandidats = None
@@ -668,6 +671,10 @@ class SentinelleAlgo(ModuleAlgo):
         objets.append(self.sentinelle.getOrigineStylet())
     
         tableauNotes = ["C", "B", "A", "G", "F", "E", "D", "J"]
+        # On rajoute Lampouy pour le 18 Mai 1152
+        if self.dateDataset == "18/05/1152":
+            tableauNotes.append("L")
+
         for note in tableauNotes:
             heureLocale = self.sentinelle[note]["HeureLocale"]
             selectionAM = (heureLocale == self.heure) and (self.sensCadran== "AM")

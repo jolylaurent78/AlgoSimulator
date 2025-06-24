@@ -76,10 +76,12 @@ class Sentinelle(dict):
         return azimutMidi
     
     def calculerHeureSentinelle(self):
-        villeCarnac = villes_dict["Carnac"]
-        coordCarnac = villeCarnac.getCoordonneesGPS()
-        (lat, lon) = coordCarnac
-        dateObsSentinelleJD = MyJulianDate.fromString("15/08/1066")
+        coordCarnac = villes_dict["Carnac"].getCoordonneesGPS()
+        coordLampouy = villes_dict["Carnac"].getCoordonneesGPS()
+        (_, lonCarnac) = coordCarnac
+        (_, lonLampouy) = coordLampouy
+        dateObsSentinelleCarnacJD = MyJulianDate.fromString("15/08/1066")
+        dateObsSentinelleLampouyJD = MyJulianDate.fromString("20/08/1152")
 
         def arrondirHeureHHMM(heure_hms: str) -> str:
             """
@@ -100,7 +102,15 @@ class Sentinelle(dict):
             return f"{hh:02d}:{mm:02d}"
 
         for cle, sentinelle in self.fichierSentinelles.items():
-            heureSentinelleJD = calculHeurePourAzimutSoleil((lat, lon), dateObsSentinelleJD, sentinelle["AzimutCalibre"], precision_deg=0.2)
+            if cle == "Lampouy":
+                dateObsSentinelleJD = dateObsSentinelleLampouyJD
+                coord = coordLampouy
+                lon = lonLampouy
+            else:
+                dateObsSentinelleJD = dateObsSentinelleCarnacJD
+                coord = coordCarnac
+                lon = lonCarnac               
+            heureSentinelleJD = calculHeurePourAzimutSoleil(coord, dateObsSentinelleJD, sentinelle["AzimutCalibre"], precision_deg=0.2)
             heureLocale = convertirHeureLocaleVersUTC(heureSentinelleJD.toString("HH:MM:SS"), lon, inverse=True )
             sentinelle["HeureLocale"] = arrondirHeureHHMM(heureLocale)
 
@@ -109,6 +119,7 @@ class Sentinelle(dict):
         dict_notes = {}
 
         for cle, sentinelle in self.fichierSentinelles.items():
+            #on rajoute toutes les notes 
             note = sentinelle["Note"].strip()
             dict_notes[note] = {
                 "HeureLocale": sentinelle["HeureLocale"],
@@ -172,11 +183,14 @@ class Sentinelle(dict):
     #
     # Fonctions de calcul
     # 
-    def surLigneHoraire(self, px, py):
+    def surLigneHoraire(self, px, py, inclureLampouy = False):
         distMin = None
         candidatHeure = None
 
         for note, valeurs in self.items():
+            # On exclut la ligne horaire de Lampouy si non demandé
+            if note == "L"  and not inclureLampouy:
+                continue
             heureLocale = valeurs["HeureLocale"]
             azimut = valeurs["AzimutCalibre"]
 
