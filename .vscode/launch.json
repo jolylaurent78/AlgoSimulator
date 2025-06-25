@@ -12,10 +12,10 @@
       }
     }
     {
-      "name": "Tester Sentinelle",
+      "name": "Tester Interface SS",
       "type": "python",
       "request": "launch",
-      "program": "${workspaceFolder}/src/Sentinelle.py",
+      "program": "${workspaceFolder}/src/interfaceSS_tk.py",
       "console": "integratedTerminal",
       "env": {
         "PYTHONPATH": "${workspaceFolder}"

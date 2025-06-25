@@ -48,6 +48,9 @@ class CarteConfig:
 
         print(f"[✅] Carte chargée : {self.description} ({w_img}x{h_img})")
 
+    def getImageCarte(self):
+        return self.img
+
     def lambert93_to_pixels(self, x, y):
         v = np.array([x, y])
         result = self.A @ v + self.offset

@@ -4,16 +4,16 @@ import threading
 import sqlite3
 import queue
 import os
-import tkinter as tk
+
 import math
-from tkinter import filedialog
+
 
 # Base de données des villes
-from src.data_loader import villes_dict
+from src.data_loader import villes_dict, villes_POI
 from src.utils import cheminRelatif
 
 # Affichage des objects graphiques
-from src.affichage_objets import ObjetGraphique, PointGraphique, COULEURS, SymboleWiki
+from src.affichage_objets import ObjetGraphique, PointGraphique, SymboleWiki
 
 # Gestion des coordonnées / projection
 from src.carte_config import carteConfig
@@ -148,6 +148,10 @@ class ListePOIs:
                     )
                 )
                 positions.append((x_l93, y_l93))
+            
+            for nom, poi in villes_POI.items():
+                poi.setLayer(self.layer)
+                objets.append(poi)
 
             self.layer.supprimerTousObjets()
             self.layer.inclureObjetDansLayer(objets)

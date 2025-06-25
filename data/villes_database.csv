@@ -1,44 +1,93 @@
-Nom,Latitude,Longitude
-Angers,47 28 25 N,0 33 15 W
-Bourges,47 04 52 N,2 23 54 E
-Cherbourg,49 38 20 N,1 37 30 W
-Dieppe,49 55 21 N,1 04 42 E
-Epernay,49 02 26 N,3 56 58 E
-Forbach,49 11 20 N,6 54 03 E
-Gérardmer,48 04 23 N,6 52 46 E
-Hericourt,47 34 43 N,6 45 31 E
-Issoire,45 33 00 N,3 15 00 E
-Jarnac,45 40 53 N,0 10 33 W
-Roncevaux,43 01 13 N,1 19 26 W
-Rocamadour, 44 48 01 N, 1 37 07 E
-Strasbourg, 48 35 00 N, 7 44 46 E
-Golfe-Juan, 43 34 07 N, 7 04 38 E
-Coetquidan, 47 56 40 N, 2 09 28 W
-Carnac, 47 35 36 N, 03 04 47 W
-Sainte-Catherine-de-Fierbois, 47 09 30 N, 0 39 16 E
-Alise-Sainte-Reine, 47 32 15 N, 4 29 27 E
-Vouneuil-sur-Vienne, 46 43 04 N, 0 32 27 E
-Nouaillé-Maupertuis, 46 30 34 N, 0 24 54 E
-Saint-Valentin, 46 57 09 N, 1 51 56 E
-3RDV, 45 34 48 N, 2 36 00 W
-Loudun, 47 00 38 N, 0 05 04 E
-Lampouy, 48 17 37 N, 2 03 53 W
-Metz, 49 07 13 N, 6 10 40 E
-Vézelay, 47 27 59 N, 3 44 54 E
-Chinon, 47 10 04 N, 0 14 37 E
-Carignan, 49 38 00 N, 5 10 07 E
-Saint-Amour, 46 26 11 N, 5 20 38 E
-Rocamadour, 44 48 01 N, 1 37 07 E
-Aléria, 42 06 53 N, 9 30 48 E
-Île-d'Aix, 46 00 46 N, 1 10 21 W
-Domrémy, 48 26 35 N, 5 40 33 E
-Bouvines, 50 34 47 N, 3 11 14 E
-Reims, 49 15 46 N, 4 02 05 E
-Château-Gaillard, 49 14 17 N, 1 24 10 E
-Gergovie, 45 42 46 N, 3 07 32 E
-Châlus, 45 39 21 N, 0 58 53 E
-Fontevraud, 47 10 53 N, 0 03 05 E
-Le Goulet, 49 08 42 N, 1 25 07 E
-Pont de Noirmoutier,46 53 30 N, 2 08 59 W
-Beaufort-en-Vallée, 47 26 25 N, 0 12 51 W
-X,45 14 18 N, 2 23 19 E
+Nom,Latitude,Longitude,Icone
+Angers,47 28 25 N,0 33 15 W,commune.png
+Dieppe,49 55 21 N,1 04 42 E,commune.png
+Epernay,49 02 26 N,3 56 58 E,commune.png
+Forbach,49 11 20 N,6 54 03 E,commune.png
+Gérardmer,48 04 23 N,6 52 46 E,commune.png
+Hericourt,47 34 43 N,6 45 31 E,commune.png
+Issoire,45 33 00 N,3 15 00 E,commune.png
+Jarnac,45 40 53 N,0 10 33 W,commune.png
+
+Roncevaux,43 01 13 N,1 19 26 W,artefact.png
+Golfe-Juan, 43 34 07 N, 7 04 38 E,artefact.png
+Sainte-Catherine-de-Fierbois, 47 09 30 N, 0 39 16 E,artefact.png
+Alise-Sainte-Reine, 47 32 15 N, 4 29 27 E,artefact.png
+Vouneuil-sur-Vienne, 46 43 04 N, 0 32 27 E,artefact.png
+Nouaillé-Maupertuis, 46 30 34 N, 0 24 54 E,artefact.png
+Saint-Valentin, 46 57 09 N, 1 51 56 E,artefact.png
+3RDV, 45 34 48 N, 2 36 00 W,artefact.png
+Loudun, 47 00 38 N, 0 05 04 E,artefact.png
+
+Bourges,47 04 52 N,2 23 54 E,soleil.png
+Strasbourg, 48 35 00 N, 7 44 46 E,soleil.png
+Orléans,47 51 46 N, 1 53 56 E,soleil.png
+Pevensey,50 49 14 N, 0 20 17 E,soleil.png
+Cherbourg,49 38 20 N,1 37 30 W,soleil.png
+Mont Saint Michel,48 38 10 N, 1 30 41 W,soleil.png
+Pont Tancarville,49 28 23 N, 0 27 51 E,soleil.png
+Limoges,45 51 00 N, 1 15 00 E,soleil.png
+
+Rocamadour, 44 48 01 N, 1 37 07 E,base.png
+Saint-Amour, 46 26 11 N, 5 20 38 E,base.png
+Aléria, 42 06 53 N, 9 30 48 E,base.png
+Île-d'Aix, 46 00 46 N, 1 10 21 W,base.png
+Coetquidan, 47 56 40 N, 2 09 28 W,base.png
+Domrémy, 48 26 35 N, 5 40 33 E,base.png
+Bouvines, 50 34 47 N, 3 11 14 E,base.png
+Reims, 49 15 46 N, 4 02 05 E,base.png
+Metz, 49 07 13 N, 6 10 40 E,base.png
+Château-Gaillard, 49 14 17 N, 1 24 10 E,base.png
+Gergovie, 45 42 46 N, 3 07 32 E,base.png
+Carignan, 49 38 00 N, 5 10 07 E,base.png
+Châlus, 45 39 21 N, 0 58 53 E,base.png
+Fontevraud, 47 10 53 N, 0 03 05 E,base.png
+Le Goulet, 49 08 42 N, 1 25 07 E,base.png
+Pont de Noirmoutier,46 53 30 N, 2 08 59 W,base.png
+
+Jumièges,49 25 55 N, 0 49 09 E,map.png
+Taillebourg,45 50 06 N, 0 38 49 W,map.png
+Burgos,42 20 27 N, 3 41 59 W,map.png
+Lac-de-Trémelin,48 6 3 N, 2 1 45 W,map.png
+
+Sainte-Mère-Église,49 24 32 N, 1 19 04 W,map.png
+Massif des Maures,43 5 45 N, 6 20 35 E,map.png
+Carnac, 47 35 36 N, 03 04 47 W,map.png
+Mayence,50 00 00 N, 8 16 16 E,map.png
+
+Beaurevoir,49 59 50 N, 3 18 35 E,map.png
+3RDV,45 34 48 N, 2 36 00 W,map.png
+Vézelay, 47 27 59 N, 3 44 54 E,map.png
+Compiègne,49 24 54 N, 2 49 23 E,map.png
+
+Waterloo,50 40 41 N, 4 24 44 E,map.png
+Sourdon, 49 42 39 N, 2 23 54 E,map.png
+Malevoisine,48 30 54 N, 2 26 40 E,map.png
+Thury-sous-Clermont,49 21 27 N, 2 19 38 E,map.png
+
+Troyes,48 17 51 N, 4 04 27 E,map.png
+Rumigny,49 48 33 N, 4 16 02 E,map.png
+Montereau,48 23 07 N, 2 57 03 E,map.png
+Chinon, 47 10 04 N, 0 14 37 E,map.png
+
+Laffrey,45 01 37 N, 5 46 30 E,map.png
+Parigné-le-Pôlin,47 51 02 N, 0 06 29 E,map.png
+Bâle,47 34 01 N, 7 34 59 E,map.png
+Boulogne-sur-Mer,50 43 35 N, 1 36 53 E,map.png
+
+Lampouy, 48 17 37 N, 2 03 53 W,map.png
+Beaufort-en-Vallée, 47 26 25 N, 0 12 51 W,map.png
+Tours,47 23 37 N, 0 41 21 E,map.png
+Poitiers,46 34 55 N, 0 20 10 E,map.png
+
+Beaugency,47 46 45 N, 1 37 57 E,map.png
+Mirebeau,46 47 09 N, 0 10 57 E,map.png
+Guérande,47 19 41 N, 2 25 46 W,map.png
+Rouen,49 26 36 N, 1 06 00 E,map.png
+
+X,45 14 18 N, 2 23 19 E,map.png
+
+
+
+
+
+

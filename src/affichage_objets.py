@@ -103,6 +103,10 @@ class ObjetGraphique:
         """
         raise NotImplementedError("La méthode afficher() doit être surchargée.")
 
+    def cadreAffichage(self):
+        x, y = self.pointReference
+        return (x,y), (x,y)
+    
     def recalculerCoordonneesPixelAbs(self):
         """
         Recalcule les coordonnées pixel absolues à partir des coordonnées Lambert93.
@@ -529,7 +533,10 @@ class CercleGraphique(ObjetGraphique):
         return (int(px_centre), int(py_centre)), int(rayon_px)
 
 
-
+    def cadreAffichage(self):
+        x, y = self.pointReference
+        rayon_px = self.cercle.rayon
+        return (x-rayon_px,y-rayon_px), (x+rayon_px,y+rayon_px)
 
     def afficher(self, canvas, transformerAffichagePixel):
         if not self.estVisible():
@@ -1084,7 +1091,7 @@ class Ligne:
 
 
 class LigneGraphique(ObjetGraphique):
-    def __init__(self, point_px: tuple[float, float], vecteur_px: tuple[float, float],
+    def __init__(self, point_px: tuple[float, float], vecteur_px: tuple[float, float], distance = None,
         nom=None,
         couleur=None, epaisseur=None,  style=None, layer=None,
         tags: dict[str, Any] = None, tooltips: list[str] = None):
@@ -1096,7 +1103,11 @@ class LigneGraphique(ObjetGraphique):
 
         self.pointReference = point_px
         self.vecteur = vecteur_px
-        self.cropToImage()
+        self.distance = distance
+
+        # si c'est une ligne, on crop aux 
+        if not distance:
+            self.cropToImage()
 
     def cropToImage(self):
         if carteConfig.image_size is None:
@@ -1140,6 +1151,8 @@ class LigneGraphique(ObjetGraphique):
         else:
             self.lignePixelImage = None
 
+           
+    
     def copie(self):
         return LigneGraphique(
             point_px=self.pointReference,
@@ -1157,15 +1170,36 @@ class LigneGraphique(ObjetGraphique):
         azimut = self.getAzimutCarte()
         return x_l93, y_l93, azimut
 
+    def cadreAffichage(self):
+        if self.distance is None:
+            x1, y1 = self.lignePixelImage.pt1
+            x2, y2 = self.lignePixelImage.pt2
+        else:
+            x1, y1 = self.pointReference
+            vx, vy = self.vecteur
+            x2 = int(x1 + vx * self.distance)
+            y2 = int(y1 + vy * self.distance)           
+        return (x1,y1), (x2,y2)
+    
     def afficher(self, canvas, transformerAffichage):
         if not self.estVisible():
             return
 
-        if self.lignePixelImage is None:
-            return
+        if self.distance is not None:
+            # On affiche un segment
+            # Calcul de la direction unitaire
+            pt1 = transformerAffichage(*self.pointReference)
+            x, y = self.pointReference
+            vx, vy = self.vecteur
+            ptAbsolu = (int(x + vx * self.distance), int(y + vy * self.distance))
+            pt2 = transformerAffichage(*ptAbsolu)
 
-        pt1 = transformerAffichage(*self.lignePixelImage.pt1)
-        pt2 = transformerAffichage(*self.lignePixelImage.pt2)
+        else:
+            #On affiche une ligne
+            if self.lignePixelImage is None:
+                return
+            pt1 = transformerAffichage(*self.lignePixelImage.pt1)
+            pt2 = transformerAffichage(*self.lignePixelImage.pt2)
 
         if pt1 is None or pt2 is None or None in pt1 or None in pt2:
             return
@@ -1477,7 +1511,7 @@ class LigneAzimut(LigneGraphique):
         vx = math.sin(angle_rad)
         vy = -math.cos(angle_rad)
 
-        super().__init__(point_px=(px, py), vecteur_px=(vx, vy), nom=nom, couleur=couleur, epaisseur=epaisseur, layer=layer, tags=tags, tooltips=tooltips)
+        super().__init__(point_px=(px, py), vecteur_px=(vx, vy), distance = None, nom=nom, couleur=couleur, epaisseur=epaisseur, layer=layer, tags=tags, tooltips=tooltips)
 
     def recalculerCoordonneesPixelAbs(self):
         px, py = carteConfig.lambert93_to_pixels(self.x_l93, self.y_l93)
@@ -1494,7 +1528,7 @@ class LigneVerticale(LigneGraphique):
     def __init__(self, ville, nom=None, couleur=None, epaisseur=None, layer=None, tags: dict[str, Any] = None, tooltips: list[str] = None):
         self.x_l93, self.y_l93 = ville.coordonneesLambert()
         px, _ = carteConfig.lambert93_to_pixels(self.x_l93, self.y_l93)
-        super().__init__(point_px=(px, 0), vecteur_px=(0, 1), nom=nom, couleur=couleur, epaisseur=epaisseur, layer=layer, tags=tags, tooltips=tooltips)
+        super().__init__(point_px=(px, 0), vecteur_px=(0, 1), distance = None, nom=nom, couleur=couleur, epaisseur=epaisseur, layer=layer, tags=tags, tooltips=tooltips)
 
     def recalculerCoordonneesPixelAbs(self):
         px, _ = carteConfig.lambert93_to_pixels(self.x_l93, self.y_l93)
@@ -1507,10 +1541,47 @@ class LigneHorizontale(LigneGraphique):
         self.x_l93, self.y_l93 = ville.coordonneesLambert()
         _, py = carteConfig.lambert93_to_pixels(self.x_l93, self.y_l93)
 
-        super().__init__(point_px=(0, py), vecteur_px=(1, 0), nom=nom, couleur=couleur, epaisseur=epaisseur, layer=layer, tags=tags, tooltips=tooltips)
+        super().__init__(point_px=(0, py), vecteur_px=(1, 0), distance = None, nom=nom, couleur=couleur, epaisseur=epaisseur, layer=layer, tags=tags, tooltips=tooltips)
 
     def recalculerCoordonneesPixelAbs(self):
         _, py = carteConfig.lambert93_to_pixels(self.x_l93, self.y_l93)
         self.pointReference = 0, py
         self.vecteur = 1, 0
+        self.cropToImage()
+
+class SegmentEntreVilles(LigneGraphique):
+    def __init__(self, ville1, ville2, nom=None, couleur=None, epaisseur=None, layer=None, tags: dict[str, Any] = None, tooltips: list[str] = None):
+        self.x1_l93, self.y1_l93 = ville1.coordonneesLambert()
+        self.x2_l93, self.y2_l93 = ville2.coordonneesLambert()
+        px1, py1 = carteConfig.lambert93_to_pixels(self.x1_l93, self.y1_l93)
+        px2, py2 = carteConfig.lambert93_to_pixels(self.x2_l93, self.y2_l93)
+
+        vx = px2 - px1
+        vy = py2 - py1
+        norme = (vx ** 2 + vy ** 2) ** 0.5
+        if norme == 0:
+            raise ValueError("Villes identiques : vecteur nul")
+
+        vx /= norme
+        vy /= norme
+
+        # Si c'est un segment, on calcule la distance entre les 2 villes en pixel absolu
+        distance = ((px2-px1)**2 + (py2-py1)**2) ** 0.5
+
+        super().__init__(point_px=(px1, py1), vecteur_px=(vx, vy), distance = distance, nom=nom, couleur=couleur, epaisseur=epaisseur, layer=layer, tags=tags, tooltips=tooltips)
+
+    def recalculerCoordonneesPixelAbs(self):
+        px1, py1 = carteConfig.lambert93_to_pixels(self.x1_l93, self.y1_l93)
+        px2, py2 = carteConfig.lambert93_to_pixels(self.x2_l93, self.y2_l93)
+        vx = px2 - px1
+        vy = py2 - py1
+        norme = (vx ** 2 + vy ** 2) ** 0.5
+        if norme == 0:
+            raise ValueError("Villes identiques : vecteur nul")
+
+        vx /= norme
+        vy /= norme
+        self.pointReference = px1, py1
+        self.vecteur = vx, vy
+        self.distance = ((px2-px1)**2 + (py2-py1)**2) ** 0.5
         self.cropToImage()
