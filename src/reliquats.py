@@ -4,7 +4,19 @@ class Reliquats:
     def __init__(self, cheminFichier):
         self.cheminFichier = cheminFichier
         self.df = pd.read_csv(cheminFichier, skipinitialspace=True)
-    
+
+    # On rajoute les méthodes pour que Reliquats se comporte comme une liste classique
+    def __len__(self):
+        return len(self.df)
+
+    def __getitem__(self, index):
+        row = self.df.iloc[index]
+        return (row["Source"], row["Destination"])
+
+    def __iter__(self):
+        for _, row in self.df.iterrows():
+            yield (row["Source"], row["Destination"])
+
     def afficherApercu(self, lignes=5):
         print(self.df.head(lignes))
 

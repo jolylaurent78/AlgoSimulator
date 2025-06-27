@@ -1,14 +1,18 @@
 import tkinter as tk
-from tkinter import ttk, Frame, Label, Canvas
+from tkinter import ttk, Label
 from PIL import Image, ImageTk
+from tksheet import Sheet
+
 import numpy as np
 import cv2
 
 # Base de données des villes
 from src.data_loader import villes_dict
 
-# Gestion des reliquats
+# Gestion des reliquats, décodage de la supersolution et dictionnaire
 from src.reliquats import Reliquats
+from src.DecodageSS import UniteDecodageSS
+from src.DictionnaireEnigmes import DictionnaireEnigmes, SequenceCategorie
 
 # Gestion de la carte
 from src.carte_config import carteConfig
@@ -49,13 +53,29 @@ class InterfaceSS(tk.Tk):
 
 
         # Initialisation des composants IHM
-        self.ihmReliquats = ListeReliquatsIHM(self.frameGauche)
-        self.ihmAlgo = AlgorithmeSSIHM(self.frameCentreHaut)
+        self.ihmReliquats = ListeReliquatsIHM(self.frameGauche, self)
         self.ihmDico = DicoIHM(self.frameCentreBas)
+        self.ihmAlgo = AlgorithmeSSIHM(self.frameCentreHaut, self.ihmDico)
         self.ihmSolutions = SolutionIHM(self.frameDroite)
 
+        # Le raffraichisseent de la Tree View met à jour l'IHM complet en appelant mettreAJourIHM
+        self.ihmReliquats.rafraichirTreeview()
+
+
+    def mettreAJourIHM(self, ligneReliquat:int):
+        # On creé la liste des unités de décodage pour chque segment
+        self.listeUnitesDecodage = []
+        for (source, destination) in self.ihmReliquats.getListeReliquats():
+            self.listeUnitesDecodage.append(UniteDecodageSS(source, destination))       
+        
+        self.ihmReliquats.mettreAJourIHM(ligneReliquat)
+        self.ihmAlgo.rafraichirImage(self.listeUnitesDecodage[ligneReliquat-1])       
+        self.ihmAlgo.rafraichirParametres(self.listeUnitesDecodage[ligneReliquat-1])  
+        
 class ListeReliquatsIHM:
-    def __init__(self, parent):
+    def __init__(self, parent, interface:InterfaceSS):
+        # On garde le parent qui reste le dispatcher des mises à jour
+        self.interface = interface
         # On charge la liste des reliquats à analyser
         self.listeReliquats = Reliquats("data/reliquats.csv")
 
@@ -106,10 +126,10 @@ class ListeReliquatsIHM:
         self.tree.column("Source", width=120, anchor="w")
         self.tree.column("Destination", width=120, anchor="w")
         self.tree.pack(fill=tk.BOTH, expand=True)
-        self.tree.bind("<<TreeviewSelect>>", lambda e: self.mettreAJourIHM())
+        self.tree.bind("<<TreeviewSelect>>", lambda e: self.selectionLigne())
 
-        # Ajout des données dans la TreeView
-        self.rafraichirTreeview()
+    def getListeReliquats(self):
+        return self.listeReliquats
 
     # On charge les données dnas la treeView lors de l'initalisation ou swap de données
     def rafraichirTreeview(self, ligneSelectionnee = None):
@@ -140,17 +160,23 @@ class ListeReliquatsIHM:
             self.tree.see(itemASel)
         elif premierItem:
             self.tree.selection_set(premierItem)
-            self.tree.see(premierItem)        
+            self.tree.see(premierItem)     
+            ligneSelectionnee = 1   
         
         # On  met à jour le reste de l'IHM
-        self.mettreAJourIHM()
+        self.interface.mettreAJourIHM(ligneSelectionnee)
 
-    def mettreAJourIHM(self):
-        itemSelectionne = self.tree.selection()
-        etat = tk.NORMAL if itemSelectionne else tk.DISABLED
+
+    def mettreAJourIHM(self, ligneReliquat = None):
+        etat = tk.NORMAL if ligneReliquat else tk.DISABLED
         self.boutonUp.config(state=etat)
         self.boutonDown.config(state=etat)
         self.boutonSwap.config(state=etat)
+
+    def selectionLigne(self):
+        itemSelectionne = self.tree.selection()    
+        ligne = int(self.tree.item(itemSelectionne)["values"][0])    
+        self.interface.mettreAJourIHM(ligne)
 
     def actionReload(self):
         self.listeReliquats = Reliquats("data/reliquats.csv")
@@ -191,42 +217,24 @@ class ListeReliquatsIHM:
 
 
 class AlgorithmeSSIHM:
-    def __init__(self, master):
-        self.frame = ttk.LabelFrame(master, text="Analyse du Segment", padding=5)
-        self.frame.pack(expand=True, fill=tk.BOTH)
-
+    def __init__(self, master, dico):
+        self.dicoIHM = dico
         # Diviser en deux frames : gauche pour la carte, droite pour les paramètres
-        self.frame_width = 600
-        self.frame_height = 600
-        self.zoom_factor = 1/16
-        self.pan_x = 0
-        self.pan_y =0
+        self.frame_width = 300
+        self.frame_height = 300
 
-        self.frameCarte = tk.Frame(self.frame, width=self.frame_width, height=self.frame_height, bg="gray")
-        self.frameCarte.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
+        self.frameCarte = tk.Frame(master, width=self.frame_width, height=self.frame_height)
+        self.frameCarte.pack(side=tk.LEFT,anchor="nw")
         self.frameCarte.pack_propagate(False)
-                                       
-        self.frameParams = tk.Frame(self.frame, bg="lightgray", width=300)
-        self.frameParams.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # La liste des objets graphiques à afficher
-        self.listeObjetgraphiques = []
-        self.creerSegmentGraphique("Bourges", "Roncevaux")
+        self.frameParams = ttk.LabelFrame(master, text="Analyse du Segment", style="TitreFrame.TLabelframe", padding=5)                                  
+        self.frameParams.pack(side=tk.LEFT, anchor="nw", padx=(10, 10), pady=(5, 5), fill=tk.BOTH, expand=True)  # Justifie en haut
+        self.frameParams.pack_propagate(False)  # Ne pas laisser le contenu changer la taille
 
         # On crée l'emplacement pour l'image
-        self.labelImage = Label(self.frameCarte)
-        self.labelImage.pack(expand=True, fill=tk.BOTH)
+        self.carteAffichee = Label(self.frameCarte)
+        self.carteAffichee.pack(side=tk.LEFT, anchor="nw")
 
-        # Chargement de la carte depuis CarteConfig
-        self.rafraichirImage()
-
-    def creerSegmentGraphique(self, source:str, destination:str):
-        pointSource = villes_dict[source]
-        pointDestination = villes_dict[destination]
-        ligne1 = SegmentEntreVilles(pointSource, pointDestination)
-        cercle = CercleGraphique(pointSource, 200)
-        self.listeObjetgraphiques.append(ligne1)
-        self.listeObjetgraphiques.append(cercle)
 
     def transformer_affichage_pixel(self, px, py):
         """
@@ -266,8 +274,8 @@ class AlgorithmeSSIHM:
 
         return final_x, final_y
     
-    def calculerBordEcran(self):
-        # On prend la liste des objets
+    def ajusterZoomEtPanSurCible(self):
+        # Étape 1 : récupérer le rectangle cible
         x1Min = None
         x2Max = None
         y1Min = None
@@ -275,14 +283,56 @@ class AlgorithmeSSIHM:
 
         for obj in self.listeObjetgraphiques:
             (x1, y1) , (x2, y2) =obj.cadreAffichage()
-            x1Min = x1 if x1Min is None else min(x1, x1Min)
-            y1Min = y1 if y1Min is None else min(y1, y1Min)
-            x2Max = x2 if x2Max is None else max(x2, x2Max)
-            y2Max = y2 if y2Max is None else max(y2, y2Max)
-        return (x1Min, y1Min), (x2Max, y2Max)
+            x1Min = min(x1, x2) if x1Min is None else min(x1, x2, x1Min)
+            y1Min = min(y1,y2) if y1Min is None else min(y1, y2, y1Min)
+            x2Max = max(x1, x2) if x2Max is None else max(x1, x2, x2Max)
+            y2Max = max(y1, y2) if y2Max is None else max(y1, y2, y2Max)
+
+        cible_w = x2Max - x1Min
+        cible_h = y2Max - y1Min
+
+        # Marge de 5% dans chaque direction
+        marge_x = 0.05 * cible_w
+        marge_y = 0.05 * cible_h
+        cible_w += 2 * marge_x
+        cible_h += 2 * marge_y
+
+        x1Min -= marge_x
+        y1Min -= marge_y
+        x2Max += marge_x
+        y2Max += marge_y
+
+        # Zoom minimal pour faire entrer tout le rectangle dans la frame
+        zoom_w = self.frame_width / cible_w
+        zoom_h = self.frame_height / cible_h
+        zoom = min(zoom_w, zoom_h)
+
+        # Crop à faire (dans l’image) pour centrer la cible
+        crop_w = self.frame_width / zoom
+        crop_h = self.frame_height / zoom
+
+        centre_x = (x1Min + x2Max) / 2
+        centre_y = (y1Min + y2Max) / 2
+
+        pan_x = centre_x - crop_w / 2
+        pan_y = centre_y - crop_h / 2
+
+        w_img, h_img = carteConfig.image_size
+        pan_x = min(max(pan_x, 0), max(0, w_img - crop_w))
+        pan_y = min(max(pan_y, 0), max(0, h_img - crop_h))
+
+        self.zoom_factor = zoom
+        self.pan_x = int(pan_x)
+        self.pan_y = int(pan_y)  
     
-    
-    def rafraichirImage(self):
+    def rafraichirImage(self, uniteDecodage:UniteDecodageSS):
+
+        # On récupère la liste des objets graphique depuis l'unité de décodage
+        self.listeObjetgraphiques = uniteDecodage.construireRepresentationCarte()
+
+        # On calcule ensuite le pan et zoom optimal
+        self.ajusterZoomEtPanSurCible()
+
         w_img, h_img = carteConfig.image_size
         crop_w = int(self.frame_width / self.zoom_factor)
         crop_h = int(self.frame_height / self.zoom_factor)
@@ -311,20 +361,188 @@ class AlgorithmeSSIHM:
             obj.afficher(canvas, self.transformer_affichage_pixel)
 
         # Mise à jour dans Tkinter
-        self.afficherCarte(canvas)
-
-
-    def afficherCarte(self,img):
-        imageRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        imageRGB = cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB)
         imageTk = ImageTk.PhotoImage(Image.fromarray(imageRGB))
-        self.labelImage.configure(image=imageTk)
-        self.labelImage.image = imageTk
+        self.carteAffichee.configure(image=imageTk)
+        self.carteAffichee.image = imageTk
 
+    def rafraichirParametres(self, uniteDecodage:UniteDecodageSS):
+        # On nettoie les widgets précédents
+        for widget in self.frameParams.winfo_children():
+            widget.destroy()
+
+        listeParametresSegment = uniteDecodage.getAttributsSegment()
+        
+        # On affiche chaque paire (label, valeur) verticalement
+        for i, (label, valeur) in enumerate(listeParametresSegment):
+            lbl = ttk.Label(self.frameParams, text=f"{label} :", font=("Arial", 10, "bold"))
+            val = ttk.Label(self.frameParams, text=valeur, font=("Arial", 10))
+
+            lbl.grid(row=i, column=0, sticky="w", padx=10, pady=4)
+            val.grid(row=i, column=1, sticky="w", padx=10, pady=4)
+
+        # Ajout de l'index Enigme / Mot
+        enigme, indexMot = uniteDecodage.calculIndex()
+        labelIndexEnigme = ttk.Label(self.frameParams, text="Index Enigme:", font=("Arial", 10, "bold"))
+        valeurIndexEnigme = ttk.Label(self.frameParams, text=f"{enigme}", font=("Arial", 10))
+        labelIndexEnigme.grid(row=i+1, column=0, sticky="w", padx=10, pady=6)
+        valeurIndexEnigme.grid(row=i+1, column=1, sticky="w", padx=10, pady=6)        
+        labelIndexMot = ttk.Label(self.frameParams, text="Index Mot :", font=("Arial", 10, "bold"))
+        valeurIndexMot = ttk.Label(self.frameParams, text=f"{indexMot}", font=("Arial", 10))
+        labelIndexMot.grid(row=i+1, column=3, sticky="w", padx=10, pady=6)
+        valeurIndexMot.grid(row=i+1, column=4, sticky="w", padx=10, pady=6)  
+
+        # On met à jour le dictionnaire
+        self.dicoIHM.selectionnerCellule(enigme, indexMot)
 
 class DicoIHM:
-    def __init__(self, parent):
-        self.frame = ttk.LabelFrame(parent, text="Dictionnaire visuel", style="TitreFrame.TLabelframe")
-        self.frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+    def __init__(self, master):
+        # On crée le dictionnaire
+        self.dictionnaireEnigmes = DictionnaireEnigmes("data/livre.txt")
+
+        # Cadre horizontal pour les options de filtrage
+        self.parent = master
+        self.frameFiltrage = tk.Frame(master)
+        self.frameFiltrage.pack(fill="x", pady=5)
+
+        # Variable commune pour le mode de filtrage
+        self.modeFiltrage = tk.StringVar(value="tous")
+
+        # Boutons radio
+        rbTous = tk.Radiobutton(self.frameFiltrage, text="Tous afficher", variable=self.modeFiltrage, value="tous", command=self.mettreAJourFiltrage)
+        rbTous.pack(side="left", padx=5)
+
+        rbFiltrer = tk.Radiobutton(self.frameFiltrage, text="Filtrer par catégories", variable=self.modeFiltrage, value="categorie", command=self.mettreAJourFiltrage)
+        rbFiltrer.pack(side="left", padx=5)
+        
+        # Bouton "..." pour ouvrir la sélection des catégories
+        btnCategories = tk.Button(self.frameFiltrage, text="...", command=self.ouvrirBoiteFiltrageCategories)
+        btnCategories.pack(side="left", padx=5)
+
+        # --- Création de la frame pour le tableau Excel
+        self.frameTableau = ttk.Frame(master)
+        self.frameTableau.pack(side="top", fill="x", pady=(5, 0))
+
+
+        nb_mots  = self.dictionnaireEnigmes.nbMotMax()
+        headers  = list(range(-nb_mots, nb_mots))
+
+        data = []
+        for i in range(len(self.dictionnaireEnigmes)):
+            ligne = [self.dictionnaireEnigmes[i][j] for j in range(-nb_mots, nb_mots)]
+            data.append(ligne)
+
+        # Supprime les widgets précédents de la frame
+        for widget in self.frameTableau.winfo_children():
+            widget.destroy()
+
+        # Crée la feuille
+        self.sheet = Sheet(self.frameTableau, 
+                        data=data,
+                        headers=headers,
+                        show_vertical_scrollbar=False,
+                        row_index=self.dictionnaireEnigmes.getTitres(),  # Affiche les titres comme index
+                        show_row_index=True,
+                        height=305,
+                        empty_vertical=0)
+
+        self.sheet.enable_bindings((
+            "single_select",
+            "row_select",
+            "column_select",
+            "arrowkeys",
+            "right_click_popup_menu",
+            "rc_select",
+            "copy",
+            "paste",
+            "delete",
+            "undo",
+            "edit_cell"
+        ))
+
+        # self.sheet.font(newfont=("Helvetica", 9, "normal"))
+        self.sheet.disable_bindings("vertical_scroll")
+        self.sheet.align_columns(columns="all", align="center")
+        self.sheet.set_options(cell_align="center")
+        self.sheet.pack(expand=True, fill="both")        
+
+        # Frame pour les suggestions en dessous du tableau
+        self.frameSuggestion = tk.Frame(master, borderwidth=1, relief="groove")
+        self.frameSuggestion.pack(side="top", fill="both", expand=True)
+
+        # Exemple de label de test
+        labelTest = tk.Label(self.frameSuggestion, text="Suggestions à venir ici…", font=("Arial", 10), fg="blue")
+        labelTest.pack(side="left", padx=10, pady=5)
+
+    def selectionnerCellule(self, enigme:int, mot:int):
+        
+        indexLigne = enigme
+        indexMot = mot+98
+
+        self.sheet.set_sheet_data(self.sheet.get_sheet_data(), reset_highlights=True, redraw=True)
+        self.sheet.highlight_cells(cells=[(indexLigne, indexMot)], bg="lightblue", fg="black", redraw=True)
+        self.sheet.see(row=indexLigne, column=indexMot)
+
+    def mettreAJourFiltrage(self):
+        mode = self.modeFiltrage.get()
+
+        if mode == "tous":
+            self.dictionnaireEnigmes.setFiltrageGlobal(False)
+        elif mode == "categorie":
+            self.dictionnaireEnigmes.setFiltrageGlobal(True)
+
+        self.sheet.set_sheet_data([])
+        self.sheet.headers([])  # Supprime tous les anciens entêtes
+
+        nb_mots = self.dictionnaireEnigmes.nbMotMax()
+        data = []
+
+        nbEnigmes = len(self.dictionnaireEnigmes)
+        for i in range(nbEnigmes):
+            ligne = [self.dictionnaireEnigmes[i][j] for j in range(-nb_mots, nb_mots)]
+            data.append(ligne)
+
+        # data = [["1", "2", "3"],["4", "5", "6"],["7", "8", "9"]]
+        self.sheet.insert_rows(data)
+        self.sheet.headers([str(i) for i in range(-nb_mots, nb_mots)])
+        self.sheet.deselect("all")
+        self.sheet.set_sheet_data(data, reset_col_positions=True, reset_row_positions=True)
+        
+
+
+    def ouvrirBoiteFiltrageCategories(self):
+        # Active automatiquement le filtre par catégorie
+        self.modeFiltrage.set("categorie")
+        self.dictionnaireEnigmes.setFiltrageGlobal(True)
+
+        top = tk.Toplevel(self.parent)
+        top.title("Choisir les catégories")
+        top.grab_set()
+
+        # Dictionnaire temporaire pour stocker les sélections
+        selections = {}
+        
+        for categorie in self.dictionnaireEnigmes.getCategories():
+            var = tk.BooleanVar(value=categorie in self.dictionnaireEnigmes.getCategoriesSelectionnees())
+            cb = tk.Checkbutton(top, text=categorie.capitalize(), variable=var)
+            cb.pack(anchor="w", padx=10, pady=2)
+            selections[categorie] = var
+
+        def valider():
+            for cat, var in selections.items():
+                self.dictionnaireEnigmes.activerCategorie(cat, var.get())
+            top.destroy()
+            self.mettreAJourFiltrage()
+
+        def annuler():
+            top.destroy()
+
+        # Boutons de validation
+        frameButtons = tk.Frame(top)
+        frameButtons.pack(pady=10)
+        tk.Button(frameButtons, text="Valider", command=valider).pack(side="left", padx=10)
+        tk.Button(frameButtons, text="Annuler", command=annuler).pack(side="right", padx=10)
+        
 
 class SolutionIHM:
     def __init__(self, parent):

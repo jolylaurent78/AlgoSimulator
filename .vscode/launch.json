@@ -22,6 +22,16 @@
       }
     }
     {
+      "name": "Tester Dictionniare",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/DictionnaireEnigmes.py",
+      "console": "integratedTerminal",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      }
+    }   
+    {
       "name": "Tester calcul Astronomique",
       "type": "python",
       "request": "launch",

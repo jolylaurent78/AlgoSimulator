@@ -1585,3 +1585,7 @@ class SegmentEntreVilles(LigneGraphique):
         self.vecteur = vx, vy
         self.distance = ((px2-px1)**2 + (py2-py1)**2) ** 0.5
         self.cropToImage()
+
+    def distanceSegment(self):
+        dist = ((self.x1_l93 - self.x2_l93)**2 + (self.y1_l93-self.y2_l93)**2)**0.5
+        return dist/1000    # en km
