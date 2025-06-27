@@ -397,8 +397,9 @@ class AlgorithmeSSIHM:
 
 class DicoIHM:
     def __init__(self, master):
-        # On crée le dictionnaire
+        # On crée le dictionnaire et une séquence
         self.dictionnaireEnigmes = DictionnaireEnigmes("data/livre.txt")
+        self.sequenceCategorie = SequenceCategorie(self.dictionnaireEnigmes)
 
         # Cadre horizontal pour les options de filtrage
         self.parent = master
@@ -466,13 +467,73 @@ class DicoIHM:
         self.sheet.set_options(cell_align="center")
         self.sheet.pack(expand=True, fill="both")        
 
-        # Frame pour les suggestions en dessous du tableau
-        self.frameSuggestion = tk.Frame(master, borderwidth=1, relief="groove")
-        self.frameSuggestion.pack(side="top", fill="both", expand=True)
+        # On rajoute une barre de boutons pour controler la séquence
+        self.frameBarreCategorie = tk.Frame(master)
+        self.frameBarreCategorie.pack(side="top", fill="x")
 
-        # Exemple de label de test
-        labelTest = tk.Label(self.frameSuggestion, text="Suggestions à venir ici…", font=("Arial", 10), fg="blue")
-        labelTest.pack(side="left", padx=10, pady=5)
+        # Exemple de contenu : un label ou un bouton global
+        self.modeIndex = tk.StringVar(value="absolu")  # valeur par défaut
+        def onChangerModeIndex():
+            modexIndex = True if self.modeIndex.get()=="relatif" else False
+            self.sequenceCategorie.setModeIndexRelatif(modexIndex)
+            self.mettreAJourChemins()
+
+        lbl = ttk.Label(self.frameBarreCategorie, text="Mode index :")
+        lbl.pack(side="left", padx=(10, 4))
+
+        rbAbsolu = ttk.Radiobutton(self.frameBarreCategorie, text="Absolu", variable=self.modeIndex, value="absolu", command=onChangerModeIndex)
+        rbRelatif = ttk.Radiobutton(self.frameBarreCategorie, text="Relatif", variable=self.modeIndex, value="relatif", command=onChangerModeIndex)
+
+        rbAbsolu.pack(side="left", padx=2)
+        rbRelatif.pack(side="left", padx=2)
+
+        self.labelLongueur = ttk.Label(self.frameBarreCategorie, text="Longueur: 0")
+        self.labelLongueur.pack(side="left", padx=(20, 4))
+        self.labelComplexite = ttk.Label(self.frameBarreCategorie, text="Complexité: 0")
+        self.labelComplexite.pack(side="left", padx=(10, 4))
+
+        # Combobox pour afficher les chemins
+        self.comboChemins = ttk.Combobox(self.frameBarreCategorie, width=80, state="readonly")
+        self.comboChemins.pack(side="left", padx=(20, 5))
+
+        # Conteneur principal pour la séquence
+        conteneurSequence = ttk.Frame(master)
+        conteneurSequence.pack(side="top", fill="x")
+
+        # Canvas pour scroll horizontal
+        canvasSequence = tk.Canvas(conteneurSequence, highlightthickness=0)
+        canvasSequence.pack(side="top", fill="x", expand=True)
+
+        # Scrollbar horizontale
+        scrollbarX = ttk.Scrollbar(conteneurSequence, orient="horizontal", command=canvasSequence.xview)
+        scrollbarX.pack(side="bottom", fill="x")
+
+        canvasSequence.configure(xscrollcommand=scrollbarX.set)
+
+        # Frame réelle qui contient les colonnes
+        self.frameSequence = ttk.Frame(canvasSequence)
+        self.frameSequence.bind(
+            "<Configure>",
+            lambda e: canvasSequence.configure(scrollregion=canvasSequence.bbox("all"))
+        )
+        canvasSequence.create_window((0, 0), window=self.frameSequence, anchor="nw")
+
+        self.sequenceCategorisGUI = []
+        
+        # On affiche la première colonne
+        self.ajouterColonneCategorie()
+
+    def mettreAJourChemins(self):
+        # On met à jour les labels Longueur & Complexité
+        longueur, complexite = self.sequenceCategorie.getComplexiteSequence()
+        self.labelLongueur.config(text=f"Longueur : {longueur}")
+        self.labelComplexite.config(text=f"Complexité : {complexite}")
+
+        # On met à jour la liste des chemins
+        chemins = self.sequenceCategorie.listeToutesSequencesPossibles()
+        self.comboChemins["values"] = chemins
+        if chemins:
+            self.comboChemins.current(0)  # Sélectionne le premier chemin par défaut
 
     def selectionnerCellule(self, enigme:int, mot:int):
         
@@ -543,6 +604,105 @@ class DicoIHM:
         tk.Button(frameButtons, text="Valider", command=valider).pack(side="left", padx=10)
         tk.Button(frameButtons, text="Annuler", command=annuler).pack(side="right", padx=10)
         
+    
+    def supprimerColonneCategorie(self, frameColonne):
+
+        index = self.sequenceCategorisGUI.index(frameColonne)
+
+        # 1. Supprimer la frameColonne (et tous ses enfants)
+        frameColonne.destroy()
+
+        # 2. Retirer le frame de la liste
+        self.sequenceCategorisGUI.pop(index)
+
+        # 3. Recaler les colonnes restantes visuellement
+        for i, frame in enumerate(self.sequenceCategorisGUI):
+            frame.grid_configure(column=i)
+
+        # On retire  la catégorie de la sequence
+        self.sequenceCategorie.retirerCategorie(index)
+
+
+    def ajouterColonneCategorie(self, index=None):
+        if index is None:
+            index = len(self.sequenceCategorisGUI)
+
+        # On crée une frame colonne
+        # self.frameSequence est la grille principale horizontale
+        frameColonne = tk.Frame(self.frameSequence, width=80)
+        frameColonne.grid(row=0, column=index, sticky="nsw")
+        frameColonne.grid_propagate(False)
+
+        # Ligne 0 : conteneur horizontal combo + bouton
+        topBar = tk.Frame(frameColonne)
+        topBar.pack(side="top")
+
+        # --- Création des widgets ---
+        combo = ttk.Combobox(topBar, values=self.dictionnaireEnigmes.getCategories(), state="readonly", width=13)
+        combo.pack(side="left", expand=True, fill="x")
+
+
+        bouton = ttk.Button(topBar, text="+", width=2)
+        bouton.pack(side="left")
+        
+        tree = ttk.Treeview(frameColonne, columns=("mot", "pos"), show="headings", selectmode="extended")
+        tree.heading("mot", text="Mot")
+        tree.heading("pos", text="Abs")
+        tree.column("mot", width=80, stretch=False)
+        tree.column("pos", width=40, stretch=False)
+        #tree.pack(side="top", fill="y", expand=True)
+        
+        # --- Ajout des éléments à la structure ---
+        self.sequenceCategorisGUI.insert(index, frameColonne)
+
+        def mettreAJourListeMots(event=None):
+            categorie = combo.get()
+            # Protection 
+            if not categorie:
+                return
+            
+            # On met à jour la catégorie
+            indexColonne = self.sequenceCategorisGUI.index(frameColonne)
+            self.sequenceCategorie.mettreAJourCategorie(indexColonne, categorie)
+            self.sequenceCategorie.afficheSequence()
+
+            # On remplit la liste des mots possible
+            mots = self.dictionnaireEnigmes.getListeCategorie(categorie)
+            tree.delete(*tree.get_children())
+            for mot, enigmeIdx, motIdx in mots:
+                posAbs = f"{enigmeIdx}/{motIdx}"
+                tree.insert("", "end", values=(mot, posAbs))
+
+        # --- Configuration du bouton ---
+        def onAjouter():        
+            mettreAJourListeMots()
+
+            # Si le tree n’est pas encore affiché, on l’ajoute
+            if not tree.winfo_ismapped():
+                tree.pack(side="top", padx=2, pady=2, fill="y", expand=True)
+
+            bouton.configure(text="–", command=lambda: self.supprimerColonneCategorie(frameColonne))
+            self.ajouterColonneCategorie()
+
+        # Sélection d'un mot
+        def onSelectionMots(event=None):
+            indexColonne = self.sequenceCategorisGUI.index(frameColonne)
+
+            # Réinitialiser la sélection
+            self.sequenceCategorie.selections[indexColonne] = []
+
+            for item in tree.selection():
+                valeurs = tree.item(item, "values")
+                if len(valeurs) >= 2 and "/" in valeurs[1]:
+                    enigmeIdx, motIdx = map(int, valeurs[1].split("/"))
+                    self.sequenceCategorie.ajouterMotSelectionne(indexColonne, enigmeIdx, motIdx)
+            # On met à jour la liste des chemins / longueur et complexité
+            self.mettreAJourChemins()
+
+        bouton.configure(command=onAjouter)
+        combo.bind("<<ComboboxSelected>>", mettreAJourListeMots)
+        tree.bind("<<TreeviewSelect>>", onSelectionMots)
+
 
 class SolutionIHM:
     def __init__(self, parent):

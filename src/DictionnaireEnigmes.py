@@ -1,3 +1,5 @@
+from itertools import product
+
 class LigneCirculaire:
     def __init__(self, ligne, masque=None):
         self.ligne = ligne
@@ -67,6 +69,9 @@ class DictionnaireEnigmes:
     def getCategories(self):
         return list(self.indexCategories.keys())
 
+    def getListeCategorie(self, categorie):
+        return self.indexCategories[categorie][1]
+    
     def getIndexCategories(self):
         return self.indexCategories
 
@@ -116,24 +121,112 @@ class DictionnaireEnigmes:
         return max((len(ligne) for _, ligne in self.dictionnaire), default=0)
 
 
-class SequenceCategorie(list):
+class SequenceCategorie:
     def __init__(self, dictionnaire):
         super().__init__()
-        self.listeCategories = []
-        self.dictionnaire = dictionnaire  # instance de DictionnaireEnigmes
+        self.listeCategories = []           # liste des catégories de la séquence
+        self.selections = []                # liste des mots sélectionnés pour chaque catégorie
+        self.dictionnaire = dictionnaire    # instance de DictionnaireEnigmes
+        self.modeIndexRelatif = False       # Par défaut, on travaille en Index absolu
 
-    def ajouterCategorie(categorie):
-        if categorie in self.dictionnaire.getListeCategories():
+    def setModeIndexRelatif(self, modeIndex):
+        self.modeIndexRelatif = modeIndex
+
+    def ajouterCategorie(self, categorie):
+        if categorie in self.dictionnaire.getCategories():
             self.listeCategories.append(categorie)   
-            self.append(None) 
+            self.selections.append([])              # aucune sélection au départ
             return len(self.listeCategories)-1
         return None
 
     def retirerCategorie(self, index):
         if 0 <= index < len(self.listeCategories):
             del self.listeCategories[index]
-            del self[index]
+            del self.selections[index]
 
+    
+    def mettreAJourCategorie(self, index, nouvelleCategorie):
+        if nouvelleCategorie not in self.dictionnaire.getCategories():
+            return False  # Catégorie inconnue
+
+        if 0 <= index < len(self.listeCategories):
+            self.listeCategories[index] = nouvelleCategorie
+            self.selections[index] = []  # Réinitialiser les sélections
+            return True
+        elif index == len(self.listeCategories):
+            self.ajouterCategorie(nouvelleCategorie)
+            return True
+        return False
+
+
+    def ajouterMotSelectionne(self, indexCategorie, indexEnigme, indexMot):
+        if 0 <= indexCategorie < len(self.selections):
+            if (indexEnigme, indexMot) not in self.selections[indexCategorie]:
+                self.selections[indexCategorie].append((indexEnigme, indexMot))
+
+    def retirerMotSelectionne(self, indexCategorie, indexEnigme, indexMot):
+        if 0 <= indexCategorie < len(self.selections):
+            if (indexEnigme, indexMot) in self.selections[indexCategorie]:
+                self.selections[indexCategorie].remove((indexEnigme, indexMot))
+
+    def getMotsSelectionnes(self, indexCategorie):
+        if 0 <= indexCategorie < len(self.selections):
+            return self.selections[indexCategorie]
+        return []
+
+    def getCategorie(self, indexCategorie):
+        if 0 <= indexCategorie < len(self.listeCategories):
+            return self.listeCategories[indexCategorie]
+        return None
+
+    def afficheSequence(self):
+        listeStr = ""
+        for c in self.listeCategories:
+            listeStr+=f"{c} : "
+        print(listeStr)
+
+
+    def getComplexiteSequence(self):
+        i =0
+        complexite = 1
+        for index in range(len(self.listeCategories)):
+            if len(self.selections[index])>0:
+                i+=1
+                complexite*=len(self.selections[index])
+            else:
+                break
+        if i ==0:
+            return 0, 0
+        else:
+            return i, complexite 
+
+
+    def listeToutesSequencesPossibles(self):
+        if not self.selections or any(len(sel) == 0 for sel in self.selections):
+            return []
+
+        # Produit cartésien de toutes les sélections
+        toutesCombinaisons = product(*self.selections)
+        resultats = []
+
+        for combinaison in toutesCombinaisons:
+            if self.modeIndexRelatif:
+                # On part de (0,0) et on calcule les deltas
+                chemin = []
+                prev = combinaison[0]
+                chemin = [f"({prev[0]}, {prev[1]})"]
+                for curr in combinaison[1:]:
+                    dx = curr[0] - prev[0]
+                    dy = curr[1] - prev[1]
+                    chemin.append(f"(+{dx}, +{dy})" if dx >= 0 and dy >= 0 else f"({dx}, {dy})")
+                    prev = curr
+            else:
+                # Coordonnées absolues
+                chemin = [f"({e},{m})" for (e, m) in combinaison]
+
+            resultats.append(" → ".join(chemin))
+
+        return resultats
 
 
 if __name__ == "__main__":
