@@ -4,6 +4,7 @@ class Reliquats:
     def __init__(self, cheminFichier):
         self.cheminFichier = cheminFichier
         self.df = pd.read_csv(cheminFichier, skipinitialspace=True)
+        self.villeInitiale = "Carnac"
 
     # On rajoute les méthodes pour que Reliquats se comporte comme une liste classique
     def __len__(self):
@@ -17,6 +18,12 @@ class Reliquats:
         for _, row in self.df.iterrows():
             yield (row["Source"], row["Destination"])
 
+    def setVilleInitiale(self, ville):
+        self.villeInitiale = ville    
+
+    def getVilleInitiale(self):
+        return self.villeInitiale
+    
     def afficherApercu(self, lignes=5):
         print(self.df.head(lignes))
 
@@ -54,12 +61,27 @@ class Reliquats:
         self.df.loc[index-1, "Source"] = self.df.loc[index-1, "Destination"]
         self.df.loc[index-1, "Destination"] = temp
 
+
+    def inverserOrdre(self):
+        max_ligne = self.df["Ligne"].max()
+        self.df["Ligne"] = self.df["Ligne"].apply(lambda x: max_ligne - x + 1)
+        self.df.sort_values("Ligne", inplace=True)
+        self.df.reset_index(drop=True, inplace=True)
+
+
     def sauvegarder(self, chemin=None):
         chemin_sortie = chemin or self.cheminFichier
         self.df.to_csv(chemin_sortie, index=False)
 
     def nombreLignes(self):
         return len(self.df)
+
+    def getListeVillesInitialles(self):
+        return ["Carnac",
+                "Beaufort-en-Vallée",
+                "Lampouy"
+        ]
+
 
 if __name__ == "__main__":
     listeReliquats = Reliquats("data/reliquats.csv")

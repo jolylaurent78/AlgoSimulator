@@ -120,6 +120,9 @@ class DictionnaireEnigmes:
     def nbMotMax(self):
         return max((len(ligne) for _, ligne in self.dictionnaire), default=0)
 
+    def nbMotsLigne(self, ligneIdx):
+        _, ligne = self.dictionnaire[ligneIdx]
+        return len(ligne)
 
 class SequenceCategorie:
     def __init__(self, dictionnaire):
@@ -174,6 +177,9 @@ class SequenceCategorie:
             return self.selections[indexCategorie]
         return []
 
+    def getCategories(self):
+        return self.listeCategories
+    
     def getCategorie(self, indexCategorie):
         if 0 <= indexCategorie < len(self.listeCategories):
             return self.listeCategories[indexCategorie]
@@ -227,6 +233,35 @@ class SequenceCategorie:
             resultats.append(" → ".join(chemin))
 
         return resultats
+
+    def conversionIndexMot(self, indexCategorie, indexMot):
+        """
+        Retourne un couple (enigme, mot), soit :
+        - en index absolu : (enigme, mot)
+        - en index relatif : (delta_enigme, delta_mot) par rapport à la sélection précédente
+        """
+        if not (0 <= indexCategorie < len(self.selections)):
+            return None  # Catégorie invalide
+
+        mots = self.selections[indexCategorie]
+        if not mots or not (0 <= indexMot < len(mots)):
+            return None  # Mot invalide ou non sélectionné
+
+        enigme, mot = mots[indexMot]
+
+        if not self.modeIndexRelatif or indexCategorie == 0:
+            return enigme, mot
+
+        # Calcul du delta par rapport au précédent mot sélectionné
+        motsPrecedents = self.selections[indexCategorie - 1]
+        if not motsPrecedents:
+            return enigme, mot  # Pas de point de référence précédent
+
+        enigmePrev, motPrev = motsPrecedents[0]  # pour le moment, seul le premier mot est pris en compte
+        deltaEnigme = enigme - enigmePrev
+        deltaMot = mot - motPrev
+        return deltaEnigme, deltaMot
+
 
 
 if __name__ == "__main__":

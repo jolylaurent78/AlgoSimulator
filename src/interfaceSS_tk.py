@@ -65,8 +65,10 @@ class InterfaceSS(tk.Tk):
     def mettreAJourIHM(self, ligneReliquat:int):
         # On creé la liste des unités de décodage pour chque segment
         self.listeUnitesDecodage = []
+        precedent = self.ihmReliquats.getListeReliquats().getVilleInitiale()
         for (source, destination) in self.ihmReliquats.getListeReliquats():
-            self.listeUnitesDecodage.append(UniteDecodageSS(source, destination))       
+            self.listeUnitesDecodage.append(UniteDecodageSS(precedent, source, destination))  
+            precedent = destination     
         
         self.ihmReliquats.mettreAJourIHM(ligneReliquat)
         self.ihmAlgo.rafraichirImage(self.listeUnitesDecodage[ligneReliquat-1])       
@@ -93,7 +95,8 @@ class ListeReliquatsIHM:
             "up":     tk.PhotoImage(file="images/up.png"),
             "down":   tk.PhotoImage(file="images/down.png"),
             "swap":   tk.PhotoImage(file="images/swap.png"),
-            "save":   tk.PhotoImage(file="images/save.png")
+            "save":   tk.PhotoImage(file="images/save.png"),
+            "reverse":   tk.PhotoImage(file="images/reverse.png")
         }
 
         self.boutonReload = tk.Button(self.frameBoutons, image=self.icones["reload"], command=self.actionReload, relief=tk.RAISED, bd=1)
@@ -111,6 +114,21 @@ class ListeReliquatsIHM:
         self.boutonSwap = tk.Button(self.frameBoutons, image=self.icones["swap"], command=self.actionSwap, relief=tk.RAISED, bd=1)
         self.boutonSwap.pack(side=tk.LEFT, padx=2)
 
+        self.boutonReverse = tk.Button(self.frameBoutons, image=self.icones["reverse"], command=self.actionReverse, relief=tk.RAISED, bd=1)
+        self.boutonReverse.pack(side=tk.LEFT, padx=2)
+
+        # Combo pour définir la ville initiale
+        listeVilles = self.listeReliquats.getListeVillesInitialles()
+        self.comboVilleInitiale = ttk.Combobox(self.frameBoutons, values=listeVilles, state="readonly", width=25)
+        self.comboVilleInitiale.set(listeVilles[0])
+        self.comboVilleInitiale.pack(side=tk.LEFT, padx=(10, 2))
+
+        def onVilleInitialeChoisie(event):
+            ville = self.comboVilleInitiale.get()
+            self.listeReliquats.setVilleInitiale(ville)
+            self.rafraichirTreeview()
+
+        self.comboVilleInitiale.bind("<<ComboboxSelected>>", onVilleInitialeChoisie)
 
 
         # Création de la TreeView
@@ -215,6 +233,9 @@ class ListeReliquatsIHM:
         if hasattr(self.listeReliquats, "sauvegarderFichierCSV"):
             self.listeReliquats.sauvegarderFichierCSV()
 
+    def actionReverse(self):
+        self.listeReliquats.inverserOrdre()
+        self.rafraichirTreeview()   
 
 class AlgorithmeSSIHM:
     def __init__(self, master, dico):
@@ -372,25 +393,33 @@ class AlgorithmeSSIHM:
             widget.destroy()
 
         listeParametresSegment = uniteDecodage.getAttributsSegment()
-        
-        # On affiche chaque paire (label, valeur) verticalement
-        for i, (label, valeur) in enumerate(listeParametresSegment):
-            lbl = ttk.Label(self.frameParams, text=f"{label} :", font=("Arial", 10, "bold"))
-            val = ttk.Label(self.frameParams, text=valeur, font=("Arial", 10))
 
-            lbl.grid(row=i, column=0, sticky="w", padx=10, pady=4)
-            val.grid(row=i, column=1, sticky="w", padx=10, pady=4)
+        # Grouper les attributs par numéro de ligne
+        lignes = dict()
+        for ligne, label, valeur in listeParametresSegment:
+            if ligne not in lignes:
+                lignes[ligne] = []
+            lignes[ligne].append((label, valeur))
+
+        # Affichage groupé par ligne
+        for row, elements in sorted(lignes.items()):
+            for col, (label, valeur) in enumerate(elements):
+                lbl = ttk.Label(self.frameParams, text=f"{label} :", font=("Arial", 10, "bold"))
+                val = ttk.Label(self.frameParams, text=valeur, font=("Arial", 10))
+
+                lbl.grid(row=row, column=2 * col, sticky="w", padx=10, pady=4)
+                val.grid(row=row, column=2 * col + 1, sticky="w", padx=10, pady=4)
 
         # Ajout de l'index Enigme / Mot
         enigme, indexMot = uniteDecodage.calculIndex()
         labelIndexEnigme = ttk.Label(self.frameParams, text="Index Enigme:", font=("Arial", 10, "bold"))
         valeurIndexEnigme = ttk.Label(self.frameParams, text=f"{enigme}", font=("Arial", 10))
-        labelIndexEnigme.grid(row=i+1, column=0, sticky="w", padx=10, pady=6)
-        valeurIndexEnigme.grid(row=i+1, column=1, sticky="w", padx=10, pady=6)        
+        labelIndexEnigme.grid(row=ligne+1, column=0, sticky="w", padx=10, pady=6)
+        valeurIndexEnigme.grid(row=ligne+1, column=1, sticky="w", padx=10, pady=6)        
         labelIndexMot = ttk.Label(self.frameParams, text="Index Mot :", font=("Arial", 10, "bold"))
         valeurIndexMot = ttk.Label(self.frameParams, text=f"{indexMot}", font=("Arial", 10))
-        labelIndexMot.grid(row=i+1, column=3, sticky="w", padx=10, pady=6)
-        valeurIndexMot.grid(row=i+1, column=4, sticky="w", padx=10, pady=6)  
+        labelIndexMot.grid(row=ligne+1, column=3, sticky="w", padx=10, pady=6)
+        valeurIndexMot.grid(row=ligne+1, column=4, sticky="w", padx=10, pady=6)  
 
         # On met à jour le dictionnaire
         self.dicoIHM.selectionnerCellule(enigme, indexMot)
@@ -498,7 +527,34 @@ class DicoIHM:
 
         # Conteneur principal pour la séquence
         conteneurSequence = ttk.Frame(master)
-        conteneurSequence.pack(side="top", fill="x")
+        conteneurSequence.pack(side="left", fill="y")
+
+        # Conteneur principal pour la séquence
+        conteneurAnalyseIndex = ttk.Frame(master, width = 200 )
+        conteneurAnalyseIndex.pack(side="right", fill="y")
+
+        # Combobox pour choisir une séquence sauvegardée
+        self.comboAnalyse = ttk.Combobox(conteneurAnalyseIndex, state="readonly", width=25)
+        self.comboAnalyse.pack(padx=5, pady=(5, 2))
+
+        # Treeview pour afficher les mots de la séquence
+        self.treeAnalyse = ttk.Treeview(conteneurAnalyseIndex, columns=("Mot", "Pidx", "P%", "P°","Midx", "M%", "M°"), show="headings", height=10)
+        self.treeAnalyse.heading("Mot", text="Mot")
+        self.treeAnalyse.heading("Pidx", text="+idx")
+        self.treeAnalyse.heading("P%", text="+%")
+        self.treeAnalyse.heading("P°", text="+°")
+        self.treeAnalyse.heading("Midx", text="-idx")
+        self.treeAnalyse.heading("M%", text="-%")
+        self.treeAnalyse.heading("M°", text="-°")
+        self.treeAnalyse.column("Mot", width=80)
+        self.treeAnalyse.column("Pidx", width=40)
+        self.treeAnalyse.column("P%", width=40)
+        self.treeAnalyse.column("P°", width=40)
+        self.treeAnalyse.column("Midx", width=40)
+        self.treeAnalyse.column("M%", width=40)
+        self.treeAnalyse.column("M°", width=40)
+        self.treeAnalyse.pack(fill="both", expand=True, padx=5, pady=(0, 5))
+
 
         # Canvas pour scroll horizontal
         canvasSequence = tk.Canvas(conteneurSequence, highlightthickness=0)
@@ -535,6 +591,62 @@ class DicoIHM:
         if chemins:
             self.comboChemins.current(0)  # Sélectionne le premier chemin par défaut
 
+            # On met à jour la combo à droite avec la sélectiondu mot dans la séquence
+            valeurs = []
+            for i, cat in enumerate(self.sequenceCategorie.getCategories()):
+                valeurs.append(f"{i+1} - {cat}")
+            self.comboAnalyse["values"] = valeurs
+            if valeurs:
+                self.comboAnalyse.current(0)
+
+            def mettreAJourTreeAnalyse(event=None):
+                # On récupère l'index de la catégorie sélectionnée dans la combo
+                valeur = self.comboAnalyse.get()
+                if not valeur or " - " not in valeur:
+                    return
+
+                indexStr, _ = valeur.split(" - ", 1)
+                indexCategorie = int(indexStr.strip()) - 1  # Car affichage commence à 1
+
+                # On récupère la liste des mots sélectionnés pour cette catégorie
+                motsSelectionnes = self.sequenceCategorie.getMotsSelectionnes(indexCategorie)
+                self.treeAnalyse.delete(*self.treeAnalyse.get_children())
+
+                for i, (enigme, indexMot) in enumerate(motsSelectionnes):
+                    mot = self.dictionnaireEnigmes.getMot(enigme, indexMot)
+                    enigmeIdxRel, motIdxRelPlus = self.sequenceCategorie.conversionIndexMot(indexCategorie, i)
+                    indexRel = motIdxRelPlus
+                    
+                    # On calcule les str si index <= 60mn
+                    if indexRel<=60:
+                        indexRelStr = f"{indexRel}"
+                        pourcentagePlusStr = f"{round((indexRel / 60) * 100)}%"
+                        anglePlusStr = f"{round((indexRel / 60) * 360)}°"
+                    else:
+                        indexRelStr = ""
+                        pourcentagePlusStr = ""
+                        anglePlusStr = ""
+
+                    indexRelMoins = indexRel - self.dictionnaireEnigmes.nbMotsLigne(enigme)
+                    if indexRelMoins>=-60:
+                        indexRelMoinsStr = f"{indexRelMoins}"
+                        pourcentageMoinsStr = f"{round((indexRelMoins / 60) * 100)}%"
+                        angleMoinsStr = f"{round((indexRelMoins / 60) * 360)}°"
+                    else:
+                        indexRelMoinsStr = ""
+                        pourcentageMoinsStr = ""
+                        angleMoinsStr = ""                
+                    
+                    self.treeAnalyse.insert(
+                        "", "end",
+                        values=(mot, indexRelStr, pourcentagePlusStr, anglePlusStr, indexRelMoinsStr, pourcentageMoinsStr, angleMoinsStr)
+                    )
+
+            self.comboAnalyse.bind("<<ComboboxSelected>>", mettreAJourTreeAnalyse)
+            mettreAJourTreeAnalyse()
+
+
+
     def selectionnerCellule(self, enigme:int, mot:int):
         
         indexLigne = enigme
@@ -563,7 +675,6 @@ class DicoIHM:
             ligne = [self.dictionnaireEnigmes[i][j] for j in range(-nb_mots, nb_mots)]
             data.append(ligne)
 
-        # data = [["1", "2", "3"],["4", "5", "6"],["7", "8", "9"]]
         self.sheet.insert_rows(data)
         self.sheet.headers([str(i) for i in range(-nb_mots, nb_mots)])
         self.sheet.deselect("all")
@@ -672,6 +783,7 @@ class DicoIHM:
             for mot, enigmeIdx, motIdx in mots:
                 posAbs = f"{enigmeIdx}/{motIdx}"
                 tree.insert("", "end", values=(mot, posAbs))
+
 
         # --- Configuration du bouton ---
         def onAjouter():        

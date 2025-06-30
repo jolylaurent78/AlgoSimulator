@@ -211,7 +211,7 @@ class PointGraphique(ObjetGraphique):
         # On génère les coordonnées GPS si elles ne sont pas définies
         if self.lat is None and self.lon is None:
             self.lon, self.lat = carteConfig.lambert93_to_gps(self.x_l93, self.y_l93)
-            self.lat, self.lon = carteConfig.lambert93_to_gps(self.x_l93, self.y_l93)
+
 
     @classmethod
     def depuisIntersectionLignes(
