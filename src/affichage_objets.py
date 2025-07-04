@@ -1172,8 +1172,8 @@ class LigneGraphique(ObjetGraphique):
 
     def cadreAffichage(self):
         if self.distance is None:
-            x1, y1 = self.lignePixelImage.pt1
-            x2, y2 = self.lignePixelImage.pt2
+            x1, y1 = self.pointReference
+            x2, y2 = self.pointReference
         else:
             x1, y1 = self.pointReference
             vx, vy = self.vecteur
@@ -1551,6 +1551,9 @@ class LigneHorizontale(LigneGraphique):
 
 class SegmentEntreVilles(LigneGraphique):
     def __init__(self, ville1, ville2, nom=None, couleur=None, epaisseur=None, layer=None, tags: dict[str, Any] = None, tooltips: list[str] = None):
+        self.ville1 = ville1
+        self.ville2 = ville2
+
         self.x1_l93, self.y1_l93 = ville1.coordonneesLambert()
         self.x2_l93, self.y2_l93 = ville2.coordonneesLambert()
         px1, py1 = carteConfig.lambert93_to_pixels(self.x1_l93, self.y1_l93)

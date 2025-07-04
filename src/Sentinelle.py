@@ -159,6 +159,8 @@ class Sentinelle(dict):
             epaisseur = 1,
             tags={"level": tagLevel}
             )
+        azMidi = ligneMidi.getAzimutCarte()
+        ligneMidi.setTooltips([f"Azimut :{azMidi:.02f}°"])
         return ligneMidi
         
     def afficherLigneHoraire(self, note:str, am_pm:str, tagLevel:str, selectionne=False):

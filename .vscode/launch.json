@@ -22,10 +22,10 @@
       }
     }
     {
-      "name": "Tester Dictionniare",
+      "name": "Tester Construction",
       "type": "python",
       "request": "launch",
-      "program": "${workspaceFolder}/src/DictionnaireEnigmes.py",
+      "program": "${workspaceFolder}/src/ConstructionsCadrans.py",
       "console": "integratedTerminal",
       "env": {
         "PYTHONPATH": "${workspaceFolder}"

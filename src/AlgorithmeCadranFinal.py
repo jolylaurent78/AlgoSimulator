@@ -155,9 +155,9 @@ class StyletFinal(ModuleAlgo):
         longNote = StyletFinal.tableauGamme[self.lettre]
         self.hauteur = StyletFinal.tableauOctave[self.octave] * self.distanceRef / longFA * longNote
 
-        # On calcule l'azimut de Midi
-        (x1, y1) = villes_dict["Bourges"].getCoordonneesPixel()
-        (x2, y2) = villes_dict[self.base].getCoordonneesPixel()
+        # On calcule l'azimut de Midi 
+        (x1, y1) = villes_dict[self.base].getCoordonneesPixel()
+        (x2, y2) = villes_dict["Bourges"].getCoordonneesPixel()
         self.azimutMidi = Ligne(x1, y1, x2, y2).azimut()
 
     COULEUR_TRAIT_MIDI = (255, 145, 34)
@@ -192,7 +192,7 @@ class StyletFinal(ModuleAlgo):
             nom = "Axe Midi",
             epaisseur = 1,
             couleur = StyletFinal.COULEUR_TRAIT_MIDI,
-            tooltips = ["Axe Midi Bourges - {self.base}"],
+            tooltips = [f"Axe Midi Bourges - {self.base}", f"Azimut Midi: {self.azimutMidi:.02f}° / {self.azimutMidi-360:.02f}°"],
             tags = {"level" : "design"}
             )
         listeObjets.append(pointBourges)
@@ -481,7 +481,7 @@ class LigneHoraireFinal(ModuleAlgo):
             couleur = LigneHoraireFinal.COULEUR_TRAIT_CANDIDAT if candidat else LigneHoraireFinal.COULEUR_TRAIT_HEURE
             ligneGraphique.setCouleur(couleur)                
 
-            ligneGraphique.setTooltips([f"Heure Locale {ampm}: {heureLocale}", f"Azimut % Midi : {azimut}"])
+            ligneGraphique.setTooltips([f"Heure Locale {ampm}: {heureLocale}", f"Azimut % Midi : {azimut:.02f}"])
             ligneGraphique.ajouterTag("level", "design")
             listeObjets.append(ligneGraphique)    
         return listeObjets

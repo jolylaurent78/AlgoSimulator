@@ -13,6 +13,7 @@ from src.data_loader import villes_dict
 from src.reliquats import Reliquats
 from src.DecodageSS import UniteDecodageSS
 from src.DictionnaireEnigmes import DictionnaireEnigmes, SequenceCategorie
+from src.ConstructionsCadrans import ObjetCadran, ConstructionsCadrans
 
 # Gestion de la carte
 from src.carte_config import carteConfig
@@ -58,6 +59,9 @@ class InterfaceSS(tk.Tk):
         self.ihmAlgo = AlgorithmeSSIHM(self.frameCentreHaut, self.ihmDico)
         self.ihmSolutions = SolutionIHM(self.frameDroite)
 
+        # Les 8 constructions
+        self.constructionsCadrans = ConstructionsCadrans("data/constructionsCadrans.csv")
+
         # Le raffraichisseent de la Tree View met à jour l'IHM complet en appelant mettreAJourIHM
         self.ihmReliquats.rafraichirTreeview()
 
@@ -67,7 +71,10 @@ class InterfaceSS(tk.Tk):
         self.listeUnitesDecodage = []
         precedent = self.ihmReliquats.getListeReliquats().getVilleInitiale()
         for (source, destination) in self.ihmReliquats.getListeReliquats():
-            self.listeUnitesDecodage.append(UniteDecodageSS(precedent, source, destination))  
+            objetPrecedent = self.constructionsCadrans[precedent]
+            objetSource = self.constructionsCadrans[source]
+            objetDestination = self.constructionsCadrans[destination]
+            self.listeUnitesDecodage.append(UniteDecodageSS(objetPrecedent, objetSource, objetDestination))  
             precedent = destination     
         
         self.ihmReliquats.mettreAJourIHM(ligneReliquat)
@@ -313,8 +320,8 @@ class AlgorithmeSSIHM:
         cible_h = y2Max - y1Min
 
         # Marge de 5% dans chaque direction
-        marge_x = 0.05 * cible_w
-        marge_y = 0.05 * cible_h
+        marge_x = 0.15 * cible_w
+        marge_y = 0.15 * cible_h
         cible_w += 2 * marge_x
         cible_h += 2 * marge_y
 

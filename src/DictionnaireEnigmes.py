@@ -1,5 +1,6 @@
 from itertools import product
 
+
 class LigneCirculaire:
     def __init__(self, ligne, masque=None):
         self.ligne = ligne
