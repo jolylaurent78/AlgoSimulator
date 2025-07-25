@@ -1,52 +1,60 @@
 
 from src.data_loader import villes_dict
-from src.affichage_objets import SegmentEntreVilles, PointGraphique, LigneEntreVilles
+from src.affichage_objets import LigneEntreVilles, LigneAzimut
 from src.ConstructionsCadrans import ObjetCadran
 
 class UniteDecodageSS:
-    def __init__(self, objetSource: ObjetCadran, objetMilieu: ObjetCadran, objetDestination: ObjetCadran):
-        self.objetSource = objetSource
-        self.objetMilieu = objetMilieu
-        self.objetDestination = objetDestination
-        
-        self.segmentA = SegmentEntreVilles(objetSource.getVilleObjetCadran(), objetMilieu.getVilleObjetCadran())
-        self.segmentB = SegmentEntreVilles(objetMilieu.getVilleObjetCadran(), objetDestination.getVilleObjetCadran())        
-        self.azimutSegmentA = self.segmentA.getAzimutCarte()
-        self.azimutSegmentB = self.segmentB.getAzimutCarte()
-        self.distanceSegment = self.segmentA.distanceSegment()+self.segmentB.distanceSegment()
+    
+    COULEUR_AXEMIDI = (255, 145, 34)
+    
+    def __init__(self, objetPrecedent, objetDebut: ObjetCadran, objetFin: ObjetCadran, axeMidi:(str, str)):
+        # On sauvegarde les objets
+        self.objetPrecedent = objetPrecedent
+        self.objetDebut = objetDebut
+        self.objetFin = objetFin
+
+        # Axe Midi
+        (self.debutAxeMidi, self.finAxeMidi) = axeMidi
+        axeMidiNonCentre = LigneEntreVilles(villes_dict[self.debutAxeMidi], villes_dict[self.finAxeMidi])
+        self.azimutMidi = axeMidiNonCentre.getAzimutCarte()
+
+        # Axe Ombre
+        self.segmentLumiereDebut = self.objetDebut.getLigneOmbre((0,0,0))
+        self.distanceLumiereDebut = self.segmentLumiereDebut.distanceSegment()
+        self.azimutLumiereDebut = self.segmentLumiereDebut.getAzimutCarte()
+        self.segmentLumiereFin = self.objetFin.getLigneOmbre((0,0,0))
+        self.distanceLumiereFin = self.segmentLumiereFin.distanceSegment()
+        self.azimutLumiereFin = self.segmentLumiereFin.getAzimutCarte()        
+
+        # AxeBase
+        self.segmentBaseDebut = self.objetDebut.axeMidiCadran(UniteDecodageSS.COULEUR_AXEMIDI)  
+        self.segmentBaseFin = self.objetFin.axeMidiCadran(UniteDecodageSS.COULEUR_AXEMIDI)
+        self.angleSegmentMidiDebut = self.azimutLumiereDebut - self.segmentBaseDebut.getAzimutCarte() 
+        self.angleSegmentMidiFin = self.azimutLumiereFin - self.segmentBaseFin.getAzimutCarte() 
 
     def construireRepresentationCarte(self):
         """
         Retourne la liste des objets graphiques à afficher pour visualiser ce segment.
         """
+        # On affiche le point précédent
+        # pointPrecedent = PointGraphique(self.objetPrecedent.getReference(), epaisseur = 4, couleur = (0,0,0))
+        # On affiche le cadran du premier point
+
+        pointBaseDebut = self.objetDebut.getBase("Base Deb", UniteDecodageSS.COULEUR_AXEMIDI)
+        pointLumiereDebut = self.objetDebut.getHeure("Debut", (0,0,0))
+
+        # On affiche le cadran du deuième point
+
+        pointBaseFin = self.objetFin.getBase("Base Fin", UniteDecodageSS.COULEUR_AXEMIDI)
+        pointLumiereFin = self.objetFin.getHeure("Fin", (0,0,0))
+
+        # On trace la droite qui symbolise d'axe de midi
+
+        axeMidiBourges = LigneAzimut(villes_dict["Bourges"], self.azimutMidi)
         
-        # On rajoute d'abord les points Source, Milieu et Destination
-        pointS = PointGraphique(self.objetSource.getVilleObjetCadran(), afficherNom = True)
-        pointM = PointGraphique(self.objetMilieu.getVilleObjetCadran(), afficherNom = True)
-        pointD = PointGraphique(self.objetDestination.getVilleObjetCadran(), afficherNom = True)
-        pointS.setNom("S")
-        pointM.setNom("M")
-        pointD.setNom("D")   
-
-        # On rajoute l'axe du cadran solaire associé
-        segmentAxeCadranMilieu = self.objetMilieu.axeMidiCadran()
-        segmentAxeCadranMilieu.setCouleur((255, 145, 34))
-        ligneAxeCadranMilieu = LigneEntreVilles(segmentAxeCadranMilieu.ville1, segmentAxeCadranMilieu.ville2, couleur = (255, 145, 34))
-        pointBaseMilieu = PointGraphique(self.objetMilieu.getBase(), afficherNom = True)
-        pointBaseMilieu.setNom("Base M") 
-        self.azimutBaseM = ligneAxeCadranMilieu.getAzimutCarte()
-
-        segmentAxeCadranDestination = self.objetDestination.axeMidiCadran()
-        segmentAxeCadranDestination.setCouleur((255, 145, 34))
-        ligneAxeCadranDestination = LigneEntreVilles(segmentAxeCadranDestination.ville1, segmentAxeCadranDestination.ville2, couleur = (255, 145, 34))
-        pointBaseDestination = PointGraphique(self.objetDestination.getBase(), afficherNom = True)
-        pointBaseDestination.setNom("Base D")    
-        self.azimutBaseD = ligneAxeCadranDestination.getAzimutCarte()
-
-        return [pointS, pointM, pointD, 
-                self.segmentA, self.segmentB, 
-                pointBaseMilieu, segmentAxeCadranMilieu, ligneAxeCadranMilieu, 
-                pointBaseDestination, segmentAxeCadranDestination, ligneAxeCadranDestination]
+        return [self.segmentBaseDebut, pointBaseDebut, self.segmentLumiereDebut, pointLumiereDebut,
+                self.segmentBaseFin, pointBaseFin, self.segmentLumiereFin, pointLumiereFin,
+                ]
 
     def getAttributsSegment(self):
         """
@@ -54,42 +62,56 @@ class UniteDecodageSS:
         - longueur en kilomètres
         - azimut (degrés, 0 = nord, sens horaire)
         """
-        distSM = self.segmentA.distanceSegment()
-        distMD = self.segmentB.distanceSegment()
 
-        # On calcule et affiche d'abord les azimuts des cadrans (en direct et en opposé) A = SM B =MD
-        azA = self.azimutSegmentA
+        def minutesDepuisMidi(horaire: str) -> int:
+            """Retourne le nombre de minutes depuis midi à partir d'une heure au format 'HH:MM'."""
+            heures, minutes = map(int, horaire.split(":"))
+            total_minutes = heures * 60 + minutes
+            minutes_midi = 12 * 60
+            return abs(total_minutes - minutes_midi)
+
+        # Heure Cadran pour chacun des segment
+        heureCadranA = self.objetDebut.getHeureCadran()
+        heureCadranB = self.objetFin.getHeureCadran()
+        minuteCadranA = minutesDepuisMidi(heureCadranA)
+        minuteCadranB = minutesDepuisMidi(heureCadranB)
+
+        azA = self.azimutLumiereDebut
         azOppA = (azA + 180) % 360
-        azB = self.azimutSegmentB
+        azB = self.azimutLumiereFin
         azOppB = (azB + 180) % 360
 
-        # On calcule le delta entre les deux segments
-        delta = (azOppA - azB) % 360
-        deltaOpp = (360 - delta) % 360
+        indexA = azA / 6
+        indexB = (azB / 6)
 
-        # On calcule l'azimut de la base du cadran associé de la base vers le stylet
-        baseM = self.azimutBaseM
-        baseOppM = (baseM + 180 ) % 360
+        # Angle entre la base et le segment
+        angleMidiA= self.angleSegmentMidiDebut
+        angleMidiB= self.angleSegmentMidiFin
 
-        baseD = self.azimutBaseD
-        baseOppD = (baseD + 180) % 360
+        # Azimu et Index autour de l'axe de Midi
+        azMidi = self.azimutMidi
+        azOppMidi = (azMidi + 180) % 360
+        indexMidi = azMidi / 6 
 
-        # On calcule l'azimut MS et MD par rapport à l'axe des stylets respetifs M et D
-        azMSCadran = azOppA - baseM
-        azMDCadran = azB - baseD
+        return [   
+            (0, "Heure Cadran Debut", f"{heureCadranA} - {minuteCadranA}mn"),
+            (0, "Heure Cadran Fin", f"{heureCadranB} - {minuteCadranB}mn"),            
+            (1, "Distance Debut", f"{self.distanceLumiereDebut:.02f}km"),
+            (1, "Distance Fin", f"{self.distanceLumiereFin:.02f}km"),
+            (2, f"Azimut Debut", f"{azA:.02f}° - {azOppA:.02f}°"),
+            (2, f"Azimut Fin", f"{azB:.02f}° - {azOppB:.02f}°"),   
+            (3, f"Angle Debut % Base", f"{angleMidiA:.02f}°"),
+            (3, f"Angle Fin % Base", f"{angleMidiB:.02f}°"),  
+            (4, f"Azimut Debut Base 60", f"{indexA:.02f}"),
+            (4, f"Azimut Debut Base 60", f"{indexB:.02f}"),  
+            (5, f"Azimut Midi", f"{azMidi:.02f}° - {azOppMidi:.02f}°"),
+            (5, f"Index Midi", f"{indexMidi:.02f}"),             
+                ]
+    
 
-        return [
-            (0, "Longueur SM", f"{distSM:.02f}km"),
-            (0, "Longueur MD", f"{distMD:.02f}km"),
-            (1, f"Azimut SM", f"{azA:.02f}° - {azOppA:.02f}°"),
-            (1, f"Azimut MD", f"{azB:.02f}° - {azOppB:.02f}°"),
-            (2, f"Delta", f"{delta:.02f}° - {deltaOpp:.02f}°"),
-            (3, f"Azimut Base M", f"{baseM:.02f}° - {baseOppM:.02f}°"),
-            (3, f"Azimut Base D", f"{baseD:.02f}° - {baseOppD:.02f}°"),
-            (4, f"Azimut MS % Cadran", f"{azMSCadran:.02f}°"),
-            (4, f"Azimut MD % Cadran", f"{azMDCadran:.02f}°"),
-        ]
 
+
+    
     def calculIndex(self):
         """
         Exemple d’algorithme de décodage.
@@ -97,7 +119,7 @@ class UniteDecodageSS:
         - Azimut ∈ [0, 360] → 12 segments → index colonne = azimut // 30
         - Longueur ∈ [0, 120 km] → 12 intervalles → index ligne = longueur // 10
         """
-        indexMot = int(self.azimutSegmentA / 24)
-        enigme = int(self.distanceSegment / 91.5)
+        indexMot = 1
+        enigme = 1
 
         return (enigme, indexMot)

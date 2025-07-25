@@ -23,9 +23,9 @@ class LigneCirculaire:
 
 
 class DictionnaireEnigmes:
-    def __init__(self, cheminFichier):
+    def __init__(self, cheminFichier, tagExclure: str = None, bonSens: bool = True):
         self.filtrageGlobal = False
-        self.chargerFichier(cheminFichier)
+        self.chargerFichier(cheminFichier, tagExclure, bonSens)
 
     def getFiltrageGlobal(self):
         return self.filtrageGlobal
@@ -33,7 +33,7 @@ class DictionnaireEnigmes:
     def setFiltrageGlobal(self, filtrage = True):
         self.filtrageGlobal = filtrage
 
-    def chargerFichier(self, cheminFichier):
+    def chargerFichier(self, cheminFichier, tagExclure: str = None, bonSens: bool = True):
         self.dictionnaire = []
         self.indexCategories = {
             "action": [False, []],
@@ -48,23 +48,43 @@ class DictionnaireEnigmes:
             "mesure": [False, []],
             "utilisable": [False, []]
         }
+        
         with open(cheminFichier, "r", encoding="utf-8") as fichier:
-            for numeroEnigme, ligne in enumerate(fichier.readlines()):
+            lignes = fichier.readlines()
+            # On inverse les lignes si dans le contre sens
+            if not bonSens:
+                lignes = list(reversed(lignes))
+
+            for numeroEnigme, ligne in enumerate(lignes):
                 mots = ligne.strip().split()
                 if not mots:
-                    continue  # ligne vide
+                    continue
                 titre = mots[0]
                 ligneSansTags = []
-                for i, mot in enumerate(mots[1:]):  # On ignore le titre
+
+                i = 0  # Compteur pour les index des mots réellement ajoutés
+                motSource = mots[1:]
+                # On inverse les mots si dans le contre sens
+                if not bonSens:
+                    motSource = reversed(motSource)
+
+                for mot in motSource:
+                    # On détecte les mots avec des [] ex: cherche[localise] cherche = Mot / localise= Tag
                     if "[" in mot and mot.endswith("]"):
                         motNettoye, tag = mot.split("[")
                         tag = tag.rstrip("]")
-                        ligneSansTags.append(motNettoye)
-                        if tag in self.indexCategories:
-                            self.indexCategories[tag][1].append((motNettoye, numeroEnigme, len(ligneSansTags) - 1))
+                        # On ne rajoute pas les mots dont le tag est "exclure"
+                        if tag != tagExclure:
+                            ligneSansTags.append(motNettoye)
+                            if tag in self.indexCategories:
+                                self.indexCategories[tag][1].append((motNettoye, numeroEnigme, i))
+                            i += 1
                     else:
                         ligneSansTags.append(mot)
+                        i += 1
+
                 self.dictionnaire.append((titre, ligneSansTags))
+
 
 
     def getCategories(self):

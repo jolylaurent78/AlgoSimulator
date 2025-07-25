@@ -83,6 +83,26 @@ class Reliquats:
         ]
 
 
+
+class AxeMidi(list):
+    def __init__(self, cheminFichier):
+        super().__init__()
+        self.cheminFichier = cheminFichier
+        self.df = pd.read_csv(cheminFichier, skipinitialspace=True)
+        self._chargerSegments()
+
+    def _chargerSegments(self):
+        for _, row in self.df.iterrows():
+            segment = (row["NomSegment"], row["Debut"], row["Fin"])
+            self.append(segment)
+
+    def afficherApercu(self, lignes=5):
+        print(self.df.head(lignes))
+
+    def getColonnes(self):
+        return list(self.df.columns)
+
+
 if __name__ == "__main__":
     listeReliquats = Reliquats("data/reliquats.csv")
     listeReliquats.afficherApercu()

@@ -1,0 +1,17 @@
+NomSegment,Debut,Fin
+Do-15 Aout-Debut,Roncevaux,X
+Do-15 Aout-Fin,X,Bourges
+Si-20 Mars-Debut,Bourges,Epernay
+Si-20 Mars-Fin,Epernay,Cherbourg
+La-30 Mai-Debut,Cherbourg,Angers
+La-30 Mai-Fin,Angers,Dieppe
+Sol-12 Avril-Debut,Dieppe,Forbach
+Sol-12 Avril-Debut,Forbach,Bourges
+Fa-27 Juillet-Debut,Bourges,Issoire
+Fa-27 Juillet-Fin,Issoire,Cherbourg
+Mi-15 Juin-Debut,Cherbourg,Issoire
+Mi-15 Juin-Fin,Issoire,Dieppe
+Re-19 Juillet-Debut,Dieppe,Angers
+Re-19 Juillet-Fin,Angers,Hericourt
+Zone-18 Mai-Debut,Carnac,Beaufort-en-Vallée
+Zone-18 Mai-Fin,Beaufort-en-Vallée,Lampouy
