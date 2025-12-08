@@ -8,30 +8,100 @@ class ConstructionsCadrans(dict):
 
     def __init__(self, chemin_csv):
 
-        with open(chemin_csv, newline='', encoding="utf-8") as f:
+        super().__init__()
+
+        # Nouveau format attendu: constructionsCadransMultiSolutions.csv
+        # Colonnes: Date, TypeStylet, Stylet, HeureStylet, Lumiere, HeureLumiere
+        lignesParDate = {}
+        with open(chemin_csv, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
+            champs = reader.fieldnames or []
+            if "TypeStylet" not in champs:
+                raise ValueError(
+                    "Format CSV invalide: colonne 'TypeStylet' absente. "
+                    "Attendu: constructionsCadransMultiSolutions.csv"
+                )
+
             for row in reader:
-                date = row["Date"]
-                # On rajoute le sylet initial
-                stylet = ObjetStylet(date, row["HeureStylet"], row["Stylet"])
-                self[row["Stylet"]] = stylet
-                # La lumiere
-                lumiere = ObjetLumiere(date, row["HeureLumiere"], row["Lumiere"], row["Stylet"])
-                self[row["Lumiere"]] = lumiere
-                # Les 2 bases
-                base1 = ObjetBase(date, row["HeureBase1"], row["Base1"], row["Stylet"])
-                base2 = ObjetBase(date, row["HeureBase2"], row["Base2"], row["Stylet"])
-                self[row["Base1"]] = base1
-                self[row["Base2"]] = base2
-                # Les 4 points finaux
-                final1A = ObjetFinal(date, row["HeureFinal1A"], row["Final1A"], row["Base1"])
-                final1B = ObjetFinal(date, row["HeureFinal1B"], row["Final1B"], row["Base1"])
-                self[row["Final1A"]] = final1A
-                self[row["Final1B"]] = final1B
-                final2A = ObjetFinal(date, row["HeureFinal2A"], row["Final2A"], row["Base2"])
-                final2B = ObjetFinal(date, row["HeureFinal2B"],row["Final2B"], row["Base2"])
-                self[row["Final2A"]] = final2A
-                self[row["Final2B"]] = final2B
+                date = (row.get("Date") or "").strip()
+                if date == "":
+                    continue
+                lignesParDate.setdefault(date, []).append(row)
+
+        # Cache pour ne pas recréer la même base quand elle apparaît plusieurs fois
+        # Clé = (date, baseVille)
+        baseCache = {}
+
+        for date, lignes in lignesParDate.items():
+            gnomonRow = None
+            lignesBases = []
+
+            for row in lignes:
+                typeStylet = (row.get("TypeStylet") or "").strip()
+                if typeStylet == "Gnomon":
+                    if gnomonRow is not None:
+                        raise ValueError(f"Plusieurs lignes Gnomon pour la date {date}")
+                    gnomonRow = row
+                elif typeStylet == "Stylet":
+                    lignesBases.append(row)
+                else:
+                    raise ValueError(
+                        f"TypeStylet inconnu '{typeStylet}' pour la date {date}"
+                    )
+
+            if gnomonRow is None:
+                raise ValueError(f"Aucune ligne Gnomon pour la date {date}")
+
+            # Ligne Gnomon = Stylet initial + Lumière
+            styletVille = (gnomonRow.get("Stylet") or "").strip()
+            heureStylet = (gnomonRow.get("HeureStylet") or "").strip()
+            lumiereVille = (gnomonRow.get("Lumiere") or "").strip()
+            heureLumiere = (gnomonRow.get("HeureLumiere") or "").strip()
+
+            self.ajouterObjetUnique(styletVille, ObjetStylet(date, heureStylet, styletVille))
+            self.ajouterObjetUnique(
+                lumiereVille, ObjetLumiere(date, heureLumiere, lumiereVille, styletVille)
+            )
+
+            # Lignes Stylet = Bases + (éventuels) Finals
+            for row in lignesBases:
+                baseVille = (row.get("Stylet") or "").strip()
+                heureBase = (row.get("HeureStylet") or "").strip()
+                finalVille = (row.get("Lumiere") or "").strip()
+                heureFinal = (row.get("HeureLumiere") or "").strip()
+
+                if baseVille == "":
+                    raise ValueError(f"Base (Stylet) vide pour la date {date}")
+
+
+                cacheKey = (date, baseVille)
+                if cacheKey in baseCache:
+                    baseObj = baseCache[cacheKey]
+                    if baseObj.getHeureCadran() != heureBase:
+                        raise ValueError(
+                            f"Incohérence: la base '{baseVille}' (date {date}) "
+                            f"a des heures différentes: '{baseObj.getHeureCadran()}' vs '{heureBase}'"
+                        )
+                else:
+                    baseObj = ObjetBase(date, heureBase, baseVille, styletVille)
+                    baseCache[cacheKey] = baseObj
+                    self.ajouterObjetUnique(baseVille, baseObj)
+
+                # Certaines lignes peuvent définir une base sans point de lumière associé
+                # (ex: Lumiere/HeureLumiere vides) => on ne crée pas d'ObjetFinal.
+                if finalVille == "" or heureFinal == "":
+                    continue
+
+                self.ajouterObjetUnique(finalVille, ObjetFinal(date, heureFinal, finalVille, baseVille))
+
+    def ajouterObjetUnique(self, nomVille: str, objet):
+        nomVille = (nomVille or "").strip()
+        if nomVille == "":
+            raise ValueError("Nom de ville vide dans le CSV")
+        if nomVille in self:
+            raise ValueError(f"Collision: la ville '{nomVille}' est déjà définie dans ConstructionsCadrans")
+        self[nomVille] = objet
+ 
 
 class ObjetCadran:
     def __init__(self, date, heureCadran: str, ombre : str, base : str, midi : str, autre : str = None):
@@ -68,15 +138,31 @@ class ObjetCadran:
     def getHeureCadran(self):
         return self.heureCadran
     
+    def typeCadran(self):
+        pass
+    
+    def getTriangleCadran(self):
+        pass
+
 class ObjetStylet(ObjetCadran):
     def __init__(self, date: str, heureCadran : str, styletVille: str):
         super().__init__(date, heureCadran, styletVille, "Coetquidan", "Golfe-Juan")    
 
+    def typeCadran(self):
+        return "stylet"
     
 class ObjetLumiere(ObjetCadran):
     def __init__(self, date: str, heureCadran: str, lumiereVille: str, styletVille: str):
         super().__init__(date, heureCadran, lumiereVille, "Coetquidan", "Golfe-Juan", styletVille )  
 
+    def getTriangleCadran(self):
+        ptBase = PointGraphique(self.base)
+        ptOuverture = PointGraphique(self.autre)
+        ptLumiere = PointGraphique(self.ombre)
+        return ptOuverture, ptBase, ptLumiere
+    
+    def typeCadran(self):
+        return "lumiere"
     
 class ObjetBase(ObjetCadran):
     def __init__(self, date: str, heureCadran: str, baseVille: str, styletVille: str):
@@ -85,11 +171,21 @@ class ObjetBase(ObjetCadran):
     def getReference(self):
         return self.base
     
+    def typeCadran(self):
+        return "base"
+    
 class ObjetFinal(ObjetCadran):
     def __init__(self, date: str, heureCadran: str, finalVille: str, baseVille: str):
         super().__init__(date, heureCadran, finalVille, baseVille, "Bourges")  
 
+    def typeCadran(self):
+        return "final"
 
-
+    def getTriangleCadran(self):
+        ptBase = PointGraphique(self.base)
+        ptOuverture = PointGraphique(self.midi)
+        ptLumiere = PointGraphique(self.ombre)
+        return ptOuverture, ptBase, ptLumiere
+    
 if __name__ == "__main__":
-    constructionsCadrans = ConstructionsCadrans("data/constructionsCadrans.csv")
+    constructionsCadrans = ConstructionsCadrans("data/constructionsCadransMultiSolutions.csv")

@@ -82,7 +82,9 @@ class UniteDecodageSS:
         azOppB = (azB + 180) % 360
 
         indexA = azA / 6
-        indexB = (azB / 6)
+        indexOppA = azOppA / 6 
+        indexB = azB / 6
+        indexOppB = azOppB / 6
 
         # Angle entre la base et le segment
         angleMidiA= self.angleSegmentMidiDebut
@@ -100,10 +102,10 @@ class UniteDecodageSS:
             (1, "Distance Fin", f"{self.distanceLumiereFin:.02f}km"),
             (2, f"Azimut Debut", f"{azA:.02f}° - {azOppA:.02f}°"),
             (2, f"Azimut Fin", f"{azB:.02f}° - {azOppB:.02f}°"),   
-            (3, f"Angle Debut % Base", f"{angleMidiA:.02f}°"),
-            (3, f"Angle Fin % Base", f"{angleMidiB:.02f}°"),  
-            (4, f"Azimut Debut Base 60", f"{indexA:.02f}"),
-            (4, f"Azimut Debut Base 60", f"{indexB:.02f}"),  
+            (3, f"Azimut Debut Base 60", f"{indexA:.02f} - {indexOppA:.02f}"),
+            (3, f"Azimut Debut Base 60", f"{indexB:.02f} - {indexOppB:.02f}"), 
+            (4, f"Angle Debut % Base", f"{angleMidiA:.02f}°"),
+            (4, f"Angle Fin % Base", f"{angleMidiB:.02f}°"),  
             (5, f"Azimut Midi", f"{azMidi:.02f}° - {azOppMidi:.02f}°"),
             (5, f"Index Midi", f"{indexMidi:.02f}"),             
                 ]

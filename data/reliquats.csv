@@ -1,33 +1,37 @@
 Ligne,Enigme,Indice,Source,Destination
-1,780,La Rosse et le cocher,Malevoisine,Observatoire de Paris
+1,530,Affaire de devin,La Ferté-Alais, La Ferté-Alais
 2,470,Le bon chemin,Loudun,Burgos
 3,470,La flèche vise le cœur,Saint-Amour,Saint-Valentin
-4,470,La flèche vise le cœur,Jumièges,Taillebourg
-5,470,La flèche vise le cœur,Châlus,Fontevraud
-6,470,La charade -Le gout du laurier-,Gergovie,Alise-Sainte-Reine
-7,470,La charade -la liaison-,Bordeaux,Beaugency
-8,470,Le Tout,Roncevaux,Rocamadour
-9,600,Quand Al-mar,Thury-sous-Clermont,Rumigny
-10,600,Quand Al-mar,Vouneuil-sur-Vienne,Sainte-Catherine-de-Fierbois
-11,500,A 2424,Parigné-le-Pôlin,Carignan
-12,500,La spirale,Metz,Bâle
-13,420,C'est là que l'Aigle,Golfe-Juan,Aléria
-14,420,C'est là que l'Aigle,Boulogne-sur-Mer,Sedan
-15,420,Imprima la marque,Mayence,Strasbourg
-16,420,Casser le bec,Waterloo,Île-d'Aix
-17,560,Ad augusta,Château-Gaillard,Bouvines
-18,560,Per Angusta,Mirebeau,Le Goulet
-19,560,Carusbuc,Saint-Valery-sur-Somme,Pevensey
-20,560,Carusbuc,Cherbourg,3RDV
-21,560,Marcher sur les eaux,Pont Tancarville,Pont de Noirmoutier
-22,560,Neptune à ton secours,Sainte-Mère-Église,Massif des Maures
-23,560,Avan de voir..la nef,Vézelay,Mont Saint Michel
-24,560,Tu ne regretteras pas,Crécy-en-Ponthieu,Nouaillé-Maupertuis
-25,560,Tu ne regretteras pas,Montereau,Troyes
-26,650,Les passer en revue,Coetquidan,Guérande
-27,520,Entre eux,Carnac,Lampouy
-28,520,Jeu Facile,Domrémy,Chinon
-29,520,Le dernier supplice,Compiègne,Rouen
-30,520,Porter ta pelle,Reims,Bourges
-31,520,Dame Nature,Lac-de-Trémelin,Beaufort-en-Vallée
-32,520,Sa blessure,Orléans,Beaurevoir
+4,470,La flèche vise le cœur,Châlus,Fontevraud
+5,470,La flèche vise le cœur,Jumièges,Taillebourg
+6,470,La charade -L'espace-,Pic du Midi,Grotte de Lombrives
+7,470,La charade -Le gout du laurier-,Gergovie,Alise-Sainte-Reine
+8,470,La charade -la liaison-,Chateau d'Antioche,Beaugency
+9,470,La charade -l'inconnu-,Beaufort-en-Vallée,Lac-de-Trémelin
+10,470,Le Tout,Roncevaux,Rocamadour
+11,470,par l'ouverture tu verras,Mirebeau,Mirebeau
+12,600,Quand Al-mar,Vouneuil-sur-Vienne,Sainte-Catherine-de-Fierbois
+13,600,Quand Al-mar s'alie,St Julien de Mailloc, Villefrancoeur
+14,600,A la fibule de Preneste,Thury-sous-Clermont,Rumigny
+15,500,A 2424,Solesmes,Carignan
+16,500,La spirale,Metz,Bâle
+17,420,C'est là que l'Aigle,Golfe-Juan, Paris
+18,420,Imprima la marque,Strasbourg, Mayence
+19,420,dans le sable,Boulogne-sur-Mer,Aléria
+20,420,Casser le bec,Sedan,Waterloo
+21,420,laisser les plumes,Île-d'Aix,Coetquidan
+22,560,Ad augusta,Château-Gaillard,Bouvines
+23,560,Per Angusta,Le Goulet,Le Goulet
+24,560,Carusbuc,Cherbourg,Pevensey
+25,560,Marcher sur les eaux,Pont Tancarville,Pont de Noirmoutier
+26,560,Neptune à ton secours,Sainte-Mère-Église,Massif des Maures
+27,560,interrmop ton parcours,3RDV,3RDV
+28,560,Avan de voir..la nef,Vézelay,Mont Saint Michel
+29,560,Tu ne regretteras pas,Montereau,Troyes
+30,560,Tu ne regretteras pas,Brétigny,Nouaillé-Maupertuis
+31,650,Les passer en revue,Guérande,Guérande
+32,520,Entre eux,Carnac,Lampouy
+33,520,Jeu Facile,Domrémy,Chinon
+34,520,Le dernier supplice,Orléans,Rouen
+35,520,Car c'est la règle,Reims,Bourges
+36,520,Dame Nature,Donon,Puy de Dôme

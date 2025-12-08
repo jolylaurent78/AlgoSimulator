@@ -31,15 +31,5 @@
         "PYTHONPATH": "${workspaceFolder}"
       }
     }   
-    {
-      "name": "Tester calcul Astronomique",
-      "type": "python",
-      "request": "launch",
-      "program": "${workspaceFolder}/src/calculAstronomique.py",
-      "console": "integratedTerminal",
-      "env": {
-        "PYTHONPATH": "${workspaceFolder}"
-      }   
-    } 
   ]
 }

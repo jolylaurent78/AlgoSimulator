@@ -2,9 +2,11 @@ import tkinter as tk
 from tkinter import ttk, Label
 from PIL import Image, ImageTk
 from tksheet import Sheet
+from tkinter import filedialog
 
 import numpy as np
 import cv2
+import csv
 
 # Base de données des villes
 from src.data_loader import villes_dict
@@ -56,8 +58,8 @@ class InterfaceSS(tk.Tk):
         self.frameCentreBas = tk.Frame(
             panedVerticalCentre, relief=tk.RIDGE, borderwidth=2
         )
-        panedVerticalCentre.add(self.frameCentreHaut, minsize=400)
-        panedVerticalCentre.add(self.frameCentreBas, minsize=400)
+        panedVerticalCentre.add(self.frameCentreHaut, minsize=300)
+        panedVerticalCentre.add(self.frameCentreBas, minsize=300)
 
         # Frame droite
         self.frameDroite = tk.Frame(
@@ -73,7 +75,7 @@ class InterfaceSS(tk.Tk):
 
         # Les 8 constructions
         self.constructionsCadrans = ConstructionsCadrans(
-            "data/constructionsCadrans.csv"
+            "data/constructionsCadransMultiSolutions.csv"
         )
 
         # Le raffraichisseent de la Tree View met à jour l'IHM complet en appelant mettreAJourIHM
@@ -1005,9 +1007,26 @@ class AxeMidiIHM:
     def __init__(self, parent, interface:InterfaceSS):
         self.interface = interface
         self.frame = ttk.LabelFrame(
-            parent, text="Axe Midi", style="TitreFrame.TLabelframe"
+            parent, text="Assemblage", style="TitreFrame.TLabelframe"
         )
         self.frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        # Barre de boutons en haut
+        self.frameBoutons = tk.Frame(self.frame)
+        self.frameBoutons.pack(side=tk.TOP, anchor=tk.W, pady=(8, 2))
+
+        # Chargement icône
+        self.iconeSave = tk.PhotoImage(file="images/save.png")
+
+        # Bouton sauvegarder
+        self.boutonSave = tk.Button(
+            self.frameBoutons,
+            image=self.iconeSave,
+            command=self.actionSauvegarder,
+            relief=tk.RAISED,
+            bd=1,
+        )
+        self.boutonSave.pack(side=tk.LEFT, padx=2)
 
         # On charge la liste des axes de Midi à analyser
         self.listeAxeMidi = AxeMidi("data/segmentsMidi.csv")
@@ -1046,6 +1065,80 @@ class AxeMidiIHM:
     def setAxeMidi(self, event=None):
         self.interface.mettreAJourIHM()
 
+    def actionSauvegarder(self):
+        print("→ Sauvegarde des segments de Midi")
+
+        listeTriangles = []
+        for uniteDecodage in self.interface.listeUnitesDecodage:
+            for objet in (uniteDecodage.objetDebut, uniteDecodage.objetFin):
+                if objet.typeCadran() in ("lumiere", "final"):
+                    # On récupère les 3 pts graphiques du triangle
+                    ptOuverture, ptBase, ptLumiere = objet.getTriangleCadran()
+                    nomOuverture= ptOuverture.getNom()
+                    nomBase= ptBase.getNom()
+                    nomLumiere= ptLumiere.getNom()
+                    # On récupère les coordonnées
+                    ptOuverture_x, ptOuverture_y = ptOuverture.coordonneesPixelAbs()
+                    ptBase_x, ptBase_y = ptBase.coordonneesPixelAbs()
+                    ptLumiere_x, ptLumiere_y = ptLumiere.coordonneesPixelAbs()   
+                    # On calcule les lignes associées
+                    ligneOuvertureBase = Ligne(ptOuverture_x,ptOuverture_y, ptBase_x, ptBase_y)
+                    ligneOuvertureLumiere = Ligne(ptOuverture_x, ptOuverture_y, ptLumiere_x, ptLumiere_y)
+                    ligneBaseLumiere = Ligne(ptBase_x, ptBase_y, ptLumiere_x, ptLumiere_y)
+                    # On calcule angles et distances entre les 3 points
+                    angleOuverture = ligneOuvertureBase.angleAvec(ligneOuvertureLumiere)
+                    angleBase = 180-ligneOuvertureBase.angleAvec(ligneBaseLumiere)
+                    angleLumiere = ligneBaseLumiere.angleAvec(ligneOuvertureLumiere)
+                    distOuvertureBase = ptOuverture.distance(ptBase)
+                    distOuvertureLumiere = ptOuverture.distance(ptLumiere)
+                    distLumiereBase = ptLumiere.distance(ptBase)
+                    # --- Orientation (bit de sens) ---
+                    # Produit vectoriel 2D au point Ouverture, corrigé du repère écran (y vers le bas)
+                    s_img = (ptBase_x - ptOuverture_x) * (ptLumiere_y - ptOuverture_y) - (ptBase_y - ptOuverture_y) * (ptLumiere_x - ptOuverture_x)
+                    s = -s_img  # inverse pour revenir à l’orientation mathématique habituelle
+                    orientation = "CCW" if s > 0 else ("CW" if s < 0 else "COL")
+                    triangle = (
+                        (nomOuverture, nomBase, nomLumiere),
+                        objet.typeCadran(),
+                        (angleOuverture, angleBase, angleLumiere),
+                        (distOuvertureBase, distOuvertureLumiere, distLumiereBase),
+                        orientation,
+                    )
+                    print(triangle)
+                    listeTriangles.append(triangle)
+
+                         # Boîte de dialogue pour choisir le fichier
+        
+        cheminFichier = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("Fichiers CSV", "*.csv")],
+            title="Enregistrer les triangles"
+        )
+
+        if not cheminFichier:
+            return  # Annulé par l'utilisateur
+
+        with open(cheminFichier, mode="w", newline="") as fichier:
+            writer = csv.writer(fichier, delimiter=";")
+            writer.writerow([
+                "Nom Ouverture", "Nom Base", "Nom Lumiere", "Type Cadran",
+                "Angle Ouverture", "Angle Base", "Angle Lumiere",
+                "Longueur Ouverture-Base", "Longueur Ouverture-Lumiere", "Longueur Lumiere-Base",
+                "Orientation"
+            ])
+            for triangle in listeTriangles:
+                noms, type, angles, longueurs, orientation = triangle
+                ligne = (
+                    list(noms)
+                    + [type]
+                    + [round(a, 2) for a in angles]
+                    + [round(d, 2) for d in longueurs]
+                    + [orientation]
+                )
+                writer.writerow(ligne)
+
+        print(f"→ {len(listeTriangles)} triangles sauvegardés dans {cheminFichier}")
+            
 
 if __name__ == "__main__":
     app = InterfaceSS()

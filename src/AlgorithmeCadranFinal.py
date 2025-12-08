@@ -94,7 +94,7 @@ class StyletFinal(ModuleAlgo):
         return "=", "+2", "-2"
 
     def getValeursOctave(self):
-        return "x1", "x2", "/2", "/4", "/8"
+        return "x1", "x2", "x4", "/2", "/4", "/8"
     
     def getValeursChoixCalendrier(self):
         return ["Standard", "Déclinaison"]
@@ -111,6 +111,7 @@ class StyletFinal(ModuleAlgo):
     tableauOctave = {
         "x1": 1,
         "x2": 2,
+        "x4": 4,
         "/2": 0.5,
         "/4": 0.25,
         "/8": 0.125
