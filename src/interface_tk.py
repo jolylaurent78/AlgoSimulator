@@ -7,25 +7,25 @@ import os
 import pickle
 import json
 import sqlite3
-from collections import defaultdict
 import csv
 import pandas as pd
 import webbrowser
+import numpy as np
 
 # Base de données des villes
 from src.data_loader import villes_dict
 
 # Affichage de la carte interractive
-from src.affichage_fenetre import display, transformer_pixel_affichage_vers_image, selectionVille, selectionObjet, sauvegarder_carte_complete
-from src.affichage_fenetre import ListePOIs
-from src.affichage_fenetre import pan_x, pan_y, zoom_factor, frame_width, frame_height, set_globals, canvasDisplay
+from src.affichage_fenetre import display, transformer_pixel_affichage_vers_image, selectionVille, selectionObjet
+from src.affichage_fenetre import ListePOIs, sauvegarder_carte_complete
+from src.affichage_fenetre import zoom_factor, set_globals
 
 # Gestion des coordonnées / projection
 from src.carte_config import carteConfig, charger_icone, hexVersBGR, bgrVersHex
 from src.configGlobale import ConfigGlobale
 
 # Affichage des objects graphiques
-from src.affichage_objets import *
+from src.affichage_objets import PointGraphique, SymboleWiki
 
 # Affichge de l'IHM pour l'algorithme'
 from src.IHMAlgorithme import IHMAlgorithme
@@ -40,7 +40,6 @@ from src.AlgorithmeManager import TypeScenario
 
 # Gestion des layers graphiques
 from src.layerManager import LayerManager
-
 
 
 class InterfaceCarte(tk.Tk):
@@ -68,7 +67,6 @@ class InterfaceCarte(tk.Tk):
         self.moteurAlgo = AlgorithmeSegment(self.layerManager)
         largeur, hauteur = self.moteurAlgo.getLargeurHauteurIHM()
 
-
         # Initialisation des attributs pour l'affichage des segment'
         self.varSegmentAffiche = None
         self.comboSegmentAffiche = None
@@ -85,13 +83,12 @@ class InterfaceCarte(tk.Tk):
         self.varAfficherAlgo = tk.BooleanVar(value=True)
         self.varAfficherLayers = tk.BooleanVar(value=True)
 
-        self._setup_main_split(largeur, hauteur )
+        self._setup_main_split(largeur, hauteur)
         self._setup_menu()
 
         # Création de la liste dynamique des POIs Wikipédia et paramètres d'affichage des POIs
         self.listePOIs = ListePOIs(self.canvas_image, self.chemin_bd, self)
         self.listePOIs.layer.setVisible(False)
-
 
         # Le nom du fichier de description de l'IHM porte le même nom de la classe Métier'
         nom_fichier_csv = "config/"+type(self.moteurAlgo).__name__ + ".csv"
@@ -105,7 +102,6 @@ class InterfaceCarte(tk.Tk):
             callbackMiseAJourMenu=None
             )
         self.ihm_algo.pack(fill="both", expand=True)
-
 
         self._refresh_images()
 
@@ -136,8 +132,7 @@ class InterfaceCarte(tk.Tk):
                 "moteur": self.moteurAlgo
             }, f)
 
-
-    def lireMetaDonneesProjet(self,chemin: str) -> dict:
+    def lireMetaDonneesProjet(self, chemin: str) -> dict:
         with open(chemin, "rb") as f:
             taille = int.from_bytes(f.read(4), byteorder="big")
             metadata_bytes = f.read(taille)
@@ -152,7 +147,6 @@ class InterfaceCarte(tk.Tk):
             data = pickle.load(f)
 
         self.appliquerEtat(data["layers"], data["moteur"])
-
 
     def appliquerEtat(self, layerManager: LayerManager, moteurAlgo):
         """Applique le nouvel état (layers et moteur) à l'interface."""
@@ -193,7 +187,7 @@ class InterfaceCarte(tk.Tk):
         self.creerLayerControle(self.frameLayers)
         self._refresh_images()
 
-### Mise en place des panels, menu, mini-carte
+    # Mise en place des panels, menu, mini-carte
 
     def _setup_menu(self):
         menubar = tk.Menu(self)
@@ -206,7 +200,7 @@ class InterfaceCarte(tk.Tk):
         menu_nouveau.add_command(
             label="Algorithme Segment",
             command=lambda: self.actionNouveauProjet(AlgorithmeSegment),
-        )        
+        )
         menu_nouveau.add_command(
             label="Algorithme Stylet Initial",
             command=lambda: self.actionNouveauProjet(AlgorithmeStyletInitial),
@@ -244,8 +238,6 @@ class InterfaceCarte(tk.Tk):
                         )
                     except Exception as e:
                         print(f"[⚠️] Erreur de lecture de métadonnées pour {file} : {e}")
-
-
 
         menu_fichier.add_separator()
         menu_fichier.add_command(label="Sauvegarder carte", command=self.sauvegarder_carte)
@@ -322,7 +314,7 @@ class InterfaceCarte(tk.Tk):
         menu_carte.add_command(
             label="Charger et calibrer une nouvelle carte...",
             command=self.demarrerCalibrationNouvelleCarte
-)
+        )
         menubar.add_cascade(label="Carte", menu=menu_carte)
 
         self.config(menu=menubar)
@@ -343,7 +335,7 @@ class InterfaceCarte(tk.Tk):
         style.configure("TitreFrame.TLabelframe.Label", font=("TkDefaultFont", 9, "bold"))
 
         # On crée le side panel
-        self.sidePanel  = tk.Frame(self)
+        self.sidePanel = tk.Frame(self)
         self.sidePanel .pack(side="left", fill="y", padx=10, pady=10)
 
         # On crée une frame pour la gestion des segments
@@ -368,9 +360,6 @@ class InterfaceCarte(tk.Tk):
         self.frameIHMAlgo.update_idletasks()  # force le layout
         label = self.moteurAlgo.getScenario().getDescriptionLisible()
         self.frameIHMAlgo.config(text=f"Scénario : {label}")
-
-
-
 
     def creerSelectionSegments(self, parent):
         segments = self.moteurAlgo.getListeSegments()
@@ -399,7 +388,7 @@ class InterfaceCarte(tk.Tk):
 
         comboSegment.bind("<<ComboboxSelected>>", onSegmentChange)
 
-### On gère le controle des layers
+    # On gère le controle des layers
     def getNomScenarioSelectionne(self) -> str:
         selection = self.treeLayers.selection()
         if not selection:
@@ -411,8 +400,7 @@ class InterfaceCarte(tk.Tk):
             self.treeLayers.selection_remove(nom_scenario)
             return
 
-        return nom_scenario # L'IHM utilise le nom lisible comme identifiant
-
+        return nom_scenario  # L'IHM utilise le nom lisible comme identifiant
 
     def cocherTousLesModules(self):
         """
@@ -428,7 +416,6 @@ class InterfaceCarte(tk.Tk):
         """
         self.comboFiltrageNiveau.set("Tous")
         self.onChangementNiveau()  # ou autre nom selon ta méthode liée
-
 
     def mettreAJourCheckboxGlobale(self):
         etats = [var.get() for var in self.checkVarsLayers.values()]
@@ -473,9 +460,7 @@ class InterfaceCarte(tk.Tk):
         self.creerLayerControle(self.frameLayers, scenario_a_selectionner=nom_scenario_lisible)
         self.updaterScenarioActif()
 
-
-
-    def updaterScenarioActif(self, event = None):
+    def updaterScenarioActif(self, event=None):
 
         nom_scenario = self.getNomScenarioSelectionne()
         if nom_scenario is None:
@@ -490,7 +475,6 @@ class InterfaceCarte(tk.Tk):
 
         # On met à jour les boutons Action
         self.mettreAJourEtatBoutonsScenario()
-
 
     def mettreAJourEtatBoutonsScenario(self):
         """
@@ -513,7 +497,6 @@ class InterfaceCarte(tk.Tk):
         icone = self.icone_visible if layer.estVisible() else self.icone_invisible
         self.boutonToggleVisibilite.configure(image=icone, state="normal")
 
-
         # On peut dupliquer n'importe quel type de scénario'
         self.boutonDupliquer.config(state="normal")
 
@@ -533,8 +516,6 @@ class InterfaceCarte(tk.Tk):
             self.boutonSupprimer.config(state="normal")
         else:
             self.boutonSupprimer.config(state="disabled")
-
-
 
     def creerLayerControle(self, parent, scenario_a_selectionner=None):
 
@@ -574,7 +555,7 @@ class InterfaceCarte(tk.Tk):
             textvariable=self.varPOIPertinence,
             state="readonly",
             width=8,
-       )
+        )
         self.varPOIPertinence.trace_add("write", lambda *args: self._refresh_images())
         self.comboPOIPertinence.pack(side="left", padx=(0, 4))
 
@@ -610,11 +591,10 @@ class InterfaceCarte(tk.Tk):
             self.varPOISujet.set(sujets[0])
         self.varPOISujet.trace_add("write", lambda *args: self._refresh_images())
         self.comboPOISujet.pack(side="left")
-#
-# 2ème ligne avec filtrage pr TAG
-#
 
-
+        #
+        # 2ème ligne avec filtrage pr TAG
+        #
 
         # === Ligne de filtrage des layers ===
         ligne_niveau_module = ttk.Frame(frame_filtrage)
@@ -639,17 +619,12 @@ class InterfaceCarte(tk.Tk):
             )
             cb.pack(side="left", padx=(2, 2))
 
-
-
-
-
-#
-# Filtrae des layers par attributs
-#
+        #
+        # Filtrae des layers par attributs
+        #
         # === Ligne 2 : Filtrage des layers en eux même ===
         ligne_checkbox = ttk.Frame(frame_filtrage)
         ligne_checkbox.pack(fill="x", pady=(2, 0))
-
 
         def ouvrir_fenetre_filtrage_scenarios_auto():
             segment = self.moteurAlgo.segment_actif
@@ -684,7 +659,6 @@ class InterfaceCarte(tk.Tk):
             self.filtres_vars = {}  # clef = (module, attribut), valeur = {valeur: BooleanVar}
 
             for col_index, (module, attribut) in enumerate(parametresScenario):
-
 
                 valeurs_possibles = self.moteurAlgo.getValeursParametre(module, attribut)
                 if not valeurs_possibles:
@@ -759,8 +733,6 @@ class InterfaceCarte(tk.Tk):
 
             popup.update_idletasks()
 
-
-
         # Checkbox "Tout sélectionner"
         def on_toggle_select_all():
             etat = self.var_select_all.get()
@@ -779,7 +751,6 @@ class InterfaceCarte(tk.Tk):
                     self.treeLayers.set(nom_scenario, column="vis", value="")
                 else:  # État "indéterminé" : on ignore
                     pass
-
 
             self._refresh_images()
 
@@ -813,9 +784,8 @@ class InterfaceCarte(tk.Tk):
         )
         btn_menu.pack(side="left")
 
-
         def ouvrirFenetreEditionScenario(nomscenario, nouveau=False):
-            #On récupère le scénario et le layer pour l'initialisation des données et la sauvegarde
+            # On récupère le scénario et le layer pour l'initialisation des données et la sauvegarde
             scenario = self.moteurAlgo.getScenarioNomLisible(nomscenario)
             layer = self.layerManager.getLayer(scenario.getDescriptionLisible(), segment=scenario.segment)
 
@@ -824,7 +794,6 @@ class InterfaceCarte(tk.Tk):
             top.transient(self)
             top.grab_set()
 
-
             # === Nom ===
             var_nom = tk.StringVar(value=scenario.nom)
             ttk.Label(top, text="Nom du scénario :").pack(anchor="w", padx=10, pady=(10, 2))
@@ -832,9 +801,7 @@ class InterfaceCarte(tk.Tk):
             entry_nom.pack(padx=10, fill="x")
 
             # === Couleur + Épaisseur ===
-            couleur =  "#000000" if nouveau else layer.getCouleur()
             var_couleur = tk.StringVar(value="#000000")
-            epaisseur = 1 if nouveau else layer.getEpaisseur()
             var_epaisseur = tk.IntVar(value=1)
 
             frame_style = ttk.Frame(top)
@@ -859,13 +826,10 @@ class InterfaceCarte(tk.Tk):
             spin_epaisseur = ttk.Spinbox(frame_style, from_=1, to=10, textvariable=var_epaisseur, width=5)
             spin_epaisseur.pack(side="left")
 
-
             # === Scénario solution ===
             solutionActive = scenario.getSolution()
             var_solution = tk.BooleanVar(value=solutionActive)
             ttk.Checkbutton(top, text="Ce scénario est une solution", variable=var_solution).pack(anchor="w", padx=10, pady=(10, 2))
-
-
 
             # === Bouton Sauvegarder ===
             def sauvegarder():
@@ -892,14 +856,13 @@ class InterfaceCarte(tk.Tk):
 
             top.mainloop()
 
-
         def actionDupliquerScenario():
             """
             Crée un nouveau scénario utilisateur basé sur celui sélectionné,
             puis ouvre immédiatement la fenêtre d’édition.
             """
             nom_scenario_lisible = self.getNomScenarioSelectionne()
-            if nom_scenario_lisible == None:
+            if nom_scenario_lisible is None:
                 return
             base = self.moteurAlgo.getScenarioNomLisible(nom_scenario_lisible)
 
@@ -923,10 +886,9 @@ class InterfaceCarte(tk.Tk):
             # Ouvrir la fenêtre d’édition en lui disant que l'objet est nouveau'
             ouvrirFenetreEditionScenario(label, True)
 
-
         def actionEditerScenario():
             nom_scenario_lisible = self.getNomScenarioSelectionne()
-            if nom_scenario_lisible == None:
+            if nom_scenario_lisible is None:
                 return
             ouvrirFenetreEditionScenario(nom_scenario_lisible)
 
@@ -997,20 +959,14 @@ class InterfaceCarte(tk.Tk):
         )
         self.boutonSupprimer.pack(side="left", padx=(2, 2))
 
-
-
-
-
-#
-# Affichage des layers
-#
-
+        #
+        # Affichage des layers
+        #
 
         # on crée une troisième ligne dans laquelle on affichera la Tree View + liste de boutons  de commande
         frameLigneLayer = ttk.Frame(parent)
         frameLigneLayer.pack(fill="x", padx=5, pady=2)
         self.frameLigneLayer = frameLigneLayer
-
 
         def onDoubleClickLayer(event):
             item_id = self.treeLayers.identify_row(event.y)
@@ -1019,7 +975,6 @@ class InterfaceCarte(tk.Tk):
                 return  # On ignore les groupes
 
             self.selectionnerUniquementScenarioActif(item_id)
-
 
         self.treeLayers = ttk.Treeview(
             frameLigneLayer,
@@ -1044,11 +999,9 @@ class InterfaceCarte(tk.Tk):
         frameLigneLayer.grid_columnconfigure(0, weight=1)
         frameLigneLayer.grid_rowconfigure(0, weight=1)
 
-
-
         # Colonne #0 = texte principal (nom + carré)
-        self.treeLayers.column("#0", width=400, anchor = "w", stretch=True)
-        self.treeLayers.heading("#0", text="Scénario", anchor = "w")
+        self.treeLayers.column("#0", width=400, anchor="w", stretch=True)
+        self.treeLayers.heading("#0", text="Scénario", anchor="w")
 
         # Colonne visibilité
         self.treeLayers.column("vis", width=30, anchor="center", stretch=False)
@@ -1057,8 +1010,6 @@ class InterfaceCarte(tk.Tk):
         # Colonne solution
         self.treeLayers.column("solution", width=30, anchor="center", stretch=False)
         self.treeLayers.heading("solution", text="🥇", anchor="center")
-
-
 
         # Groupes visibles dans colonne #0
         grp_user = self.treeLayers.insert("", "end", iid="grp_user", text="📘 Scénarios personnalisés", open=True)
@@ -1103,7 +1054,6 @@ class InterfaceCarte(tk.Tk):
             )
             self.treeLayers.bind("<<TreeviewSelect>>", self.updaterScenarioActif)
 
-
         # Sélectionne le scénario actif si précisé
         if scenario_a_selectionner:
             self.treeLayers.selection_set(scenario_a_selectionner)
@@ -1123,9 +1073,7 @@ class InterfaceCarte(tk.Tk):
             self.frameSegment.pack_forget()
         self._refresh_images()
 
-
-
-### Gestion des évènements utilisatuer sur l'image'
+    # Gestion des évènements utilisatuer sur l'image'
     def _setup_canvas(self):  # ajout des événements souris
         self.canvas_image = tk.Canvas(self, bg="gray")
         self.canvas_image.bind("<Configure>", self._on_canvas_resize)
@@ -1163,16 +1111,22 @@ class InterfaceCarte(tk.Tk):
 
         self._refresh_images()
 
-    def _refresh_images(self, afficherPOIsUniquement = False):
+    def _refresh_images(self, afficherPOIsUniquement=False):
 
         if not hasattr(self, "canvas_image"):
             return  # L'objet n'est pas encore prêt
 
         (w_img, h_img) = carteConfig.image_size
         if self.modeCalibration:
-            canvas = display(LayerManager(), ListePOIs(self.canvas_image, self.chemin_bd, self), retourner_image=True, afficherPOIsUniquement=False)
+            canvas = display(LayerManager(),
+                             ListePOIs(self.canvas_image, self.chemin_bd, self),
+                             retourner_image=True,
+                             afficherPOIsUniquement=False)
         else:
-            canvas = display(self.layerManager, self.listePOIs, retourner_image=True, afficherPOIsUniquement = afficherPOIsUniquement)
+            canvas = display(self.layerManager,
+                             self.listePOIs,
+                             retourner_image=True,
+                             afficherPOIsUniquement=afficherPOIsUniquement)
 
         image_rgb = cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB)
         image_pil = Image.fromarray(image_rgb)
@@ -1238,7 +1192,7 @@ class InterfaceCarte(tk.Tk):
                 font=("Helvetica", 16, "bold")
             )
 
-### Gesion des évènements souris
+    # Gesion des évènements souris
 
     def _on_mouse_move_global(self, event):
 
@@ -1247,7 +1201,7 @@ class InterfaceCarte(tk.Tk):
             return
 
         # On gère d'abord les tooltips'
-        obj = selectionObjet(px, py, self.layerManager, layerPOIs = self.listePOIs.layer)
+        obj = selectionObjet(px, py, self.layerManager, layerPOIs=self.listePOIs.layer)
         texte = None
         if obj is not None:
             lignes = obj.getTooltipComplet() if hasattr(obj, "getTooltipComplet") else []
@@ -1269,7 +1223,6 @@ class InterfaceCarte(tk.Tk):
             self.tooltip_overlay.bind("<Button-1>", lambda e: "break")  # empêche le tooltip de consommer l'événement
             self.tooltip_overlay.bind("<Button-3>", lambda e: "break")  # empêche aussi le clic droit d’être bloqué
 
-
         if texte:
             self.tooltip_overlay.config(text=texte)
             self.tooltip_overlay.place(x=event.x + 10, y=event.y + 10)
@@ -1278,7 +1231,7 @@ class InterfaceCarte(tk.Tk):
         else:
             self.tooltip_overlay.place_forget()
 
-        #On gère la mesure de la distance
+        # On gère la mesure de la distance
         if not self.pointReferenceMesureDistance:
             return
 
@@ -1299,9 +1252,6 @@ class InterfaceCarte(tk.Tk):
 
         # Texte noir par-dessus
         self.overlay.create_text(10, 15, text=texte, anchor="w", fill="black", font=("TkDefaultFont", 10))
-
-
-
 
     def _on_mouse_press(self, event):
 
@@ -1332,8 +1282,6 @@ class InterfaceCarte(tk.Tk):
                         for o in self.layerManager.getListeObjetsGraphiquesVisible():
                             o.setSelection(False)
                         obj.setSelection(True)
-
-
                 else:
                     # Clic dans le vide : tout désélectionner
                     for o in self.layerManager.getListeObjetsGraphiquesVisible():
@@ -1354,11 +1302,9 @@ class InterfaceCarte(tk.Tk):
             label="Centrer la carte",
             command=lambda: self.centrerCarte(px, py))
 
-
         # Gestion de l'outil de distance
         # 1. Conversion coordonnées pixels image → Lambert93
         x_l93, y_l93 = carteConfig.pixels_to_lambert93(px, py)
-
 
         # 2. Chercher d'abord une ville
         ville = selectionVille(px, py)
@@ -1366,7 +1312,7 @@ class InterfaceCarte(tk.Tk):
         # 3. Si pas de ville, chercher un objet graphique
         point = None
         if not ville:
-            obj = selectionObjet(px, py, self.layerManager, layerPOIs = self.listePOIs.layer)
+            obj = selectionObjet(px, py, self.layerManager, layerPOIs=self.listePOIs.layer)
             if isinstance(obj, PointGraphique) and obj.estVisible():
                 point = obj
 
@@ -1395,7 +1341,6 @@ class InterfaceCarte(tk.Tk):
         if isinstance(point, SymboleWiki):
             self.menu_contextuel.add_command(label=f"Ouvrir le lien « {point.url} »", command=lambda: webbrowser.open(point.url))
 
-
         #
         # Analyse en détail d'un scénario'
         #
@@ -1414,8 +1359,6 @@ class InterfaceCarte(tk.Tk):
         self.menu_contextuel.tk_popup(event.x_root, event.y_root)
         self.menu_contextuel.grab_release()
 
-
-
     def cacher_objet_selectionne(self):
         if hasattr(self, 'objet_selectionne') and self.objet_selectionne:
             self.objet_selectionne.setVisible(False)
@@ -1433,7 +1376,6 @@ class InterfaceCarte(tk.Tk):
         self.last_mouse_pos = (event.x, event.y)
         self._refresh_images()
 
-
     def _on_mouse_wheel(self, event):
         import src.affichage_fenetre as af
         old_zoom = af.zoom_factor
@@ -1447,7 +1389,7 @@ class InterfaceCarte(tk.Tk):
         af.pan_y += int((rel_y) * af.frame_height * (1 / old_zoom - 1 / af.zoom_factor))
         self._refresh_images()
 
-### Gestion de l'outil Distance
+    # Gestion de l'outil Distance
 
     def definirPointReferenceMesure(self, x_l93: float, y_l93: float, nom: str):
         """
@@ -1479,10 +1421,7 @@ class InterfaceCarte(tk.Tk):
             self.overlay = None
         print("❌ Mode mesure désactivé (touche Échap)")
 
-
-### Centrage de la carte
-
-
+    # Centrage de la carte
     def centrerCarte(self, px, py, zoom_max=2.5):
         from affichage_fenetre import frame_width, frame_height
         w_img, h_img = carteConfig.image_size
@@ -1520,13 +1459,9 @@ class InterfaceCarte(tk.Tk):
         set_globals(pan_x_val=nouveau_pan_x, pan_y_val=nouveau_pan_y, zoom_factor_val=facteur_zoom)
         self._refresh_images()
 
-
-### Analyse d'un scnéario'
-
+    # Analyse d'un scnéario'
     def analyserScenarioDepuisCarte(self, nom_scenario_lisible: str):
-        scenario = self.moteurAlgo.getScenarioNomLisible(nom_scenario_lisible)
-
-         # 1. Réinitialise les modules visibles (coche tous)
+        # 1. Réinitialise les modules visibles (coche tous)
         self.cocherTousLesModules()
 
         # 2. Remet le niveau de filtrage à "Tous"
@@ -1545,7 +1480,7 @@ class InterfaceCarte(tk.Tk):
             self.toggle_affichage_layers()
         return
 
-### Menu Wikipedia'
+    # Menu Wikipedia'
 
     def extraireTagsP31(self):
         """
@@ -1591,8 +1526,6 @@ class InterfaceCarte(tk.Tk):
         except Exception as e:
             messagebox.showerror("Erreur", f"Une erreur est survenue :\n{e}")
 
-
-
     def importerFichierP31(self):
         chemin_fichier = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv")])
         if not chemin_fichier:
@@ -1634,7 +1567,7 @@ class InterfaceCarte(tk.Tk):
                 # Créer la catégorie si nécessaire
                 if categorie and categorie not in categories_crees:
                     cursor.execute("INSERT INTO P31Categorie (nom, visible) VALUES (?, ?)",
-                                (categorie, 1 if statut == "garde" else 0))
+                                   (categorie, 1 if statut == "garde" else 0))
                     categories_crees.add(categorie)
 
                 # Mise à jour dans P31Classification
@@ -1757,7 +1690,6 @@ class InterfaceCarte(tk.Tk):
             frame_couleur.pack(side="left", padx=10)
             frame_couleur.bind("<Button-1>", lambda e, s=source: choisirCouleur(s))
 
-
         # === Onglet 3 : FILTRAGE AVANCÉ ===
         tab_filtrage = ttk.Frame(notebook)
         notebook.add(tab_filtrage, text="Filtrage")
@@ -1796,19 +1728,15 @@ class InterfaceCarte(tk.Tk):
         frame_boutons = tk.Frame(fenetre, padx=10, pady=10)
         frame_boutons.pack(side="bottom", fill="x")
 
-
         tk.Button(frame_boutons, text="Appliquer", command=appliquer).pack(side="right", padx=5)
         tk.Button(frame_boutons, text="Annuler", command=annuler).pack(side="right", padx=5)
 
-
-
-### Gestion des fonctions activées depuis le menu
+    # Gestion des fonctions activées depuis le menu
     def quitter_application(self):
         import sys
         self.destroy()
         self.quit()
         sys.exit(0)
-
 
     def actionSauvegarderProjet(self):
         nom_module = type(self.moteurAlgo).__name__
@@ -1828,10 +1756,7 @@ class InterfaceCarte(tk.Tk):
         except Exception as e:
             messagebox.showerror("Erreur", f"Erreur lors de la sauvegarde :\n{e}")
 
-
-
     def actionChargerProjet(self):
-        nom_module = type(self.moteurAlgo).__name__
         fichier = filedialog.askopenfilename(
             initialdir=self.dossiers["projets"],
             filetypes=[("{nom_module} (*.pkl)", "*.pkl")],
@@ -1865,7 +1790,6 @@ class InterfaceCarte(tk.Tk):
             print(f"✅ Carte sauvegardée sous : {filepath}")
             print(f"✅ Carte sauvegardée sous : {filepath}")
 
-
     def gerer_regles_algo(self):
         self.ihm_algo.ouvrir_fenetre_regles()
 
@@ -1874,7 +1798,6 @@ class InterfaceCarte(tk.Tk):
 
     def demanderGenerationRapport(self):
         self.ihm_algo.ouvrirBoiteGenerationRapport(self.dossiers["exports"])
-
 
     def actionChangerCarte(self, json_path):
 
@@ -1889,7 +1812,6 @@ class InterfaceCarte(tk.Tk):
 
         # Important : forcer le redraw complet
         self._refresh_images()
-
 
     def demarrerCalibrationNouvelleCarte(self):
 
@@ -1956,10 +1878,8 @@ class InterfaceCarte(tk.Tk):
         self._on_mouse_move_global_saved = self._on_mouse_move_global
         self._on_mouse_move_global = lambda event: None
 
-
         self.canvas_image.bind("<Button-3>", self._on_right_click_calibrationMode)
         self._escape_bind_id = self.bind("<Escape>", self.annulerCalibration)
-
 
         # Force un redraw
         self._refresh_images()
@@ -2053,7 +1973,7 @@ class InterfaceCarte(tk.Tk):
     def toggle_affichage_algo(self):
         def estAfficheDansPane(widget, pane):
             return str(widget) in [str(p) for p in pane.panes()]
-        
+
         if self.varAfficherAlgo.get():
             if not estAfficheDansPane(self.frameIHMAlgo, self.paneGauche):
                 self.paneGauche.add(self.frameIHMAlgo)
@@ -2064,7 +1984,7 @@ class InterfaceCarte(tk.Tk):
             self.paneGauche.update_idletasks()
             self.paneGauche.paneconfig(self.frameLayers, height=self.paneGauche.winfo_height())
         self._adjust_side_panel_visibility()
-    
+
     def toggle_affichage_layers(self):
         def estAfficheDansPane(widget, pane):
             return str(widget) in [str(p) for p in pane.panes()]
@@ -2077,7 +1997,7 @@ class InterfaceCarte(tk.Tk):
             if not estAfficheDansPane(self.frameLayers, self.paneGauche):
                 self.paneGauche.add(self.frameLayers, before=self.paneGauche.panes()[0])
                 self.paneGauche.paneconfig(self.frameLayers, height=200)
- 
+
         else:
 
             # self.frameSegment.pack_forget()
@@ -2087,7 +2007,6 @@ class InterfaceCarte(tk.Tk):
 
         self._adjust_side_panel_visibility()
 
-
     def _adjust_side_panel_visibility(self):
         if not self.varAfficherAlgo.get() and not self.varAfficherLayers.get():
             if self.sidePanel in self.main_pane.panes():
@@ -2095,7 +2014,6 @@ class InterfaceCarte(tk.Tk):
         else:
             if self.sidePanel not in self.main_pane.panes():
                 self.main_pane.add(self.sidePanel, before=self.canvas_image, minsize=200)
-
 
 
 if __name__ == "__main__":

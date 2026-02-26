@@ -7,7 +7,7 @@ class Layer:
         self.couleur = couleur
         self.epaisseur = epaisseur
         self.visible = visible
-        self.objets = []  #  Tous les objets graphiques associés à ce layer
+        self.objets = []   # Tous les objets graphiques associés à ce layer
 
     def setCouleur(self, couleur: tuple[int, int, int]):
         self.couleur = couleur
@@ -75,11 +75,7 @@ class LayerManager:
         self.segmentActif = None    # segment actuellement affiché
         self.filtreActif = {"module": None, "level": "tous"}
 
-
-
-
-
-    def creerLayer(self, nomLayer, segment = None) -> Layer:
+    def creerLayer(self, nomLayer, segment=None) -> Layer:
         segment = segment or self.segmentActif
         if segment is None:
             raise ValueError("Aucun segment actif défini et aucun segment fourni.")
@@ -92,7 +88,6 @@ class LayerManager:
             layer = Layer(nomLayer)
             self._layers[segment][nomLayer] = layer
         return layer
-
 
     def getLayer(self, nomLayer, segment=None) -> Layer | None:
         segment = segment or self.segmentActif
@@ -122,7 +117,6 @@ class LayerManager:
             if self.layerCourant and self.layerCourant.nom == nom:
                 self.layerCourant = None
             del self._layers[segment][nom]
-
 
     def renommerLayer(self, ancien_nom: str, nouveau_nom: str, segment: str = None):
         """
@@ -173,7 +167,6 @@ class LayerManager:
         else:
             self.filtreActif[cle] = valeur.lower()
 
-
     def estObjetVisible(self, obj) -> bool:
         """
         Retourne True si l’objet est à la fois visible et non filtré.
@@ -191,7 +184,6 @@ class LayerManager:
                     return False
         return True
 
-
     def getListeObjetsGraphiquesVisible(self, segment=None) -> list:
         segment = segment or self.segmentActif
         if segment is None:
@@ -208,4 +200,3 @@ class LayerManager:
         for segment in self._layers:
             for layer in self._layers[segment].values():
                 layer.recalculerCoordonneesPixelAbs()
-

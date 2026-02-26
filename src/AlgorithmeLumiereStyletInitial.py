@@ -1,6 +1,4 @@
-import csv
 import math
-from collections import OrderedDict
 
 # Moteur Algo générique
 from src.AlgorithmeManager import ModuleAlgo, AlgorithmeManager
@@ -9,11 +7,11 @@ from src.Sentinelle import Sentinelle, LieuxObservation
 
 
 # Librairie calcul astronomique
-from src.calculAstronomique import positionSoleil, calculLeverAstre, calculLeverSoleil, calculCoucherSoleil
-from src.calculAstronomique import MyJulianDate, decalage2Notes, decalage2Jours, getIndexesPourNote, convertirHeureLocaleVersUTC, heureSymetrique, decalageGamme
+from src.calculAstronomique import positionSoleil, calculLeverSoleil
+from src.calculAstronomique import MyJulianDate, convertirHeureLocaleVersUTC, heureSymetrique
 
 # Affichage des objects graphiques
-from src.affichage_objets import *
+from src.affichage_objets import ObjetGraphique, PointGraphique, LigneAzimut, ArcOriente, CercleGraphique
 
 # Base de données des villes
 from src.data_loader import villes_dict
@@ -21,9 +19,10 @@ from src.data_loader import villes_dict
 # Gestion des layers graphiques
 from src.layerManager import LayerManager
 
+
 class AlgorithmeLumiereStyletInitial(AlgorithmeManager):
 
-    def __init__(self, layerManager:LayerManager):
+    def __init__(self, layerManager: LayerManager):
         self.dataset = ListeSegmentsDataSet("data/dataset.csv")  # Créé explicitement ici
         super().__init__(layerManager)
 
@@ -31,9 +30,9 @@ class AlgorithmeLumiereStyletInitial(AlgorithmeManager):
         self.structure_declaree = structure
 
     def getListeModulesInitiale(self):
-            return [
-                ("soleil", "Soleil", Soleil()),
-                ("stylet", "Stylet", Stylet())
+        return [
+            ("soleil", "Soleil", Soleil()),
+            ("stylet", "Stylet", Stylet())
             ]
 
     def appliquerParametresDepuisStructure(self):
@@ -53,18 +52,18 @@ class Soleil(ModuleAlgo):
                 "dataset.stylet"]
 
     def __init__(self):
-# Variables input des autres modules
+        # Variables input des autres modules
         self.dateDataset = ""
         self.styletDataset = ""
-# Affiché
+        # Affiché
         self.lettreDom = None
         self.lieuObservation = None
         self.heureLeverSoleilStrasbourg = None
-        self.azimutLeverSoleil = None        
+        self.azimutLeverSoleil = None
         self.rotationCarte = None
-        self.tableauAzimut = []        
+        self.tableauAzimut = []
 
-# Variables output pour les autres modules
+        # Variables output pour les autres modules
         self.dateObservationJD = None
         self.coordObservation = None
         self.stylet = None
@@ -76,14 +75,14 @@ class Soleil(ModuleAlgo):
 
         self.sentinelle = Sentinelle("data/sentinelle.csv")
         super().__init__()
-  
+
     def getValeursChoixHeure(self):
         heureLampouy = self.sentinelle["L"]["HeureLocale"]
         if self.dateDataset == "18/05/1152":
             heureLampouy = self.sentinelle["L"]["HeureLocale"]
             return ["Même heure", "Symétrique", heureLampouy, heureSymetrique(heureLampouy)]
         else:
-            return ["Même heure", "Symétrique"] 
+            return ["Même heure", "Symétrique"]
 
     def getValeursLieuObservation(self):
         return LieuxObservation.getListeLieuxObservation(self.lettreDom, self.dateDataset)
@@ -113,8 +112,6 @@ class Soleil(ModuleAlgo):
         self.choixHeure = "Même heure"
         self.stylet = self.styletDataset
 
-    
-
     # On calcule automatiquement l'heure de la sentinelle en fonction du stylet initial
     def calculer(self):
         # on skip tant que le stylet n'est pas défini
@@ -129,23 +126,23 @@ class Soleil(ModuleAlgo):
             self.heureAMPM = ampm
             self.validite = "Valide"
             heureLampouy = self.sentinelle["L"]["HeureLocale"]
-            if self.choixHeure  == heureLampouy:
-                self.heureSentinelle = heureLampouy+":00"     
-            elif self.choixHeure  == heureSymetrique(heureLampouy):
-                self.heureSentinelle = heureSymetrique(heureLampouy)+":00"    
+            if self.choixHeure == heureLampouy:
+                self.heureSentinelle = heureLampouy+":00"
+            elif self.choixHeure == heureSymetrique(heureLampouy):
+                self.heureSentinelle = heureSymetrique(heureLampouy)+":00"
             else:
-                symetrique = (ampm == "PM" and self.choixHeure == "Même heure") or  (ampm == "AM" and self.choixHeure == "Symétrique")
+                symetrique = (ampm == "PM" and self.choixHeure == "Même heure") or (ampm == "AM" and self.choixHeure == "Symétrique")
                 self.heureSentinelle = heureSymetrique(heure) if symetrique else heure
 
-             # on récupère les coords GPS de la ville d'observation
-            (lat, lon) = villes_dict[self.lieuObservation].getCoordonneesGPS()
+            # on récupère les coords GPS de la ville d'observation
+            (_, lon) = villes_dict[self.lieuObservation].getCoordonneesGPS()
             self.heureUTC = convertirHeureLocaleVersUTC(self.heureSentinelle, lon)
 
         else:
             self.heureSentinelle = None
             self.heureAMPM = None
             self.heureUTC = None
-            self.validite = "Unvalide"    
+            self.validite = "Unvalide"
 
 
 class Stylet(ModuleAlgo):
@@ -162,9 +159,8 @@ class Stylet(ModuleAlgo):
                 "soleil.validite"
                 ]
 
-    
     def __init__(self):
-# Variables input des autres modules
+        # Variables input des autres modules
         self.dateDataset = ""
         self.lettreDomSoleil = ""
         self.heureAMPMSoleil = None
@@ -175,7 +171,7 @@ class Stylet(ModuleAlgo):
         self.heureSentinelleSoleil = None
         self.heureAMPMSoleil = None
         self.heureUTCSoleil = None
-# Affiché
+        # Affiché
         self.distanceMetz = None
         self.formuleDistance = None
         self.hauteurStylet = None
@@ -190,7 +186,7 @@ class Stylet(ModuleAlgo):
         super().__init__()
 
     RAYON_CANDIDAT = 20
- 
+
     tableauGamme = {
         "C": ("2**-12/12", 2**(-12/12)),
         "B": ("2**-10/12", 2**(-10/12)),
@@ -206,7 +202,7 @@ class Stylet(ModuleAlgo):
 
     def getValeursOctave(self):
         return "x1", "x2", "/2"
-    
+
     def setup(self):
         """
         Initialise la valeur par défaut de lieuObservation à partir de la lettre dominicale.
@@ -214,53 +210,59 @@ class Stylet(ModuleAlgo):
         donc on le prépare ici à titre d’initialisation.
         """
 
-        # On initialise le point Metz pour le calcul de la distance     
-        self.pointMetz = PointGraphique(villes_dict["Metz"])  
-
+        # On initialise le point Metz pour le calcul de la distance
+        self.pointMetz = PointGraphique(villes_dict["Metz"])
 
     # On calcule automatiquement l'heure de la sentinelle en fonction du stylet initial
     def calculer(self):
 
         if self.validiteSoleil == "Valide":
-            #On calcule la distance % Metz
+            # On calcule la distance % Metz
             pointStylet = PointGraphique(villes_dict[self.styletSoleil])
             self.distanceMetz = self.pointMetz.distance(pointStylet)
             # On calcule la formule en str du calcul de la hauteur
             (faLongueurStr, faLongueur) = Stylet.tableauGamme.get("F", ("-", 0))
-            (noteLongueurStr, noteLongueur) = Stylet.tableauGamme.get(self.lettreDomSoleil, ("-", 0))           
-            self.formuleDistance =f"{float(self.distanceMetz):.0f} / {faLongueurStr} * {noteLongueurStr}"
+            (noteLongueurStr, noteLongueur) = Stylet.tableauGamme.get(self.lettreDomSoleil, ("-", 0))
+            self.formuleDistance = f"{float(self.distanceMetz):.0f} / {faLongueurStr} * {noteLongueurStr}"
             self.hauteurStylet = self.distanceMetz / faLongueur * noteLongueur
 
             # On prend en compte l'octave
             tableauOctave = {"x1": 1, "x2": 2, "/2": 0.5}
 
-            #On calcule la position du soleil
+            # On calcule la position du soleil
             coordObservation = villes_dict[self.lieuObservationSoleil].getCoordonneesGPS()
             (lat, lon) = coordObservation
             heureObservationJD = MyJulianDate.fromString(self.dateDataset, self.heureUTCSoleil)
             self.hauteurSoleil, self.azimutSoleil = positionSoleil((lat, lon), heureObservationJD)
-            self.distanceStylet =  tableauOctave[self.octave] * self.hauteurStylet / math.tan(math.radians(self.hauteurSoleil))
+            self.distanceStylet = tableauOctave[self.octave] * self.hauteurStylet / math.tan(math.radians(self.hauteurSoleil))
 
             # On calcule l'axe final de la lumière
             if self.sensCarte == "Endroit":
-                rotationCarteStr = f"+{float(self.rotationCarteSoleil):.2f}" if self.rotationCarteSoleil>=0 else f"{float(self.rotationCarteSoleil):.2f}"
+                rotationCarteStr = (
+                    f"+{float(self.rotationCarteSoleil):.2f}"
+                    if self.rotationCarteSoleil >= 0
+                    else f"{float(self.rotationCarteSoleil):.2f}"
+                )
                 azimutSoleilStr = f"{float(self.azimutSoleil):.2f}"
-                self.formuleAxeCarte = azimutSoleilStr + rotationCarteStr 
+                self.formuleAxeCarte = azimutSoleilStr + rotationCarteStr
                 self.axeCarte = self.azimutSoleil + self.rotationCarteSoleil
             else:
-                rotationCarteStr = f"-{float(self.rotationCarteSoleil):.2f}" if self.rotationCarteSoleil>=0 else f"{float(-self.rotationCarteSoleil):.2f}"                   
-                azimutSoleilStr = f"{float(self.azimutSoleil):.2f}"               
-                self.formuleAxeCarte = "360-"+ azimutSoleilStr + rotationCarteStr
+                rotationCarteStr = (
+                    f"-{float(self.rotationCarteSoleil):.2f}"
+                    if self.rotationCarteSoleil >= 0
+                    else f"{float(-self.rotationCarteSoleil):.2f}"
+                )
+                azimutSoleilStr = f"{float(self.azimutSoleil):.2f}"
+                self.formuleAxeCarte = "360-" + azimutSoleilStr + rotationCarteStr
                 self.axeCarte = 360 - self.azimutSoleil - self.rotationCarteSoleil
 
         else:
             self.heureSentinelle = None
             self.heureAMPM = None
             self.heureUTC = None
-            self.distanceMetz = None      
-            self.hauteurStylet = None 
+            self.distanceMetz = None
+            self.hauteurStylet = None
             self.formuleAxeCarte = None
-
 
     def construireRepresentationCarte(self) -> list[ObjetGraphique]:
         listeObjets = []
@@ -272,98 +274,98 @@ class Stylet(ModuleAlgo):
             #
             origineStylet = PointGraphique(
                 villeOrigineTrait,
-                afficherNom = True,
-                tags = {"level" : "design"}
+                afficherNom=True,
+                tags={"level" : "design"}
             )
             listeObjets.append(origineStylet)
 
-            if self.sensCarte =="Endroit":
-                ligneLumiere= LigneAzimut(
+            if self.sensCarte == "Endroit":
+                ligneLumiere = LigneAzimut(
                     villeOrigineTrait,
                     self.azimutSoleil,
-                    f"Axe soleil observé",
-                    couleur=(94,94,255), # Rouge  clair
-                    tooltips = [f"Axe observation={self.azimutSoleil:.2f}°", f"Sens carte: {self.sensCarte}"],
-                    tags = {"level" : "design"}
+                    "Axe soleil observé",
+                    couleur=(94, 94, 255),  # Rouge  clair
+                    tooltips=[f"Axe observation={self.azimutSoleil:.2f}°", f"Sens carte: {self.sensCarte}"],
+                    tags={"level" : "design"}
                 )
                 arcRotationLumiere = ArcOriente(
                     villeOrigineTrait,
                     150,
                     self.azimutSoleil,
                     self.rotationCarteSoleil,
-                    nom = "Rotation",
+                    nom="Rotation",
                     epaisseur=1,
-                    couleur = (64,64,0),  # LEs arc en rouge
-                    style = "Arrow",
-                    tooltips = [f"Rotation Carte={self.rotationCarteSoleil:.2f}°",f"Sens carte: {self.sensCarte}"],
-                    tags = {"level" : "design"}
+                    couleur=(64, 64, 0),  # LEs arc en rouge
+                    style="Arrow",
+                    tooltips=[f"Rotation Carte={self.rotationCarteSoleil:.2f}°", f"Sens carte: {self.sensCarte}"],
+                    tags={"level" : "design"}
                     )
             else:
-                ligneLumiere= LigneAzimut(
+                ligneLumiere = LigneAzimut(
                     villeOrigineTrait,
                     360-self.azimutSoleil,
-                    f"Axe soleil observé symetrique",
-                    couleur=(94,94,255), # Rouge  clair
-                    tooltips = [f"Axe observation={self.azimutSoleil:.2f}°"],
-                    tags = {"level" : "design"}
-                )    
+                    "Axe soleil observé symetrique",
+                    couleur=(94, 94, 255),  # Rouge  clair
+                    tooltips=[f"Axe observation={self.azimutSoleil:.2f}°"],
+                    tags={"level" : "design"}
+                    )
                 arcRotationLumiere = ArcOriente(
                     villeOrigineTrait,
                     150,
                     360-self.azimutSoleil,
                     -self.rotationCarteSoleil,
-                    nom = "Rotation",
+                    nom="Rotation",
                     epaisseur=1,
-                    couleur = (64,64,0),  # LEs arc en rouge
-                    style = "Arrow",
-                    tooltips = [f"Rotation Carte={-self.rotationCarteSoleil:.2f}°",f"Sens carte: {self.sensCarte}"],
-                    tags = {"level" : "design"}
-                    )         
+                    couleur=(64, 64, 0),  # LEs arc en rouge
+                    style="Arrow",
+                    tooltips=[f"Rotation Carte={-self.rotationCarteSoleil:.2f}°", f"Sens carte: {self.sensCarte}"],
+                    tags={"level" : "design"}
+                    )
             listeObjets.append(ligneLumiere)
             listeObjets.append(arcRotationLumiere)
 
             ligne = LigneAzimut(
                 villeOrigineTrait,
                 self.axeCarte,
-                f"Axe Lumière après rotation",
+                "Axe Lumière après rotation",
                 epaisseur=1,
-                tooltips = [f"Axe apres rotation ={self.axeCarte:.2f}°"],
-                tags = {"level" : "construction"}
+                tooltips=[f"Axe apres rotation ={self.axeCarte:.2f}°"],
+                tags={"level" : "construction"}
                 )
             listeObjets.append(ligne)
 
             cercle = CercleGraphique(
                 origineStylet,
                 self.distanceStylet,
-                epaisseur = 1,
-                nom ="Ombre du stylet",
+                epaisseur=1,
+                nom="Ombre du stylet",
                 tooltips=[f"Hauteur soleil : {self.hauteurSoleil}", f"Distance  = {self.distanceStylet}km"],
-                tags = {"level" : "construction"}
-            )        
+                tags={"level" : "construction"}
+            )
             listeObjets.append(cercle)
 
             intersections = cercle.intersectionLigne(ligne)
             px1, py1 = intersections[0]
             px2, py2 = intersections[1]
             pt1 = PointGraphique("intersection 1", px1, py1)
-            pt2 = PointGraphique("intersection 2", px2, py2 )
+            pt2 = PointGraphique("intersection 2", px2, py2)
             cercleCandidat1 = CercleGraphique(
                 pt1,
                 Stylet.RAYON_CANDIDAT,
-                epaisseur = 2,
-                nom ="Candidat",
+                epaisseur=2,
+                nom="Candidat",
                 tooltips=[f"Hauteur soleil : {self.hauteurSoleil}", f"Distance  = {self.distanceStylet}km"],
-                tags = {"level" : "construction"}
-            )   
+                tags={"level" : "construction"}
+            )
             listeObjets.append(cercleCandidat1)
             cercleCandidat2 = CercleGraphique(
                 pt2,
                 Stylet.RAYON_CANDIDAT,
-                epaisseur = 2,
-                nom ="Candidat",
+                epaisseur=2,
+                nom="Candidat",
                 tooltips=[f"Hauteur soleil : {self.hauteurSoleil}", f"Distance  = {self.distanceStylet}km"],
-                tags = {"level" : "construction"}
-            ) 
+                tags={"level" : "construction"}
+            )
             listeObjets.append(cercleCandidat2)
 
         return listeObjets

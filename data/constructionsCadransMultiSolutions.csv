@@ -2,10 +2,8 @@ Date,TypeStylet,Stylet,HeureStylet,Lumiere,HeureLumiere
 15/08/778,Gnomon,Roncevaux,09:42,Bourges,11:23
 15/08/778,Stylet,Saint-Amour,09:42,Jumièges,11:00
 15/08/778,Stylet,Saint-Amour,09:42,Grotte de Lombrives,08:12
-15/08/778,Stylet,Saint-Amour,09:42,Chateau d'Antioche,10:25
-15/08/778,Stylet,Saint-Amour,09:42,Mirebeau,11:38
 15/08/778,Stylet,Rocamadour,10:25,St Julien de Mailloc,11:00
-15/08/778,Stylet,Rocamadour,10:25,Taillebourg,08:12
+15/08/778,Stylet,Rocamadour,10:25,Loches,11:00
 15/08/778,Stylet,Rocamadour,10:25,La Ferté-Alais,11:42
 15/08/778,Stylet,Rocamadour,10:25,Lac-de-Trémelin,09:42
 
@@ -47,6 +45,7 @@ Date,TypeStylet,Stylet,HeureStylet,Lumiere,HeureLumiere
 19/7/933,Stylet,Fontevraud,11:38,Beaufort-en-Vallée,08:12
 
 18/05/1152,Gnomon,Loudun,12:00,Burgos,14:47
-18/05/1152,Stylet,Pont de Noirmoutier,10:09
+18/05/1152,Stylet,Pont de Noirmoutier,10:09,Pertuis d'Antioche,09:42
+18/05/1152,Stylet,Pont de Noirmoutier,10:09,Mirebeau,11:38
 18/05/1152,Stylet,Le Goulet,10:09,Beaugency,11:38
 18/05/1152,Stylet,Le Goulet,10:09,Pic du Midi,11:00

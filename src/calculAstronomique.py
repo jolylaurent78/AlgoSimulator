@@ -8,12 +8,11 @@ from skyfield import almanac
 
 from functools import total_ordering
 from math import floor
-from numpy import arctan2, sqrt, degrees
+from numpy import sin, radians, degrees, arcsin, arctan2
 
 # === Dictionnaire des astres ===
 
-
-#eph = load('de406.bsp')
+# eph = load('de406.bsp')
 eph = load('data/ephemeride/de406.bsp')
 
 ASTRES = {
@@ -52,7 +51,9 @@ ALTITUDE_LEVER_STANDARD = -0.566  # degrés, pour simuler la réfraction atmosph
 #
 # des fonctions pour manipuler les notes de musique
 #
-def decalageGamme(note, substitution = True):
+
+
+def decalageGamme(note, substitution=True):
     gamme = ["C", "D", "E", "F", "G", "A", "B"]
 
     def substituer(n):
@@ -80,8 +81,6 @@ def decalageGamme(note, substitution = True):
     return note_substituee, note_moins_2, note_plus_2
 
 
-
-
 def decalage2Notes(note, code):
     notesMusique = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
     if note not in notesMusique:
@@ -89,8 +88,8 @@ def decalage2Notes(note, code):
     index = notesMusique.index(note)
 
     # On fait d'abord un décalage de 2 dans le bon sens'
-    sens = code[:2]    
-    index_decale = (index - 2) % len(notesMusique) if sens== "-2" else (index + 2) % len(notesMusique)
+    sens = code[:2]
+    index_decale = (index - 2) % len(notesMusique) if sens == "-2" else (index + 2) % len(notesMusique)
 
     # On regarde ensuite si il y a un codage de substituion en Sol = Fa
     codage = code[2] if len(code) > 2 else None
@@ -101,6 +100,7 @@ def decalage2Notes(note, code):
             index_decale = 3
     # On renvoie la valeur
     return notesMusique[index_decale]
+
 
 def decalage2Jours(jourSemaine, sens):
     joursSemaine = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
@@ -123,6 +123,7 @@ def genererMappingIndexes(heures, indexCle, estMontant):
         notesVersIndexes.setdefault(note, []).append(i)
 
     return notesVersIndexes
+
 
 def getIndexesPourNote(note, heures):
     configurations = [
@@ -150,7 +151,7 @@ def getIndexesPourNote(note, heures):
 #
 def convertirHeureLocaleVersUTC(heure: str, longitude_deg: float, inverse=False):
     """
-    Convertit une heure locale vraie (HH:MM:SS) en heure UTC, 
+    Convertit une heure locale vraie (HH:MM:SS) en heure UTC,
     ou l'inverse si inverse=True.
 
     Chaque degré de longitude = 4 minutes d'avance locale sur UTC.
@@ -196,7 +197,6 @@ def convertirHeureLocaleVersUTC(heure: str, longitude_deg: float, inverse=False)
     return f"{hh_res:02}:{mm_res:02}:{ss_res:02}"
 
 
-
 def heureSymetrique(heure: str) -> str:
     """
     Calcule l'heure symétrique (locale) par rapport à midi solaire.
@@ -210,7 +210,6 @@ def heureSymetrique(heure: str) -> str:
     mm_sym = (total_sym % 3600) // 60
 
     return f"{hh_sym:02}:{mm_sym:02}"
-
 
 
 #
@@ -235,7 +234,6 @@ class MyJulianDate:
 
         self.jd = floor(365.25 * (annee + 4716)) + floor(30.6001 * (mois + 1)) + jour + B - 1524.5 + fraction_jour
 
-
     @classmethod
     def fromJD(cls, jd):
         # Constructeur alternatif à partir d’un float déjà existant
@@ -254,28 +252,27 @@ class MyJulianDate:
         except Exception as e:
             raise ValueError(f"Format de date invalide : '{date_str}' (attendu JJ/MM/AAAA)") from e
 
-
     def __eq__(self, other):
         return float(self) == float(other)
-    
+
     def __lt__(self, other):
         return float(self) < float(other)
-    
+
     def __add__(self, other):
         if isinstance(other, (int, float)):
             return MyJulianDate.fromJD(self.jd + other)
         return NotImplemented
-    
+
     def __radd__(self, other):
         return self.__add__(other)
-    
+
     def __sub__(self, other):
         if isinstance(other, MyJulianDate):
             return self.jd - other.jd  # différence en jours
         elif isinstance(other, (int, float)):
             return MyJulianDate.fromJD(self.jd - other)
         return NotImplemented
-    
+
     def __truediv__(self, scalar):
         return MyJulianDate(float(self) / scalar)
 
@@ -288,21 +285,14 @@ class MyJulianDate:
         index = int((self.jd + 0.5) % 7)
         return jours[index]
 
-
-
-
-
-
     def __float__(self):
         return float(self.jd)
 
     def __str__(self):
         return self.toString("JJ/MM/AAAA") + " - " + self.toString("HH:MM:SS")
 
-
     def __repr__(self):
         return f"MyJulianDate({self.jd:.2f}) → {self.__str__()}"
-
 
     def toString(self, format: str):
         """
@@ -316,19 +306,19 @@ class MyJulianDate:
             noms = ["janvier", "février", "mars", "avril", "mai", "juin",
                     "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
             return noms[mois - 1]
-    
+
         t = ts.ut1_jd(self.jd)
         y, m, d, h, mi, s = t.utc
         if self.jd < 2299160.5:
             y, m, d = self.enTuple()
-    
+
         # Heure calculée depuis la fraction du jour
         fraction = (self.jd + 0.5) % 1
         total_seconds = fraction * 86400
         hh = int(total_seconds // 3600)
         mm = int((total_seconds % 3600) // 60)
         ss = int(total_seconds % 60)
-    
+
         # Génération du format
         if format == "JJ/MM/AAAA":
             return f"{d:02d}/{m:02d}/{y}"
@@ -351,7 +341,6 @@ class MyJulianDate:
         else:
             raise ValueError(f"Format inconnu : '{format}'")
 
-
     def date6Mois(self):
         """
         Retourne la date opposée sur un disque annuel (type cadran solaire),
@@ -359,21 +348,20 @@ class MyJulianDate:
         du nombre de jours de l'année (365 ou 366).
         """
         annee, mois, jour = self.enTuple()
-        
+
         def est_bissextile_julien(annee):
             return annee % 4 == 0
-    
+
         jours_par_mois = [31, 29 if est_bissextile_julien(annee) else 28, 31, 30, 31, 30,
-                        31, 31, 30, 31, 30, 31]
-        total_jours = sum(jours_par_mois)
-    
+                          31, 31, 30, 31, 30, 31]
+
         rang = sum(jours_par_mois[:mois - 1]) + jour
-    
+
         if rang < 184:  # Jusqu'au 2 juillet inclus (rang 183)
             rang_opposé = rang + 183
         else:           # À partir du 3 juillet
             rang_opposé = rang - 182
-    
+
         # Conversion inverse
         jour_restant = rang_opposé
         mois_opposé = 1
@@ -383,43 +371,40 @@ class MyJulianDate:
                 mois_opposé += 1
             else:
                 break
-    
+
         jour_opposé = jour_restant
 
         return MyJulianDate(jour_opposé, mois_opposé, annee)
-
-
 
     def enTuple(self):
         jd = self.jd
         Z = int(jd + 0.5)
         F = jd + 0.5 - Z
-    
+
         if Z < 2299161:
             A = Z
         else:
             alpha = int((Z - 1867216.25) / 36524.25)
             A = Z + 1 + alpha - int(alpha / 4)
-    
+
         B = A + 1524
         C = int((B - 122.1) / 365.25)
         D = int(365.25 * C)
         E = int((B - D) / 30.6001)
-    
+
         day = B - D - int(30.6001 * E) + F
-    
+
         if E < 14:
             month = E - 1
         else:
             month = E - 13
-    
+
         if month > 2:
             year = C - 4716
         else:
             year = C - 4715
-    
-        return int(year), int(month), int(day)
 
+        return int(year), int(month), int(day)
 
     def estBissextile(self):
         """
@@ -442,11 +427,11 @@ class MyJulianDate:
         annee, _, _ = self.enTuple()
         jd_1jan = MyJulianDate(1, 1, annee)
         nb_jours = int(self.jd - jd_1jan.jd)
-        
+
         # Attention, on ne doit pas prendre en compte les jours bissextile dans cette lettre
-        if self.estBissextile() and nb_jours>59:
-            nb_jours-=1
-            
+        if self.estBissextile() and nb_jours > 59:
+            nb_jours -= 1
+
         lettres = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
         return lettres[nb_jours % 7]
 
@@ -461,6 +446,8 @@ def positionSoleil(coord_tuple, jd):
     return float(alt.degrees), float(az.degrees)
 
 # === Position d’un astre quelconque à une date donnée ===
+
+
 def positionAstre(coord_tuple, jd, astre):
     latitude, longitude = coord_tuple
     lieu = Topos(latitude_degrees=latitude, longitude_degrees=longitude)
@@ -475,31 +462,30 @@ def positionAstre(coord_tuple, jd, astre):
     coord_Roncevaux = (43+1/60+13/3600, -1-19/60-26/3600)  # 43 01 13 N,1 19 26 W
     coord_Gerardmer = (48+4/60+23/3600, 6+52/60+46/3600)  # 48 04 23 N,6 52 46 E
 
-
-    if coord_Dieppe == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA")=="12/10/1365":
+    if coord_Dieppe == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "12/10/1365":
         return 46+46/60+54/3600, 106+34/60+37/3600
-    if coord_Bourges == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA")=="12/10/1365":
+    if coord_Bourges == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "12/10/1365":
         return 40+22/60+9/3600, 94+41/60+19/3600
 
-    if coord_Cherbourg == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA")=="26/01/1214":
+    if coord_Cherbourg == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "26/01/1214":
         return 17+13/60+22/3600, 79+14/60+45/3600
-    if coord_Roncevaux == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA")=="26/01/1214":
+    if coord_Roncevaux == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "26/01/1214":
         return 3+6/60+7/3600, 65+12/60+38/3600
-    if coord_Gerardmer == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA")=="26/01/1214":
+    if coord_Gerardmer == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "26/01/1214":
         return 13+10/60+1/3600, 74+41/60+40/3600
 
-    if coord_Cherbourg == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA")=="15/12/1066":
+    if coord_Cherbourg == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "15/12/1066":
         return 23+12/60+18/3600, 81+58/60+50/3600
-    if coord_Roncevaux == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA")=="15/12/1066":
+    if coord_Roncevaux == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "15/12/1066":
         return 9+32/60+12/3600, 67+56/60+33/3600
-    if coord_Gerardmer == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA")=="15/12/1066":
+    if coord_Gerardmer == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "15/12/1066":
         return 19+21/60+41/3600, 77+28/60+35/3600
 
-    if coord_Dieppe == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA")=="18/01/933":
+    if coord_Dieppe == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "18/01/933":
         return 8+16/60+23/3600, 72+29/60+28/3600
-    if coord_Bourges == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA")=="18/01/933":
+    if coord_Bourges == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "18/01/933":
         return 1+45/60+13/3600, 65+31/60+13/3600
-        
+
     return float(alt.degrees), float(az.degrees)
 
 
@@ -532,7 +518,7 @@ def calculHeurePourAzimutSoleil(coord_tuple, jd, azimut_cible, altitude_min=0.0,
             delta2 = (previous_azimut - azimut_cible + 360) % 360
             # On vérifie que les deux points successifs sont au-dessus de altitude_min
             if (alt > altitude_min and previous_alt > altitude_min) and \
-                ((delta1 < 180 and delta2 > 180) or (delta2 < 180 and delta1 > 180)):
+               ((delta1 < 180 and delta2 > 180) or (delta2 < 180 and delta1 > 180)):
                 # Passage détecté
                 t_before = t - dt
                 t_after = t
@@ -565,10 +551,9 @@ def calculHeurePourAzimutSoleil(coord_tuple, jd, azimut_cible, altitude_min=0.0,
 
     return MyJulianDate.fromJD((t_before + t_after) / 2)
 
-
-
-
 # === Calcul du lever d’un astre ===
+
+
 def calculLeverAstre(coord_tuple, jd, astre, altitude_lever=ALTITUDE_LEVER_STANDARD):
     latitude, longitude = coord_tuple
     lieu = Topos(latitude_degrees=latitude, longitude_degrees=longitude)
@@ -576,8 +561,6 @@ def calculLeverAstre(coord_tuple, jd, astre, altitude_lever=ALTITUDE_LEVER_STAND
     t1 = float(jd) + 0.5
     dt = DEFAULT_INTERVAL
     previous_alt = None
-
- 
 
     def hauteur(jd_local):
         t = ts.ut1_jd(jd_local)
@@ -608,6 +591,8 @@ def calculLeverAstre(coord_tuple, jd, astre, altitude_lever=ALTITUDE_LEVER_STAND
     return MyJulianDate.fromJD((t_before + t_after) / 2)
 
 # === Calcul du lever du Soleil ===
+
+
 def calculLeverSoleil(coord_tuple, jd):
     latitude, longitude = coord_tuple
     observateur = wgs84.latlon(latitude, longitude)
@@ -620,6 +605,7 @@ def calculLeverSoleil(coord_tuple, jd):
             return MyJulianDate.fromJD(ti.ut1)
     raise RuntimeError("Aucun lever trouvé avec find_discrete pour ce jour.")
 
+
 def calculCoucherSoleil(coord_tuple, jd):
     latitude, longitude = coord_tuple
     observateur = wgs84.latlon(latitude, longitude)
@@ -631,6 +617,7 @@ def calculCoucherSoleil(coord_tuple, jd):
         if yi == 0:  # coucher du Soleil (transition 1 → 0)
             return MyJulianDate.fromJD(ti.ut1)
     raise RuntimeError("Aucun coucher trouvé avec find_discrete pour ce jour.")
+
 
 def calculZenithSoleil(coord_tuple, jd):
     """
@@ -654,12 +641,6 @@ def calculZenithSoleil(coord_tuple, jd):
     raise RuntimeError("Aucun transit trouvé avec find_discrete pour ce jour.")
 
 
-from skyfield.positionlib import ICRF
-from skyfield.constants import AU_KM
-
-
-from numpy import sin, cos, radians, degrees, arcsin
-
 def declinaisonSoleil(jd):
     """
     Déclinaison géométrique du Soleil calculée depuis sa longitude écliptique
@@ -670,25 +651,21 @@ def declinaisonSoleil(jd):
     # Formule officielle IAU 2000 pour obliquité vraie (en degrés)
     def obliquity_IAU2000(jd):
         T = (jd - 2451545.0) / 36525.0  # siècles juliens depuis J2000.0
-        epsilon_deg = 23.43929111 \
-                    - (46.8150 / 3600) * T \
-                    - (0.00059 / 3600) * T**2 \
-                    + (0.001813 / 3600) * T**3
+        epsilon_deg = 23.43929111 - (46.8150 / 3600) * T - (0.00059 / 3600) * T**2 + (0.001813 / 3600) * T**3
         return radians(epsilon_deg)
-  
+
     # Obliquité vraie de l'écliptique en radians
     epsilon = obliquity_IAU2000(float(jd))
 
-    
     # Longitude écliptique du Soleil
     astrometric = earth.at(t).observe(sun).apparent()  # ici apparent ok pour la position géométrique
     lon_deg = astrometric.frame_latlon(ecliptic_frame)[1].degrees
     lon_rad = radians(lon_deg)
-    
+
     # Calcul de la déclinaison
     decl_rad = arcsin(sin(epsilon) * sin(lon_rad))
     decl_deg = degrees(decl_rad)
-    
+
     return decl_deg
 
 
@@ -725,6 +702,7 @@ def trouverSolsticeEteAvecAlmanac(annee):
             return jd_solstice, decl_max
 
     raise RuntimeError("Pas de solstice trouvé dans la période donnée.")
+
 
 def trouverDatesPourDeclinaison(delta_cible, annee):
     """
@@ -780,6 +758,8 @@ def trouverDatesPourDeclinaison(delta_cible, annee):
 
 # Cache pour éviter de recalculer plusieurs fois l’équinoxe d’une même année
 memo_equinoxes = {}
+
+
 def azimutHeliocentrique(jd, nom_planete, annee=None):
     """
     Azimut héliocentrique d'une planète à la date donnée,
@@ -805,6 +785,7 @@ def azimutHeliocentrique(jd, nom_planete, annee=None):
 
     # Résultat : azimut relatif à l'équinoxe de printemps de l'année de jd
     return (angle_planete - angle_ref) % 360
+
 
 def azimutHeliocentriqueJ2000(jd, nom_planete):
     """
@@ -856,7 +837,6 @@ def trouverDatePourAzimut(azimut_cible, annee, planete="Terre", jd_centre=None, 
             meilleur_azimut = a
         jour += PAS_ETAPE1
 
-    myjd = MyJulianDate.fromJD(meilleur_jd)
     # --- Étape 2 : balayage affiné (6h autour du meilleur jour)
     pas = 6 / 24  # 6 heures
     jd1 = meilleur_jd - PAS_ETAPE1
@@ -876,24 +856,24 @@ def trouverDatePourAzimut(azimut_cible, annee, planete="Terre", jd_centre=None, 
     jd1 = meilleur_jd - pas
     jd2 = meilleur_jd + pas
     az1 = azimut(jd1)
-    az2 = azimut(jd2)
 
     while (jd2 - jd1) > seuil:
         milieu = (jd1 + jd2) / 2
         az_milieu = azimut(milieu)
         if (az1 - azimut_cible) * (az_milieu - azimut_cible) < 0:
-            jd2, az2 = milieu, az_milieu
+            jd2, _ = milieu, az_milieu
         else:
             jd1, az1 = milieu, az_milieu
 
     return MyJulianDate.fromJD((jd1 + jd2) / 2)
 
+
 def trouverAnneesAlignement(planete: str,
-                             azimut_terre: float,
-                             delta_azimut: float,
-                             marge_erreur: float,
-                             annee_min: int,
-                             annee_max: int) -> list[dict]:
+                            azimut_terre: float,
+                            delta_azimut: float,
+                            marge_erreur: float,
+                            annee_min: int,
+                            annee_max: int) -> list[dict]:
     """
     Recherche les années pour lesquelles la planète est positionnée à un certain delta d’azimut
     par rapport à la Terre, lorsque celle-ci est à un azimut donné (dans un repère héliocentrique
@@ -912,7 +892,7 @@ def trouverAnneesAlignement(planete: str,
 
     for annee in range(annee_min, annee_max + 1):
         # === CAS DIRECT ===
-  
+
         jd_direct = trouverDatePourAzimut(azimut_terre, annee, planete="Terre", jd_centre=jd_centre_direct)
         print(jd_direct)
         az_planete = azimutHeliocentrique(jd_direct, planete, annee)
@@ -920,7 +900,7 @@ def trouverAnneesAlignement(planete: str,
         az_cible2 = (azimut_terre - delta_azimut) % 360
 
         if abs((az_planete - az_cible1 + 180) % 360 - 180) <= marge_erreur or \
-            abs((az_planete - az_cible2 + 180) % 360 - 180) <= marge_erreur:
+           abs((az_planete - az_cible2 + 180) % 360 - 180) <= marge_erreur:
             resultats.append({
                 "annee": annee,
                 "cas": "direct",
@@ -931,7 +911,6 @@ def trouverAnneesAlignement(planete: str,
         y, m, d = jd_direct.enTuple()
         jd_centre_direct = MyJulianDate(d, m, y+1)
 
-
         # === CAS OPPOSÉ ===
         azimut_oppose = (azimut_terre + 180) % 360
 
@@ -941,7 +920,7 @@ def trouverAnneesAlignement(planete: str,
         az_cible2 = (azimut_oppose - delta_azimut) % 360
 
         if abs((az_planete - az_cible1 + 180) % 360 - 180) <= marge_erreur or \
-            abs((az_planete - az_cible2 + 180) % 360 - 180) <= marge_erreur:
+           abs((az_planete - az_cible2 + 180) % 360 - 180) <= marge_erreur:
             resultats.append({
                 "annee": annee,
                 "cas": "opposition",
@@ -955,11 +934,8 @@ def trouverAnneesAlignement(planete: str,
     return resultats
 
 
-
-
 # === Exemple de test ===
 if __name__ == "__main__":
-
 
     resultats = trouverAnneesAlignement("Saturne", 0, 128.5, 3, 770, 800)
     for r in resultats:

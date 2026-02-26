@@ -1,6 +1,7 @@
 import configparser
 import os
 
+
 class ConfigGlobale:
     def __init__(self, fichier="config/simulateurAlgo.ini"):
         self.config = configparser.ConfigParser()

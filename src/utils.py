@@ -1,6 +1,7 @@
 import os
 import sys
 
+
 def cheminRelatif(relatif):
     """
     Renvoie le chemin absolu vers un fichier/dossier embarqué,

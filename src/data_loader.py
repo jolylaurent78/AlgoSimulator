@@ -6,7 +6,8 @@ from src.utils import cheminRelatif
 from src.carte_config import carteConfig
 
 # Affichage des objects graphiques
-from src.affichage_objets import *
+from src.affichage_objets import PointGraphique, SymboleWiki
+
 
 class VillesDict(dict):
     def __init__(self, csv_path, afficherIcone=False):
@@ -42,8 +43,8 @@ class VillesDict(dict):
             if afficherIcone:
                 self[nom] = SymboleWiki(nom, x_l93, y_l93, icone_path=icone_path, nom=nom)
             else:
-                self[nom] = PointGraphique(nom, x_l93, y_l93)                
-                
-            
+                self[nom] = PointGraphique(nom, x_l93, y_l93)
+
+
 villes_dict = VillesDict("data/villes_database.csv")
 villes_POI = VillesDict("data/villes_database.csv", afficherIcone=True)

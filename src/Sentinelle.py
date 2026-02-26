@@ -6,10 +6,11 @@ from src.calculAstronomique import calculHeurePourAzimutSoleil
 from src.calculAstronomique import MyJulianDate, convertirHeureLocaleVersUTC
 
 # Affichage des objects graphiques
-from src.affichage_objets import *
+from src.affichage_objets import PointGraphique, Ligne, LigneEntreVilles, LigneAzimut
 
 # Base de données des villes
 from src.data_loader import villes_dict
+
 
 class Sentinelle(dict):
     COULEUR_TRAIT_MIDI = (255, 145, 34)
@@ -18,12 +19,12 @@ class Sentinelle(dict):
 
     #
     # Fonctions d'initialisation
-    # 
+    #
     def __init__(self, chemin_csv):
         self.fichierSentinelles = OrderedDict()  # { "S1" : {"Angle": ..., "Ville": ...} }
         self.chargerFichier(chemin_csv)
 
-        # On calcule les azimuts et on initialise les points graphiques cles 
+        # On calcule les azimuts et on initialise les points graphiques cles
         self.pointCoetquidan = PointGraphique(villes_dict["Coetquidan"])
         self.pointGolfeJuan = PointGraphique(villes_dict["Golfe-Juan"])
         self.azimutMidi = self.completerAzimutPrecis()
@@ -33,7 +34,7 @@ class Sentinelle(dict):
 
         # On crée le dictionnaire
         self.creerDictSentinelles()
-   
+
     #
     # Chargement des données initiales à partir du csv..
     def chargerFichier(self, chemin_csv):
@@ -50,7 +51,7 @@ class Sentinelle(dict):
                     "HeureLocale": None
                 }
 
-    # Calcul de l'angle précis 
+    # Calcul de l'angle précis
     def completerAzimutPrecis(self):
         # On prépare l'axe de référence : Coetquidan -> Golfe-Juan
 
@@ -59,7 +60,7 @@ class Sentinelle(dict):
 
         ligneMidi = Ligne(px1, py1, px2, py2)
         azimutMidi = ligneMidi.azimut()
-        
+
         # On complète AzimutPrecis pour chaque sentinelle
         for cle, sentinelle in self.fichierSentinelles.items():
             ville = sentinelle["Ville"]
@@ -74,7 +75,7 @@ class Sentinelle(dict):
                 ligneVersVille = Ligne(px1, py1, pxV, pyV)
                 sentinelle["AzimutCalibre"] = 180-float(ligneVersVille.angleAvec(ligneMidi))
         return azimutMidi
-    
+
     def calculerHeureSentinelle(self):
         coordCarnac = villes_dict["Carnac"].getCoordonneesGPS()
         coordLampouy = villes_dict["Carnac"].getCoordonneesGPS()
@@ -109,9 +110,9 @@ class Sentinelle(dict):
             else:
                 dateObsSentinelleJD = dateObsSentinelleCarnacJD
                 coord = coordCarnac
-                lon = lonCarnac               
+                lon = lonCarnac
             heureSentinelleJD = calculHeurePourAzimutSoleil(coord, dateObsSentinelleJD, sentinelle["AzimutCalibre"], precision_deg=0.2)
-            heureLocale = convertirHeureLocaleVersUTC(heureSentinelleJD.toString("HH:MM:SS"), lon, inverse=True )
+            heureLocale = convertirHeureLocaleVersUTC(heureSentinelleJD.toString("HH:MM:SS"), lon, inverse=True)
             sentinelle["HeureLocale"] = arrondirHeureHHMM(heureLocale)
 
     def creerDictSentinelles(self):
@@ -119,7 +120,7 @@ class Sentinelle(dict):
         dict_notes = {}
 
         for cle, sentinelle in self.fichierSentinelles.items():
-            #on rajoute toutes les notes 
+            # on rajoute toutes les notes
             note = sentinelle["Note"].strip()
             dict_notes[note] = {
                 "HeureLocale": sentinelle["HeureLocale"],
@@ -132,7 +133,7 @@ class Sentinelle(dict):
         self.update(dict_notes)
 
         return dict_notes
-    
+
     def getOrigineStylet(self):
         return self.pointCoetquidan
 
@@ -150,28 +151,28 @@ class Sentinelle(dict):
 
     #
     # Fonctions d'affichage
-    # 
-  
-    def afficherLigneMidi(self, tagLevel:str):
+    #
+
+    def afficherLigneMidi(self, tagLevel: str):
         ligneMidi = LigneEntreVilles(self.pointCoetquidan, self.pointGolfeJuan,
-            nom="Axe Midi solaire",
-            couleur=Sentinelle.COULEUR_TRAIT_MIDI,
-            epaisseur = 1,
-            tags={"level": tagLevel}
-            )
+                                     nom="Axe Midi solaire",
+                                     couleur=Sentinelle.COULEUR_TRAIT_MIDI,
+                                     epaisseur=1,
+                                     tags={"level": tagLevel}
+                                     )
         azMidi = ligneMidi.getAzimutCarte()
         ligneMidi.setTooltips([f"Azimut :{azMidi:.02f}°"])
         return ligneMidi
-        
-    def afficherLigneHoraire(self, note:str, am_pm:str, tagLevel:str, selectionne=False):
+
+    def afficherLigneHoraire(self, note: str, am_pm: str, tagLevel: str, selectionne=False):
         heurelocale = self[note]["HeureLocale"]
         azimutCalibre = self[note]["AzimutCalibre"]
         rotation = (180 - azimutCalibre) % 360
-        azimut = self.azimutMidi + rotation if am_pm=="AM" else self.azimutMidi - rotation
+        azimut = self.azimutMidi + rotation if am_pm == "AM" else self.azimutMidi - rotation
 
         couleurAffichage = Sentinelle.COULEUR_TRAIT_CANDIDAT if selectionne else Sentinelle.COULEUR_TRAIT_HEURE
-        
-        ligne= LigneAzimut(
+
+        ligne = LigneAzimut(
             self.pointCoetquidan,
             azimut,
             nom=f"Ligne Horaire {heurelocale} AM",
@@ -184,14 +185,14 @@ class Sentinelle(dict):
 
     #
     # Fonctions de calcul
-    # 
-    def surLigneHoraire(self, px, py, inclureLampouy = False):
+    #
+    def surLigneHoraire(self, px, py, inclureLampouy=False):
         distMin = None
         candidatHeure = None
 
         for note, valeurs in self.items():
             # On exclut la ligne horaire de Lampouy si non demandé
-            if note == "L"  and not inclureLampouy:
+            if note == "L" and not inclureLampouy:
                 continue
             heureLocale = valeurs["HeureLocale"]
             azimut = valeurs["AzimutCalibre"]
@@ -200,10 +201,6 @@ class Sentinelle(dict):
             azimut_corrige_am = (self.azimutMidi + delta) % 360
             azimut_corrige_sym = (self.azimutMidi - delta) % 360
 
-
-            pt1x, pt1y = self.pointCoetquidan.coordonneesPixelAbs()
-            pt2x, pt2y = self.pointGolfeJuan.coordonneesPixelAbs()
-            ligneRef = Ligne(pt1x, pt1y, pt2x, pt2y )
             ligneAM = Ligne.depuisPointEtAzimut(self.pointCoetquidan.coordonneesPixelAbs(), azimut_corrige_am)
             lignePM = Ligne.depuisPointEtAzimut(self.pointCoetquidan.coordonneesPixelAbs(), azimut_corrige_sym)
             distAM = ligneAM.distanceAuPoint(px, py)
@@ -213,22 +210,22 @@ class Sentinelle(dict):
                 distMin = distAM
                 candidatHeure = heureLocale
                 ampm = "AM"
-                azimutHeure = azimut_corrige_am            
-            elif distMin>distAM:
+                azimutHeure = azimut_corrige_am
+            elif distMin > distAM:
                 distMin = distAM
                 candidatHeure = heureLocale
                 ampm = "AM"
                 azimutHeure = azimut_corrige_am
-            if distMin>distPM:
+            if distMin > distPM:
                 distMin = distPM
                 candidatHeure = heureLocale
                 ampm = "PM"
                 azimutHeure = azimut_corrige_sym
 
         distKM = int(self.pointCoetquidan.pixelsVersMetres()*distMin/1000)
-        selection = distKM<20
+        selection = distKM < 20
 
-        return selection, candidatHeure, ampm, distKM, azimutHeure        
+        return selection, candidatHeure, ampm, distKM, azimutHeure
 
 
 class LieuxObservation:
@@ -254,12 +251,12 @@ class LieuxObservation:
     }
 
     @staticmethod
-    def getListeLieuxObservation(note:str, date:str=""):
+    def getListeLieuxObservation(note: str, date: str = ""):
         ville1 = LieuxObservation.tableauObservation.get(note, "-")
         ville2 = LieuxObservation.tableauObservationDecale.get(note, "-")
         solutions = [ville1, ville2]
 
-         # On gère le cas Roncevaux en rajoutant "Gérardmer si présent"
+        # On gère le cas Roncevaux en rajoutant "Gérardmer si présent"
         if "Roncevaux" in solutions:
             solutions.append("Gérardmer")  # ou la ville que tu veux
 
@@ -268,12 +265,18 @@ class LieuxObservation:
             solutions.append("Lampouy")
 
         return solutions
-    
+
     @staticmethod
-    def getDefautLieuObservation(note:str):
-        return LieuxObservation.tableauObservation.get(note, "-") 
+    def getDefautLieuObservation(note: str):
+        return LieuxObservation.tableauObservation.get(note, "-")
+
 
 if __name__ == "__main__":
     sentinelle = Sentinelle("data/sentinelle.csv")
     for nom, infos in sentinelle.fichierSentinelles.items():
-        print(f"{nom} → Azimut: {infos['Azimut']} | Ville: {infos['Ville']} | AzimutCalibre: {infos['AzimutCalibre']:.2f} | HeureLocale: {infos['HeureLocale']}")
+        print(
+            f"{nom} → Azimut: {infos['Azimut']} | "
+            f"Ville: {infos['Ville']} | "
+            f"AzimutCalibre: {infos['AzimutCalibre']:.2f} | "
+            f"HeureLocale: {infos['HeureLocale']}"
+             )

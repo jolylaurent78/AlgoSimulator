@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 class Reliquats:
     def __init__(self, cheminFichier):
         self.cheminFichier = cheminFichier
@@ -19,11 +20,11 @@ class Reliquats:
             yield (row["Source"], row["Destination"])
 
     def setVilleInitiale(self, ville):
-        self.villeInitiale = ville    
+        self.villeInitiale = ville
 
     def getVilleInitiale(self):
         return self.villeInitiale
-    
+
     def afficherApercu(self, lignes=5):
         print(self.df.head(lignes))
 
@@ -41,18 +42,17 @@ class Reliquats:
 
     def monterLigne(self, index):
         if index > 1 and index < len(self.df):
-            ligne_courante = self.df.loc[index -1, "Ligne"]
+            ligne_courante = self.df.loc[index - 1, "Ligne"]
             ligne_au_dessus = self.df.loc[index - 2, "Ligne"]
-            self.df.loc[index -1, "Ligne"], self.df.loc[index - 2, "Ligne"] = ligne_au_dessus, ligne_courante
+            self.df.loc[index - 1, "Ligne"], self.df.loc[index - 2, "Ligne"] = ligne_au_dessus, ligne_courante
             self.df.sort_values("Ligne", inplace=True)
             self.df.reset_index(drop=True, inplace=True)
-
 
     def descendreLigne(self, index):
         if index < len(self.df):
             ligne_courante = self.df.loc[index - 1, "Ligne"]
             ligne_en_dessous = self.df.loc[index, "Ligne"]
-            self.df.loc[index -1, "Ligne"], self.df.loc[index , "Ligne"] = ligne_en_dessous, ligne_courante
+            self.df.loc[index - 1, "Ligne"], self.df.loc[index , "Ligne"] = ligne_en_dessous, ligne_courante
             self.df.sort_values("Ligne", inplace=True)
             self.df.reset_index(drop=True, inplace=True)
 
@@ -61,13 +61,11 @@ class Reliquats:
         self.df.loc[index-1, "Source"] = self.df.loc[index-1, "Destination"]
         self.df.loc[index-1, "Destination"] = temp
 
-
     def inverserOrdre(self):
         max_ligne = self.df["Ligne"].max()
         self.df["Ligne"] = self.df["Ligne"].apply(lambda x: max_ligne - x + 1)
         self.df.sort_values("Ligne", inplace=True)
         self.df.reset_index(drop=True, inplace=True)
-
 
     def sauvegarder(self, chemin=None):
         chemin_sortie = chemin or self.cheminFichier
@@ -80,8 +78,7 @@ class Reliquats:
         return ["Carnac",
                 "Beaufort-en-Vallée",
                 "Lampouy"
-        ]
-
+                ]
 
 
 class AxeMidi(list):

@@ -1,7 +1,3 @@
-import csv
-import math
-from collections import OrderedDict
-
 # Moteur Algo générique
 from src.AlgorithmeManager import ModuleAlgo, AlgorithmeManager
 from src.ListeSegmentsDataSet import ListeSegmentsDataSet
@@ -9,10 +5,10 @@ from src.Sentinelle import Sentinelle, LieuxObservation
 
 # Librairie calcul astronomique
 from src.calculAstronomique import positionSoleil, positionAstre, calculLeverAstre, calculLeverSoleil, calculCoucherSoleil, ASTRES
-from src.calculAstronomique import MyJulianDate, decalage2Notes, decalage2Jours, getIndexesPourNote, convertirHeureLocaleVersUTC, heureSymetrique
+from src.calculAstronomique import MyJulianDate, decalage2Notes, decalage2Jours
 
 # Affichage des objects graphiques
-from src.affichage_objets import *
+from src.affichage_objets import ObjetGraphique, PointGraphique, Ligne, LigneAzimut, ArcOriente, CercleGraphique
 
 # Gestion des coordonnées / projection
 from src.carte_config import carteConfig
@@ -23,9 +19,10 @@ from src.data_loader import villes_dict
 # Gestion des layers graphiques
 from src.layerManager import LayerManager
 
+
 class AlgorithmeStyletInitial(AlgorithmeManager):
 
-    def __init__(self, layerManager:LayerManager):
+    def __init__(self, layerManager: LayerManager):
         self.dataset = ListeSegmentsDataSet("data/dataset.csv")  # Créé explicitement ici
         super().__init__(layerManager)
 
@@ -33,14 +30,14 @@ class AlgorithmeStyletInitial(AlgorithmeManager):
         self.structure_declaree = structure
 
     def getListeModulesInitiale(self):
-            return [
-                ("soleil", "Soleil", Soleil()),
-                ("carte", "Carte", Carte()),
-                ("planete", "Planète", Planete()),
-                ("etoile", "Etoile", Etoile()),
-                ("sentinelle", "Sentinelle", SentinelleAlgo()),
-                ("candidats", "Candidat", Candidats())
-            ]
+        return [
+            ("soleil", "Soleil", Soleil()),
+            ("carte", "Carte", Carte()),
+            ("planete", "Planète", Planete()),
+            ("etoile", "Etoile", Etoile()),
+            ("sentinelle", "Sentinelle", SentinelleAlgo()),
+            ("candidats", "Candidat", Candidats())
+        ]
 
     def appliquerParametresDepuisStructure(self):
         pass
@@ -52,25 +49,26 @@ class AlgorithmeStyletInitial(AlgorithmeManager):
 # Gestion de l'objet Soleil: Gère l'observation.
 # Pas de calcul à proprement parlé, juste l'initialsation de la lettre Dominicale et lieu d'observation'
 #
+
+
 class Soleil(ModuleAlgo):
     def getEntreesModules(self):
         return ["dataset.date"]
 
     def __init__(self):
-# Variables input des autres modules
+        # Variables input des autres modules
         self.dateDataset = ""
-# Affiché
+        # Affiché
         self.lettreSeg = None
         self.dateObservation = ""
         self.visibiliteZeta = ""
         self.lieuObservation = None
         self.decalage6mois = None
-# Variables output pour les autres modules
+        # Variables output pour les autres modules
         self.dateObservationJD = None
         self.coordObservation = None
         self.lettreObs = None
         super().__init__()
-
 
     def setup(self):
         """
@@ -89,15 +87,14 @@ class Soleil(ModuleAlgo):
         heureLeverZeta = calculLeverAstre(coord_strasbourg, dateSegment, ASTRES['ZetaPuppis'])
         heureLeverSoleil = calculLeverSoleil(coord_strasbourg, dateSegment)
         heureCoucherSoleil = calculCoucherSoleil(coord_strasbourg, dateSegment)
-        if (heureLeverZeta>=heureLeverSoleil) and (heureLeverZeta<=heureCoucherSoleil):
+        if (heureLeverZeta >= heureLeverSoleil) and (heureLeverZeta <= heureCoucherSoleil):
             self.visibiliteZeta = "Non visible"
             self.dateObservationJD = dateSegment.date6Mois()
         else:
             self.visibiliteZeta = "Visible"
             self.dateObservationJD = dateSegment
 
-
-        self.dateObservation = self.dateObservationJD.jourSemaine() +" " + self.dateObservationJD.toString("JJ/MM/AAAA")
+        self.dateObservation = self.dateObservationJD.jourSemaine() + " " + self.dateObservationJD.toString("JJ/MM/AAAA")
         self.lettreObs = self.dateObservationJD.lettreDominicale()
         self.lieuObservation = LieuxObservation.getDefautLieuObservation(self.lettreSeg)
 
@@ -105,7 +102,7 @@ class Soleil(ModuleAlgo):
 
     def getValeursLieuObservation(self):
         return LieuxObservation.getListeLieuxObservation(self.lettreSeg, self.dateDataset)
-    
+
     def calculer(self):
 
         ville = villes_dict[self.lieuObservation]
@@ -115,19 +112,20 @@ class Soleil(ModuleAlgo):
 # Gestion de l'objet Soleil: Gère l'observation '
 #
 
+
 class Carte(ModuleAlgo):
     def getEntreesModules(self):
-        return ["soleil.dateObservationJD", "soleil.coordObservation" ]
+        return ["soleil.dateObservationJD", "soleil.coordObservation"]
 
     def __init__(self):
-# Variables input des autres modules
+        # Variables input des autres modules
         self.dateObservationJDSoleil = None
         self.coordObservationSoleil = None
 
         self.heure = None           # L'heure du lever du soleil à Strasbourg'
         self.azimut = None          # L'azimut du soleil à son lever
         self.heureLeverZeta = None  # Heure lever Zeta Pupis au lieu d'observation (type string pour affichage)
-# Variables output pour les autres modules
+        # Variables output pour les autres modules
         self.heureLeverZetaJD = None  # Heure lever Zeta Pupis au lieu d'observation (julian date pour )
         self.rotation = None           # Rotation de la carte
         self.azimutZeta = None      # L'azimut de Zeta Pupis à son lever
@@ -166,24 +164,23 @@ class Planete(ModuleAlgo):
             "soleil.dateObservationJD",
             "carte.heureLeverZetaJD",
             "carte.azimutZeta",
-            "carte.rotation" ]
-
+            "carte.rotation"]
 
     def __init__(self):
-# Variable input des autres modules
+        # Variable input des autres modules
         self.coordObservationSoleil = None
         self.dateObservationJDSoleil = None
         self.heureLeverZetaJDCarte = None
         self.azimutZetaCarte = None
         self.rotationCarte = None
 
-# Valeurs initialisées à calculer
+        # Valeurs initialisées à calculer
         self.nom = None
         self.azimut = None
         self.hauteur = None
         self.sensCarte = "Endroit"
         self.sensZeta = "Endroit"
-        self.axeFinalCalcul  = None
+        self.axeFinalCalcul = None
         self.axeFinal = None
         super().__init__()
 
@@ -204,7 +201,6 @@ class Planete(ModuleAlgo):
         Initialise la planète observée en fonction du jour de la semaine
         """
         self.nom = Planete.tableauPlanetes.get(self.dateObservationJDSoleil.jourSemaine(), "-")
-        villeBourges = villes_dict["Bourges"]
 
     def getValeursNom(self):
         return [
@@ -217,7 +213,6 @@ class Planete(ModuleAlgo):
 
     def getValeursSensZeta(self):
         return ["Endroit", "Envers"]
-
 
     def getRegles(self):
         return [
@@ -242,39 +237,46 @@ class Planete(ModuleAlgo):
     def _regle_carte_toujours_endroit(self):
         return "Endroit"
 
-
     def calculer(self):
         # On calcule lazimut de la plaète à l'heure donnée'
         lat, lon = self.coordObservationSoleil
         self.hauteur, self.azimut = positionAstre((lat, lon), self.heureLeverZetaJDCarte, ASTRES[self.nom])
 
         if self.hauteur > 0:
-            #On prend en compte le sens de la carte:
+            # On prend en compte le sens de la carte:
             # On suppose que l'Est est aligné avec le level du soleil à Strasbourg'
             # ET ensuite on aligne l'axe de la carte % Zeta Puppis
-            azimutPlaneteAvecSensCarte = self.azimut if self.sensCarte=="Endroit" else 360-self.azimut
-            azimutPlaneteAvecSensCarteStr = f"{float(self.azimut):.2f}" if self.sensCarte=="Endroit" else f"360-{float(self.azimut):.2f}"
+            azimutPlaneteAvecSensCarte = self.azimut if self.sensCarte == "Endroit" else 360-self.azimut
+            azimutPlaneteAvecSensCarteStr = f"{float(self.azimut):.2f}" if self.sensCarte == "Endroit" else f"360-{float(self.azimut):.2f}"
 
             # Si l'axe de Zeta est inversé, on inverse le sens de Zeta'
-            azimutZetaAvecSensAxe = self.azimutZetaCarte if self.sensZeta=="Endroit" else -self.azimutZetaCarte
-            azimutZetaAvecSensAxeStr = f"{float(self.azimutZetaCarte):.2f}" if self.sensZeta=="Endroit" else f"-{float(self.azimutZetaCarte):.2f}"
-            if (azimutZetaAvecSensAxe>=0) and (self.azimut>=0):
+            azimutZetaAvecSensAxe = self.azimutZetaCarte if self.sensZeta == "Endroit" else -self.azimutZetaCarte
+            azimutZetaAvecSensAxeStr = (
+                f"{float(self.azimutZetaCarte):.2f}"
+                if self.sensZeta == "Endroit"
+                else f"-{float(self.azimutZetaCarte):.2f}"
+            )
+            if (azimutZetaAvecSensAxe >= 0) and (self.azimut >= 0):
                 azimutZetaAvecSensAxeStr = "+"+azimutZetaAvecSensAxeStr
 
             # Si la carte est à l'envers, on inverse le sens de rotation'
-            rotationCarteAvecSensCarte = self.rotationCarte if self.sensCarte=="Endroit" else -self.rotationCarte
-            rotationCarteAvecSensCarteStr = f"{float(self.rotationCarte):.2f}" if self.sensCarte=="Endroit" else f"-{float(self.rotationCarte):.2f}"
-            if (rotationCarteAvecSensCarte>=0) and (self.rotationCarte>=0):
+            rotationCarteAvecSensCarte = self.rotationCarte if self.sensCarte == "Endroit" else -self.rotationCarte
+            rotationCarteAvecSensCarteStr = (
+                f"{float(self.rotationCarte):.2f}"
+                if self.sensCarte == "Endroit"
+                else f"-{float(self.rotationCarte):.2f}"
+            )
+            if (rotationCarteAvecSensCarte >= 0) and (self.rotationCarte >= 0):
                 rotationCarteAvecSensCarteStr = "+"+rotationCarteAvecSensCarteStr
 
             self.axeFinal = (azimutPlaneteAvecSensCarte + azimutZetaAvecSensAxe + rotationCarteAvecSensCarte) % 360
-            self.axeFinalCalcul = azimutPlaneteAvecSensCarteStr + " " + azimutZetaAvecSensAxeStr + " "+ rotationCarteAvecSensCarteStr
+            self.axeFinalCalcul = azimutPlaneteAvecSensCarteStr + " " + azimutZetaAvecSensAxeStr + " " + rotationCarteAvecSensCarteStr
         else:
-            self.axeFinalCalcul =f"La planète {self.nom} est invisible à cette heure"
+            self.axeFinalCalcul = f"La planète {self.nom} est invisible à cette heure"
             self.axeFinal = None
 
     def construireRepresentationCarte(self) -> list[ObjetGraphique]:
-        if self.hauteur >0:
+        if self.hauteur > 0:
             villeBourges = villes_dict["Bourges"]
 
             #
@@ -282,44 +284,44 @@ class Planete(ModuleAlgo):
             #
             bourges = PointGraphique(
                 villeBourges,
-                afficherNom = True,
-                tags = {"level" : "design"}
+                afficherNom=True,
+                tags={"level" : "design"}
             )
             azimut = self.azimut if self.sensCarte == "Endroit" else 360-self.azimut
             ligneObservation = LigneAzimut(
                 bourges,
                 azimut,
                 f"Axe {self.nom} observé",
-                couleur=(255,128,0), # Blue très clair
-                tooltips = [f"Axe observation={azimut:.2f}°",f"Sens carte: {self.sensCarte}"],
-                tags = {"level" : "design"}
+                couleur=(255, 128, 0),  # Blue très clair
+                tooltips=[f"Axe observation={azimut:.2f}°", f"Sens carte: {self.sensCarte}"],
+                tags={"level" : "design"}
             )
 
-            rotationCarte = self.rotationCarte if self.sensCarte=="Endroit" else -self.rotationCarte
-            rotationZeta = self.azimutZetaCarte if self.sensZeta=="Endroit" else -self.azimutZetaCarte
+            rotationCarte = self.rotationCarte if self.sensCarte == "Endroit" else -self.rotationCarte
+            rotationZeta = self.azimutZetaCarte if self.sensZeta == "Endroit" else -self.azimutZetaCarte
             arcRotationZeta = ArcOriente(
                 bourges,
                 150,
                 azimut,
                 rotationZeta,
-                nom = "Rotation",
+                nom="Rotation",
                 epaisseur=1,
-                couleur = (64,64,0),  # LEs arc en rouge
-                style = "Arrow",
-                tooltips = [f"Rotation zéta={self.azimutZetaCarte:.2f}°",f"Sens zeta: {self.sensZeta}"],
-                tags = {"level" : "design"}
+                couleur=(64, 64, 0),  # LEs arc en rouge
+                style="Arrow",
+                tooltips=[f"Rotation zéta={self.azimutZetaCarte:.2f}°", f"Sens zeta: {self.sensZeta}"],
+                tags={"level" : "design"}
                 )
             arcRotationCarte = ArcOriente(
                 bourges,
                 150,
                 azimut+rotationZeta,
                 rotationCarte,
-                nom = "Rotation",
+                nom="Rotation",
                 epaisseur=1,
-                couleur = (255,0,128),
-                style = "Arrow",
-                tooltips = [f"Rotation Carte={self.rotationCarte:.2f}°",f"Sens carte: {self.sensCarte}"],
-                tags = {"level" : "design"}
+                couleur=(255, 0, 128),
+                style="Arrow",
+                tooltips=[f"Rotation Carte={self.rotationCarte:.2f}°", f"Sens carte: {self.sensCarte}"],
+                tags={"level" : "design"}
                 )
 
             ligne = LigneAzimut(
@@ -327,10 +329,9 @@ class Planete(ModuleAlgo):
                 self.axeFinal,
                 f"Axe {self.nom} après rotation",
                 epaisseur=1,
-                tooltips = [f"Axe apres rotation ={self.axeFinal:.2f}°"],
-                tags = {"level" : "construction"}
+                tooltips=[f"Axe apres rotation ={self.axeFinal:.2f}°"],
+                tags={"level" : "construction"}
             )
-
 
             return [bourges, ligne, ligneObservation, arcRotationCarte, arcRotationZeta]
         else:
@@ -338,18 +339,20 @@ class Planete(ModuleAlgo):
 #
 # Gestion de l'axe de la grande ourse
 #
+
+
 class Etoile(ModuleAlgo):
     def getEntreesModules(self):
         return ["soleil.lettreObs",
-            "soleil.lettreSeg",
-            "carte.heureLeverZetaJD",
-            "soleil.coordObservation",
-            "carte.azimutZeta",
-            "carte.rotation"
-        ]
+                "soleil.lettreSeg",
+                "carte.heureLeverZetaJD",
+                "soleil.coordObservation",
+                "carte.azimutZeta",
+                "carte.rotation"
+                ]
 
     def __init__(self):
-# Variable input des autres modules
+        # Variable input des autres modules
         self.heureLeverZetaJDCarte = None
         self.coordObservationSoleil = None
         self.azimutZetaCarte = None
@@ -365,7 +368,7 @@ class Etoile(ModuleAlgo):
         self.sensCarte = "Endroit"
         self.sensZeta = "Endroit"
         self.origineTrait = None
-        self.axeFinalCalcul  = None
+        self.axeFinalCalcul = None
         self.axeFinal = None
         super().__init__()
 
@@ -400,7 +403,6 @@ class Etoile(ModuleAlgo):
         "D": "Bourges"
     }
 
-
     def setup(self):
         """
         Initialise l'étoile en fonction de la lettre dominicale
@@ -417,6 +419,7 @@ class Etoile(ModuleAlgo):
             Etoile.tableauGandeOurse.get(self.lettreObsSoleil, "-"),
             Etoile.tableauGandeOurse.get(decalage2Notes(self.lettreObsSoleil, Etoile.sensTableauGandeOurse), "-")
         ]
+
     def getValeursSensCarte(self):
         return ["Endroit", "Envers"]
 
@@ -424,14 +427,14 @@ class Etoile(ModuleAlgo):
         return ["Endroit", "Envers"]
 
     def getValeursOrigineTrait(self):
-            villeStd = Etoile.tableauOrigineTrait.get(self.lettreSegSoleil, "-")
-            villeDec = Etoile.tableauOrigineTraitDecale.get(self.lettreSegSoleil, "-")
-            tab = []
-            if villeStd != "Bourges":
-                tab += [villeStd]
-            if villeDec != "Bourges":
-                tab += [villeDec]
-            return tab
+        villeStd = Etoile.tableauOrigineTrait.get(self.lettreSegSoleil, "-")
+        villeDec = Etoile.tableauOrigineTraitDecale.get(self.lettreSegSoleil, "-")
+        tab = []
+        if villeStd != "Bourges":
+            tab += [villeStd]
+        if villeDec != "Bourges":
+            tab += [villeDec]
+        return tab
 
     def getRegles(self):
         return [["Synchroniser l'Axe de Zéta en fonction du choix de l'étoile", "sensZeta", self._regle_zeta_selon_etoile]]
@@ -450,39 +453,46 @@ class Etoile(ModuleAlgo):
         else:
             return self.sensZeta
 
-
     def calculer(self):
         # On calcule lazimut de l'étoile à l'heure donnée'
         lat, lon = self.coordObservationSoleil
-        self.hauteur, self.azimut  = positionAstre((lat, lon), self.heureLeverZetaJDCarte, ASTRES[self.nom])
+        self.hauteur, self.azimut = positionAstre((lat, lon), self.heureLeverZetaJDCarte, ASTRES[self.nom])
 
-        if self.hauteur>0:
-            #On prend en compte le sens de la carte:
+        if self.hauteur > 0:
+            # On prend en compte le sens de la carte:
             # On suppose que l'Est est aligné avec le level du soleil à Strasbourg'
             # ET ensuite on aligne l'axe de la carte % Zeta Puppis
-            azimutEtoileAvecSensCarte = self.azimut if self.sensCarte=="Endroit" else 360-self.azimut
-            azimutEtoileAvecSensCarteStr = f"{float(self.azimut):.2f}" if self.sensCarte=="Endroit" else f"360-{float(self.azimut):.2f}"
+            azimutEtoileAvecSensCarte = self.azimut if self.sensCarte == "Endroit" else 360-self.azimut
+            azimutEtoileAvecSensCarteStr = f"{float(self.azimut):.2f}" if self.sensCarte == "Endroit" else f"360-{float(self.azimut):.2f}"
 
             # Si l'axe de Zeta est inversé, on inverse le sens de Zeta'
-            azimutZetaAvecSensAxe = self.azimutZetaCarte if self.sensZeta=="Endroit" else -self.azimutZetaCarte
-            azimutZetaAvecSensAxeStr = f"{float(self.azimutZetaCarte):.2f}" if self.sensZeta=="Endroit" else f"-{float(self.azimutZetaCarte):.2f}"
-            if (azimutZetaAvecSensAxe>=0) and (self.azimut>=0):
+            azimutZetaAvecSensAxe = self.azimutZetaCarte if self.sensZeta == "Endroit" else -self.azimutZetaCarte
+            azimutZetaAvecSensAxeStr = (
+                f"{float(self.azimutZetaCarte):.2f}"
+                if self.sensZeta == "Endroit"
+                else f"-{float(self.azimutZetaCarte):.2f}"
+            )
+            if (azimutZetaAvecSensAxe >= 0) and (self.azimut >= 0):
                 azimutZetaAvecSensAxeStr = "+"+azimutZetaAvecSensAxeStr
 
             # Si la carte est à l'envers, on inverse le sens de rotation'
-            rotationCarteAvecSensCarte = self.rotationCarte if self.sensCarte=="Endroit" else -self.rotationCarte
-            rotationCarteAvecSensCarteStr = f"{float(self.rotationCarte):.2f}" if self.sensCarte=="Endroit" else f"-{float(self.rotationCarte):.2f}"
-            if (rotationCarteAvecSensCarte>=0) and (self.rotationCarte>=0):
+            rotationCarteAvecSensCarte = self.rotationCarte if self.sensCarte == "Endroit" else -self.rotationCarte
+            rotationCarteAvecSensCarteStr = (
+                f"{float(self.rotationCarte):.2f}"
+                if self.sensCarte == "Endroit"
+                else f"-{float(self.rotationCarte):.2f}"
+            )
+            if (rotationCarteAvecSensCarte >= 0) and (self.rotationCarte >= 0):
                 rotationCarteAvecSensCarteStr = "+"+rotationCarteAvecSensCarteStr
 
             self.axeFinal = (azimutEtoileAvecSensCarte + azimutZetaAvecSensAxe + rotationCarteAvecSensCarte) % 360
-            self.axeFinalCalcul = azimutEtoileAvecSensCarteStr + " " + azimutZetaAvecSensAxeStr + " "+ rotationCarteAvecSensCarteStr
+            self.axeFinalCalcul = azimutEtoileAvecSensCarteStr + " " + azimutZetaAvecSensAxeStr + " " + rotationCarteAvecSensCarteStr
         else:
-            self.axeFinalCalcul =f"L'étoile {self.nom} est invisible à cette heure"
+            self.axeFinalCalcul = f"L'étoile {self.nom} est invisible à cette heure"
             self.axeFinal = None
 
     def construireRepresentationCarte(self) -> list[ObjetGraphique]:
-        if self.hauteur >0:
+        if self.hauteur > 0:
             villeOrigineTrait = villes_dict[self.origineTrait]
 
             #
@@ -490,44 +500,44 @@ class Etoile(ModuleAlgo):
             #
             originePG = PointGraphique(
                 villeOrigineTrait,
-                afficherNom = True,
-                tags = {"level" : "design"}
+                afficherNom=True,
+                tags={"level" : "design"}
             )
             azimut = self.azimut if self.sensCarte == "Endroit" else 360-self.azimut
             ligneObservation = LigneAzimut(
                 villeOrigineTrait,
                 azimut,
                 f"Axe {self.nom} observé",
-                couleur=(94,94,255), # Rouge  clair
-                tooltips = [f"Axe observation={azimut:.2f}°",f"Sens carte: {self.sensCarte}"],
-                tags = {"level" : "design"}
+                couleur=(94, 94, 255),  # Rouge  clair
+                tooltips=[f"Axe observation={azimut:.2f}°", f"Sens carte: {self.sensCarte}"],
+                tags={"level" : "design"}
             )
 
-            rotationCarte = self.rotationCarte if self.sensCarte=="Endroit" else -self.rotationCarte
-            rotationZeta = self.azimutZetaCarte if self.sensZeta=="Endroit" else -self.azimutZetaCarte
+            rotationCarte = self.rotationCarte if self.sensCarte == "Endroit" else -self.rotationCarte
+            rotationZeta = self.azimutZetaCarte if self.sensZeta == "Endroit" else -self.azimutZetaCarte
             arcRotationZeta = ArcOriente(
                 villeOrigineTrait,
                 150,
                 azimut,
                 rotationZeta,
-                nom = "Rotation",
+                nom="Rotation",
                 epaisseur=1,
-                couleur = (64,64,0),  # LEs arc en rouge
-                style = "Arrow",
-                tooltips = [f"Rotation zéta={self.azimutZetaCarte:.2f}°",f"Sens zeta: {self.sensZeta}"],
-                tags = {"level" : "design"}
+                couleur=(64, 64, 0),  # LEs arc en rouge
+                style="Arrow",
+                tooltips=[f"Rotation zéta={self.azimutZetaCarte:.2f}°", f"Sens zeta: {self.sensZeta}"],
+                tags={"level" : "design"}
                 )
             arcRotationCarte = ArcOriente(
                 villeOrigineTrait,
                 150,
                 azimut+rotationZeta,
                 rotationCarte,
-                nom = "Rotation",
+                nom="Rotation",
                 epaisseur=1,
-                couleur = (255,0,128),
-                style = "Arrow",
-                tooltips = [f"Rotation Carte={self.rotationCarte:.2f}°",f"Sens carte: {self.sensCarte}"],
-                tags = {"level" : "design"}
+                couleur=(255, 0, 128),
+                style="Arrow",
+                tooltips=[f"Rotation Carte={self.rotationCarte:.2f}°", f"Sens carte: {self.sensCarte}"],
+                tags={"level" : "design"}
                 )
 
             ligne = LigneAzimut(
@@ -535,15 +545,14 @@ class Etoile(ModuleAlgo):
                 self.axeFinal,
                 f"Axe {self.nom} après rotation",
                 epaisseur=1,
-                tooltips = [f"Axe apres rotation ={self.axeFinal:.2f}°"],
-                tags = {"level" : "construction"}
+                tooltips=[f"Axe apres rotation ={self.axeFinal:.2f}°"],
+                tags={"level" : "construction"}
             )
-
 
             return [originePG, ligne, ligneObservation, arcRotationCarte, arcRotationZeta]
 
         else:
-            return[]
+            return []
 
 
 #
@@ -553,7 +562,7 @@ class Candidats(ModuleAlgo):
     RAYON_CANDIDAT = 20
 
     def getEntreesModules(self):
-        return ["dataset.date", "planete.axeFinal","etoile.axeFinal","etoile.origineTrait" ]
+        return ["dataset.date", "planete.axeFinal", "etoile.axeFinal", "etoile.origineTrait"]
 
     def __init__(self):
         # Variable input des autres modules
@@ -561,14 +570,14 @@ class Candidats(ModuleAlgo):
         self.axeFinalPlanete = None
         self.axeFinalEtoile = None
         self.origineTraitEtoile = None
-        self.heureSentinelle =None
+        self.heureSentinelle = None
         self.ampm = None
         self.distKM = None
-        self.selection  = None
+        self.selection = None
         self.azimutHeure = None
         self.villeSolution = None
 
-        self.sentinelle=Sentinelle("data/sentinelle.csv")
+        self.sentinelle = Sentinelle("data/sentinelle.csv")
 
         super().__init__()
 
@@ -590,8 +599,8 @@ class Candidats(ModuleAlgo):
 
         # On calcule l'intersection.
         x, y = lignePlanete.intersection(ligneEtoile)
-        x_l93, y_l93 =carteConfig.pixels_to_lambert93(x, y)
-        intersectionPlaneteEtoile = PointGraphique("intersection", x_l93,y_l93)
+        x_l93, y_l93 = carteConfig.pixels_to_lambert93(x, y)
+        intersectionPlaneteEtoile = PointGraphique("intersection", x_l93, y_l93)
 
         # On vérifie que le point est visible
         if not intersectionPlaneteEtoile.estVisibledansImage():
@@ -601,7 +610,6 @@ class Candidats(ModuleAlgo):
         # On calcule la distance avec la ligne horaire la pllus proche
         inclureLampouy = (self.dateDataset == "18/05/1152")
         selection, self.heureSentinelle, self.ampm, self.distKM, self.azimutHeure = self.sentinelle.surLigneHoraire(x, y, inclureLampouy)
-
 
         if not selection:
             self.selection = "Trop loin d'une ligne horaire"
@@ -617,17 +625,17 @@ class Candidats(ModuleAlgo):
         # Le centre du triangle
         px, py = Ligne.barycentreTriangle(lignePlanete, ligneEtoile, ligneSentinelle)
         x_l93, y_l93 = carteConfig.pixels_to_lambert93(px, py)
-        self.pointIntersection = PointGraphique("intersection", x_l93,y_l93)
+        self.pointIntersection = PointGraphique("intersection", x_l93, y_l93)
 
     def construireRepresentationCarte(self) -> list[ObjetGraphique]:
         if self.selection == "Sélectionné":
             return [CercleGraphique(
                 self.pointIntersection,
                 Candidats.RAYON_CANDIDAT,
-                epaisseur = 2,
-                nom ="Intersection Axe Planete + Etoile",
+                epaisseur=2,
+                nom="Intersection Axe Planete + Etoile",
                 tooltips=[f"Heure : {self.heureSentinelle}", f"Distance Heure = {self.distKM}km"],
-                tags = {"level" : "construction"}
+                tags={"level" : "construction"}
             )]
 
         return []
@@ -638,22 +646,21 @@ class Candidats(ModuleAlgo):
 #
 class SentinelleAlgo(ModuleAlgo):
     def getEntreesModules(self):
-        return ["dataset.date","candidats.selection","candidats.heureSentinelle", "candidats.ampm"]
+        return ["dataset.date", "candidats.selection", "candidats.heureSentinelle", "candidats.ampm"]
 
     def __init__(self):
-# Variable input des autres modules
+        # Variable input des autres modules
         self.dateDataset = None
         self.selectionCandidats = None
         self.heureSentinelleCandidats = None
         self.ampmCandidats = None
 
-# Valeurs initialisées à calculer
+        # Valeurs initialisées à calculer
         self.heure = ""
         self.sensCadran = ""
-        self.sentinelle=Sentinelle("data/sentinelle.csv")
+        self.sentinelle = Sentinelle("data/sentinelle.csv")
 
         super().__init__()
-
 
     def calculer(self):
         if self.selectionCandidats == "Sélectionné":
@@ -669,7 +676,7 @@ class SentinelleAlgo(ModuleAlgo):
         # 🔷 Ligne de référence (Midi solaire)
         objets.append(self.sentinelle.afficherLigneMidi("design"))
         objets.append(self.sentinelle.getOrigineStylet())
-    
+
         tableauNotes = ["C", "B", "A", "G", "F", "E", "D", "J"]
         # On rajoute Lampouy pour le 18 Mai 1152
         if self.dateDataset == "18/05/1152":
@@ -677,14 +684,12 @@ class SentinelleAlgo(ModuleAlgo):
 
         for note in tableauNotes:
             heureLocale = self.sentinelle[note]["HeureLocale"]
-            selectionAM = (heureLocale == self.heure) and (self.sensCadran== "AM")
-            selectionPM = (heureLocale == self.heure) and (self.sensCadran== "PM") 
+            selectionAM = (heureLocale == self.heure) and (self.sensCadran == "AM")
+            selectionPM = (heureLocale == self.heure) and (self.sensCadran == "PM")
             tagLevelAM = "construction" if selectionAM else "design"
             tagLevelPM = "construction" if selectionPM else "design"
 
             objets.append(self.sentinelle.afficherLigneHoraire(note, "AM", tagLevelAM, selectionAM))
-            objets.append(self.sentinelle.afficherLigneHoraire(note, "PM", tagLevelPM, selectionPM))       
+            objets.append(self.sentinelle.afficherLigneHoraire(note, "PM", tagLevelPM, selectionPM))
 
         return objets
-
-

@@ -28,9 +28,6 @@ from src.layerManager import Layer, LayerManager
 DISTANCE_SELECTION_PIXELS = 5
 
 
-
-
-
 class ListePOIs:
     def __init__(self, canvas, chemin_bd: str, interface):
         self.chemin_bd = chemin_bd
@@ -44,13 +41,12 @@ class ListePOIs:
         self.taille_symbole = cfg.getInt("Wikipedia", "tailleSymbole", 3)
 
         # Layer interne (non enregistré dans le layerManager)
-        self.layer = Layer("POIs Wikipedia", couleur=(0, 128, 255), epaisseur = self.taille_symbole, visible=False)
+        self.layer = Layer("POIs Wikipedia", couleur=(0, 128, 255), epaisseur=self.taille_symbole, visible=False)
         self.canvas = canvas
 
         self.queue_resultats = queue.Queue()
         self.thread_courant = None
         self.categories_visibles = set()
-
 
     def chargerAsync(self, bbox: tuple[float, float, float, float], zoom: float):
         """
@@ -82,7 +78,7 @@ class ListePOIs:
                 params.append(self.interface.varPOISujet.get())
 
             # Si le zoom est trop large, on ne garde que les POIs croisés
-            diagonale =((xmax - xmin) ** 2 + (ymax - ymin) ** 2) ** 0.5
+            diagonale = ((xmax - xmin) ** 2 + (ymax - ymin) ** 2) ** 0.5
             if diagonale > self.zoom_seuil_diagonale:
                 conditions.append("crossReference = 2")
             elif diagonale > self.zoom_seuil_diagonale / 2:
@@ -97,7 +93,6 @@ class ListePOIs:
                     conditions.append("crossReference >= 1")
                 else:
                     conditions.append("crossReference = 2")
-
 
             sql = f"""
                 SELECT qid, titre, source_backlink, summary, lambert_x, lambert_y, icone, url
@@ -148,7 +143,7 @@ class ListePOIs:
                     )
                 )
                 positions.append((x_l93, y_l93))
-            
+
             for nom, poi in villes_POI.items():
                 poi.setLayer(self.layer)
                 objets.append(poi)
@@ -161,7 +156,8 @@ class ListePOIs:
         self.thread_courant.start()
 
     def _afficherPOIs(self):
-        self.interface._refresh_images(afficherPOIsUniquement = True )
+        self.interface._refresh_images(afficherPOIsUniquement=True)
+
 
 def clamp_pan(crop_w, crop_h):
     global pan_x, pan_y
@@ -263,9 +259,8 @@ def transformer_pixel_affichage_vers_image(x_ecran, y_ecran):
     return px, py
 
 
-def display(layerManager:LayerManager, listePOIs:ListePOIs, retourner_image=False, afficherPOIsUniquement=False):
+def display(layerManager: LayerManager, listePOIs: ListePOIs, retourner_image=False, afficherPOIsUniquement=False):
     global pan_x, pan_y, zoom_factor, canvasDisplay
-
 
     # Dans le cas de base, on crée un canvas.. mais pour afficher les POIs, on le réutilise
     if not afficherPOIsUniquement:
@@ -294,7 +289,7 @@ def display(layerManager:LayerManager, listePOIs:ListePOIs, retourner_image=Fals
         canvasDisplay = canvas  # ← stocké globalement
 
         # On lance un thread pour calculer en parallèle la liste des POIs à afficher
-        if (listePOIs.layer.estVisible() == True):
+        if listePOIs.layer.estVisible() :
             x1_l93, y1_l93 = carteConfig.pixels_to_lambert93(x1, y1)
             x2_l93, y2_l93 = carteConfig.pixels_to_lambert93(x2, y2)
             # Correction du sens Y (axe inversé écran vs Lambert)
@@ -305,12 +300,12 @@ def display(layerManager:LayerManager, listePOIs:ListePOIs, retourner_image=Fals
             bbox = (xmin, ymin, xmax, ymax)
             listePOIs.chargerAsync(bbox, zoom=zoom_factor)
 
-    #On affiche la liste des objets graphiques associés aux Algorithmes dans
-    if afficherPOIsUniquement == False:
+    if not afficherPOIsUniquement :
+        # On affiche la liste des objets graphiques associés aux Algorithmes dans
         for obj in layerManager.getListeObjetsGraphiquesVisible():
             obj.afficher(canvas, transformer_affichage_pixel)
     else:
-    # On affiche les POIs si dispo sur le canvas déjà initialisé.
+        # On affiche les POIs si dispo sur le canvas déjà initialisé.
         for obj in listePOIs.layer.getListeObjetsGraphiques():
             obj.afficher(canvasDisplay, transformer_affichage_pixel)
 
@@ -329,7 +324,6 @@ def get_distance_selection_pixels():
 
     # Convertit cette distance en pixels image
     return base_distance_ecran / zoom_factor
-
 
 
 def selectionVille(x_pix: float, y_pix: float) -> PointGraphique | None:
@@ -358,7 +352,7 @@ def selectionVille(x_pix: float, y_pix: float) -> PointGraphique | None:
     return candidats[0][1]
 
 
-def selectionObjet(x_pix: float, y_pix: float, layerManager:LayerManager, typeObjetCible = None, layerPOIs = None) -> "ObjetGraphique | None":
+def selectionObjet(x_pix: float, y_pix: float, layerManager: LayerManager, typeObjetCible=None, layerPOIs=None) -> "ObjetGraphique | None":
     tolérance = get_distance_selection_pixels()
     candidats = []
 
@@ -374,7 +368,7 @@ def selectionObjet(x_pix: float, y_pix: float, layerManager:LayerManager, typeOb
             continue
 
     if layerPOIs is not None:
-         for obj in layerPOIs.getListeObjetsGraphiques():
+        for obj in layerPOIs.getListeObjetsGraphiques():
             d = obj.distanceDepuis(x_pix, y_pix)
             if d <= tolérance:
                 candidats.append((d, obj))
@@ -384,7 +378,6 @@ def selectionObjet(x_pix: float, y_pix: float, layerManager:LayerManager, typeOb
 
     candidats.sort(key=lambda t: t[0])
     return candidats[0][1]
-
 
 
 def sauvegarder_carte_complete(filepath="sauvegarde.png"):

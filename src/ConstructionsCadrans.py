@@ -4,6 +4,7 @@ import csv
 from src.data_loader import villes_dict
 from src.affichage_objets import PointGraphique, SegmentEntreVilles
 
+
 class ConstructionsCadrans(dict):
 
     def __init__(self, chemin_csv):
@@ -73,7 +74,6 @@ class ConstructionsCadrans(dict):
                 if baseVille == "":
                     raise ValueError(f"Base (Stylet) vide pour la date {date}")
 
-
                 cacheKey = (date, baseVille)
                 if cacheKey in baseCache:
                     baseObj = baseCache[cacheKey]
@@ -101,7 +101,7 @@ class ConstructionsCadrans(dict):
         if nomVille in self:
             raise ValueError(f"Collision: la ville '{nomVille}' est déjà définie dans ConstructionsCadrans")
         self[nomVille] = objet
- 
+
 
 class ObjetCadran:
     def __init__(self, date, heureCadran: str, ombre : str, base : str, midi : str, autre : str = None):
@@ -115,68 +115,72 @@ class ObjetCadran:
 
     def getVilleObjetCadran(self):
         return self.ombre
-    
-    def axeMidiCadran(self, couleur) : 
-        return SegmentEntreVilles(self.base, self.midi, couleur = couleur)
+
+    def axeMidiCadran(self, couleur) :
+        return SegmentEntreVilles(self.base, self.midi, couleur=couleur)
 
     def getBase(self, nom: str, couleur):
-        point = PointGraphique(self.base, couleur = couleur, afficherNom = True, epaisseur = 4)
+        point = PointGraphique(self.base, couleur=couleur, afficherNom=True, epaisseur=4)
         point.setNom(nom)
         return point
 
     def getLigneOmbre(self, couleur):
-        return SegmentEntreVilles(self.base, self.ombre, couleur = couleur)
-            
+        return SegmentEntreVilles(self.base, self.ombre, couleur=couleur)
+
     def getHeure(self, nom: str, couleur):
-        point = PointGraphique(self.ombre, couleur = couleur, afficherNom = True, epaisseur = 4)
+        point = PointGraphique(self.ombre, couleur=couleur, afficherNom=True, epaisseur=4)
         point.setNom(nom)
         return point
-    
+
     def getReference(self):
         return self.ombre
 
     def getHeureCadran(self):
         return self.heureCadran
-    
+
     def typeCadran(self):
         pass
-    
+
     def getTriangleCadran(self):
         pass
 
+
 class ObjetStylet(ObjetCadran):
     def __init__(self, date: str, heureCadran : str, styletVille: str):
-        super().__init__(date, heureCadran, styletVille, "Coetquidan", "Golfe-Juan")    
+        super().__init__(date, heureCadran, styletVille, "Coetquidan", "Golfe-Juan")
 
     def typeCadran(self):
         return "stylet"
-    
+
+
 class ObjetLumiere(ObjetCadran):
     def __init__(self, date: str, heureCadran: str, lumiereVille: str, styletVille: str):
-        super().__init__(date, heureCadran, lumiereVille, "Coetquidan", "Golfe-Juan", styletVille )  
+        super().__init__(date, heureCadran, lumiereVille, "Coetquidan", "Golfe-Juan", styletVille)
 
     def getTriangleCadran(self):
         ptBase = PointGraphique(self.base)
         ptOuverture = PointGraphique(self.autre)
         ptLumiere = PointGraphique(self.ombre)
         return ptOuverture, ptBase, ptLumiere
-    
+
     def typeCadran(self):
         return "lumiere"
-    
+
+
 class ObjetBase(ObjetCadran):
     def __init__(self, date: str, heureCadran: str, baseVille: str, styletVille: str):
-        super().__init__(date, heureCadran, styletVille, baseVille, "Bourges")  
+        super().__init__(date, heureCadran, styletVille, baseVille, "Bourges")
 
     def getReference(self):
         return self.base
-    
+
     def typeCadran(self):
         return "base"
-    
+
+
 class ObjetFinal(ObjetCadran):
     def __init__(self, date: str, heureCadran: str, finalVille: str, baseVille: str):
-        super().__init__(date, heureCadran, finalVille, baseVille, "Bourges")  
+        super().__init__(date, heureCadran, finalVille, baseVille, "Bourges")
 
     def typeCadran(self):
         return "final"
@@ -186,6 +190,7 @@ class ObjetFinal(ObjetCadran):
         ptOuverture = PointGraphique(self.midi)
         ptLumiere = PointGraphique(self.ombre)
         return ptOuverture, ptBase, ptLumiere
-    
+
+
 if __name__ == "__main__":
     constructionsCadrans = ConstructionsCadrans("data/constructionsCadransMultiSolutions.csv")
