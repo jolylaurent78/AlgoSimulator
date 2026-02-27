@@ -141,8 +141,8 @@ class CercleHoraire(ModuleAlgo):
             # On prend en compte les heures de substitution
             if self.heureSubstitution == "11:00":
                 self.heureSentinelle = self.sentinelle["J"]["HeureLocale"]
-            elif self.choixCalendrierSegment == "Standard":
-                self.heureSentinelle = self.heureStylet
+            # elif self.choixCalendrierSegment == "Standard":
+            #     self.heureSentinelle = self.heureStylet
             else:
                 tabDec = {"=": 0, "+2": 2, "-2": 1}
                 listeNotes = decalageGamme(self.lettreChoixSegment, False)  # On décale sans susbtition Fa/Sol

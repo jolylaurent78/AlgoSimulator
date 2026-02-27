@@ -124,11 +124,6 @@ class IHMAlgorithme(tk.Frame):
         self.construire_interface_depuis_parametres(self.parametres_csv, affichage=True)
         self.update_idletasks()  # force le layout à jour
 
-        # On affiche la taille de la fenetre finale
-        w = self.winfo_width()
-        h = self.winfo_height()
-        print(f"[DEBUG] Taille réelle de la fenêtre : {w} x {h} px")
-
     def parser_csv(self, chemin):
         """
             Parse le fichier CSV et vérifie la validité syntaxique des lignes.
