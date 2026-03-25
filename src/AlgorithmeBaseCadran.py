@@ -142,7 +142,7 @@ class CercleHoraire(ModuleAlgo):
             if self.heureSubstitution == "11:00":
                 self.heureSentinelle = self.sentinelle["J"]["HeureLocale"]
             # elif self.choixCalendrierSegment == "Standard":
-            #     self.heureSentinelle = self.heureStylet
+            #    self.heureSentinelle = self.heureStylet
             else:
                 tabDec = {"=": 0, "+2": 2, "-2": 1}
                 listeNotes = decalageGamme(self.lettreChoixSegment, False)  # On décale sans susbtition Fa/Sol
@@ -232,7 +232,7 @@ class Partition(ModuleAlgo):
         return LieuxObservation.getListeLieuxObservation(self.lettreDomSegment, self.dateDataset)
 
     def getValeursP2M2(self):
-        return "=", "+2", "-2"
+        return "=", "+2", "-2", "Clef"
 
     def getValeursTypeSymetrie(self):
         return "Flip vertical", "Flip horizontal"

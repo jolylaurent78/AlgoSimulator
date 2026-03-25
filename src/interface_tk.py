@@ -249,6 +249,7 @@ class InterfaceCarte(tk.Tk):
         menu_algo = tk.Menu(menubar, tearoff=0)
         menu_algo.add_command(label="Gérer les règles...", command=self.gerer_regles_algo)
         menu_algo.add_command(label="Créer scénarios automatiques", command=self.creer_scenarios_automatiques)
+        menu_algo.add_command(label="Recharger les données du dataset", command=self.rechargerDataset)
         menu_algo.add_separator()
         menu_algo.add_command(label="Générer un rapport...", command=self.demanderGenerationRapport)
         menubar.add_cascade(label="Algorithme", menu=menu_algo)
@@ -1795,6 +1796,15 @@ class InterfaceCarte(tk.Tk):
 
     def creer_scenarios_automatiques(self):
         self.ihm_algo.ouvrir_fenetre_scenarios()
+
+    def rechargerDataset(self):
+        try:
+            self.moteurAlgo.rechargerDatasetEtRecalculerTout(self.layerManager)
+            self.appliquerEtat(self.layerManager, self.moteurAlgo)
+            messagebox.showinfo("Dataset", "Rechargement OK")
+        except Exception as e:
+            messagebox.showerror("Dataset", str(e))
+            raise
 
     def demanderGenerationRapport(self):
         self.ihm_algo.ouvrirBoiteGenerationRapport(self.dossiers["exports"])

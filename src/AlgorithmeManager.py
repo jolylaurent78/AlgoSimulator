@@ -339,6 +339,47 @@ class AlgorithmeManager:
             if self.scenario_actif not in self._scenarios[segment]:
                 self.scenario_actif = list(self._scenarios[segment].keys())[0]
 
+    def rechargerDatasetEtRecalculerTout(self, layerManager: LayerManager) -> None:
+        segmentAvant = self.segment_actif
+        scenarioAvant = self.scenario_actif
+
+        from src.ListeSegmentsDataSet import ListeSegmentsDataSet
+        self.dataset = ListeSegmentsDataSet("data/dataset.csv")
+        self.dataset.setup()
+
+        assert segmentAvant in self.dataset.getValeursSegment(), (
+            "Le segment actif n'existe plus dans dataset.csv après rechargement."
+        )
+
+        self.dataset.segment = segmentAvant
+        self.dataset.calculer()
+
+        listeSegments = self.dataset.getValeursSegment()
+        for seg in listeSegments:
+            scenarios_segment = self._scenarios.get(seg, {})
+            if not scenarios_segment:
+                continue
+
+            self.dataset.segment = seg
+            self.dataset.calculer()
+
+            for sc in list(scenarios_segment.keys()):
+                self.calculerModules(nom_scenario=sc, segment=seg, setup=True)
+
+                scenario = scenarios_segment[sc]
+                nom_layer = scenario.getDescriptionLisible()
+                layer = layerManager.getLayer(nom_layer, segment=seg)
+                if layer is None:
+                    layer = layerManager.creerLayer(nom_layer, segment=seg)
+                scenario.construireRepresentationCarte(layer)
+
+        self.segment_actif = segmentAvant
+        self.scenario_actif = scenarioAvant
+        self.dataset.segment = segmentAvant
+        self.dataset.calculer()
+        layerManager.segmentActif = segmentAvant
+        layerManager.recalculerCoordonneesPixelAbsTous()
+
     #
     # Methode de calcul des dépendances entre modules: construction de graph, vérification de l'intégrité...'
     #
