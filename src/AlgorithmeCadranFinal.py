@@ -91,7 +91,7 @@ class StyletFinal(ModuleAlgo):
         return "Base 1", "Base 2"
 
     def getValeursP2M2(self):
-        return "=", "+2", "-2"
+        return "=", "+2", "-2", "Clef"
 
     def getValeursOctave(self):
         return "x1", "x2", "x4", "/2", "/4", "/8"
@@ -149,8 +149,8 @@ class StyletFinal(ModuleAlgo):
         self.lettreChoix = self.lettreDomSegment if self.choixCalendrier == "Standard" else self.lettreDeclDataset
 
         # On sélectionne la hauteur du stylet
-        tabDec = {"=": 0, "+2": 2, "-2": 1}
-        listeNotes = decalageGamme(self.lettreChoix, False)  # On décale sans susbtition Fa/Sol
+        tabDec = {"=": 0, "+2": 2, "-2": 1, "Clef": 3}
+        listeNotes = decalageGamme(self.lettreChoix)  # On décale sans susbtition Fa/Sol
         self.lettre = listeNotes[tabDec[self.P2M2]]
 
         longFA = StyletFinal.tableauGamme["F"]
@@ -225,7 +225,7 @@ class LumiereFinal(ModuleAlgo):
         return ["Standard", "Déclinaison"]
 
     def getValeursChoixHeure(self):
-        list = ["=", "+2", "-2", "11:00"]
+        list = ["=", "+2", "-2", "Clef", "11:00"]
         if self.dateDataset == "18/05/1152":
             heureLampouy = self.sentinelle["L"]["HeureLocale"]
             list.append(heureLampouy)
@@ -289,8 +289,8 @@ class LumiereFinal(ModuleAlgo):
         elif self.choixHeure == heureLampouy:
             self.heureLocale = heureLampouy
         else:
-            tabDec = {"=": 0, "+2": 2, "-2": 1}
-            listeNotes = decalageGamme(self.lettreChoix, False)  # On décale sans susbtition Fa/Sol
+            tabDec = {"=": 0, "+2": 2, "-2": 1, "Clef": 3}
+            listeNotes = decalageGamme(self.lettreChoix)  # On décale sans susbtition Fa/Sol
             choixNote = listeNotes[tabDec[self.choixHeure]]
             self.heureLocale = self.sentinelle[choixNote]["HeureLocale"]
 
@@ -373,7 +373,7 @@ class LigneHoraireFinal(ModuleAlgo):
         return ["Standard", "Déclinaison"]
 
     def getValeursChoixHeure(self):
-        list = ["=", "+2", "-2", "11:00"]
+        list = ["=", "+2", "-2", "Clef", "11:00"]
         if self.dateDataset == "18/05/1152":
             heureLampouy = self.sentinelleLumiere["L"]["HeureLocale"]
             list.append(heureLampouy)
@@ -437,8 +437,8 @@ class LigneHoraireFinal(ModuleAlgo):
         elif self.choixHeure == heureLampouy:
             self.heureLocale = heureLampouy
         else:
-            tabDec = {"=": 0, "+2": 2, "-2": 1}
-            listeNotes = decalageGamme(self.lettreChoix, False)  # On décale sans susbtition Fa/Sol
+            tabDec = {"=": 0, "+2": 2, "-2": 1, "Clef": 3}
+            listeNotes = decalageGamme(self.lettreChoix)  # On décale sans susbtition Fa/Sol
             choixNote = listeNotes[tabDec[self.choixHeure]]
             self.heureLocale = self.sentinelleLumiere[choixNote]["HeureLocale"]
 

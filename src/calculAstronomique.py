@@ -53,32 +53,34 @@ ALTITUDE_LEVER_STANDARD = -0.566  # degrés, pour simuler la réfraction atmosph
 #
 
 
-def decalageGamme(note, substitution=True):
+def decalageGamme(note):
     gamme = ["C", "D", "E", "F", "G", "A", "B"]
 
     def substituer(n):
-        if n == "F":
-            return "G"
-        elif n == "G":
+        if n == "C":
             return "F"
+        elif n == "F":
+            return "C"
         else:
-            return n
-
-    # Substitution de la note de départ
-    note_substituee = substituer(note) if substitution else note
+            return ""
 
     # Trouver l'index dans la gamme
-    index = gamme.index(note_substituee)
+    index = gamme.index(note)
 
     # Calcul des décalages
     note_plus_2 = gamme[(index + 2) % len(gamme)]
     note_moins_2 = gamme[(index - 2) % len(gamme)]
+    
+    # On teste en premier le swap de la note, puis avec n+2 puis avec n-2
+    note_swap = substituer(note)
+    if note_swap == "":
+        note_swap = substituer(note_plus_2)
+    if note_swap == "":
+        note_swap = substituer(note_moins_2)
+    if note_swap == "":
+        note_swap = note
 
-    # Substituer les résultats
-    note_plus_2 = substituer(note_plus_2) if substitution else note_plus_2
-    note_moins_2 = substituer(note_moins_2) if substitution else note_moins_2
-
-    return note_substituee, note_moins_2, note_plus_2
+    return note, note_moins_2, note_plus_2, note_swap
 
 
 def decalage2Notes(note, code):

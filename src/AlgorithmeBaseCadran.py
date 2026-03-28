@@ -145,7 +145,7 @@ class CercleHoraire(ModuleAlgo):
             #    self.heureSentinelle = self.heureStylet
             else:
                 tabDec = {"=": 0, "+2": 2, "-2": 1}
-                listeNotes = decalageGamme(self.lettreChoixSegment, False)  # On décale sans susbtition Fa/Sol
+                listeNotes = decalageGamme(self.lettreChoixSegment)  # On décale sans susbtition Fa/Sol
                 choixNote = listeNotes[tabDec[self.heureSubstitution]]
                 self.heureSentinelle = self.sentinelle[choixNote]["HeureLocale"]
 
@@ -290,8 +290,8 @@ class Partition(ModuleAlgo):
         heureObsJD = MyJulianDate.fromString(self.dateSegmentDataset, self.heureUTCCarnac)
         _, self.azimutSoleil = positionSoleil((latCarnac, lonCarnac), heureObsJD)
 
-        tabDec = {"=": 0, "+2": 2, "-2": 1}
-        listeNotes = decalageGamme(self.lettreChoixSegment, False)  # On décale sans susbtition Fa/Sol
+        tabDec = {"=": 0, "+2": 2, "-2": 1, "Clef": 3}
+        listeNotes = decalageGamme(self.lettreChoixSegment)  # On décale sans susbtition Fa/Sol
         self.lettrePartition = listeNotes[tabDec[self.P2M2]]
 
         # On doit calculer ici les lignes candidates
@@ -403,7 +403,7 @@ class CercleDistance(ModuleAlgo):
         return "Ouverture", "Stylet"
 
     def getValeursP2M2(self):
-        return "=", "+2", "-2"
+        return "=", "+2", "-2", "Clef"
 
     def getValeursOctave(self):
         return "x1", "x2", "/2"
@@ -459,8 +459,8 @@ class CercleDistance(ModuleAlgo):
         self.distanceClef = self.pointStylet.distance(PointGraphique(villes_dict["Metz"]))
 
         # On sélectionne la hauteur du stylet
-        tabDec = {"=": 0, "+2": 2, "-2": 1}
-        listeNotes = decalageGamme(self.lettreChoixSegment, False)  # On décale sans susbtition Fa/Sol
+        tabDec = {"=": 0, "+2": 2, "-2": 1, "Clef": 3}
+        listeNotes = decalageGamme(self.lettreChoixSegment)  # On décale sans susbtition Fa/Sol
         self.lettreHauteur = listeNotes[tabDec[self.P2M2]]
 
         _, longFA = CercleDistance.tableauGamme["F"]
