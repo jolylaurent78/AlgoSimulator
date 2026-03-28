@@ -1,11 +1,5 @@
 import cv2
 import numpy as np
-import threading
-import sqlite3
-import queue
-import os
-
-import math
 
 
 # Base de données des villes
@@ -13,13 +7,10 @@ from src.data_loader import villes_dict, villes_POI
 from src.utils import cheminRelatif
 
 # Affichage des objects graphiques
-from src.affichage_objets import ObjetGraphique, PointGraphique, SymboleWiki
+from src.affichage_objets import ObjetGraphique, PointGraphique
 
 # Gestion des coordonnées / projection
 from src.carte_config import carteConfig
-
-# Gestion des variables globales de l'affichge pan, zoom...'
-from src.configGlobale import ConfigGlobale
 
 # Gestion des layers graphiques
 from src.layerManager import Layer, LayerManager
@@ -29,134 +20,22 @@ DISTANCE_SELECTION_PIXELS = 5
 
 
 class ListePOIs:
-    def __init__(self, canvas, chemin_bd: str, interface):
-        self.chemin_bd = chemin_bd
+    def __init__(self, canvas, interface):
         self.interface = interface
 
-        # Lecture des paramètres depuis le fichier INI
-        cfg = ConfigGlobale()
-        self.nombre_max = cfg.getInt("Wikipedia", "nbMaxObjetsAffiche", 200)
-        self.zoom_seuil_diagonale = cfg.getInt("Wikipedia", "zoomSeuilDiagonale", 300_000)
-        self.icone_par_defaut = cfg.get("Wikipedia", "iconeParDefaut", "images/defaut.png")
-        self.taille_symbole = cfg.getInt("Wikipedia", "tailleSymbole", 3)
-
         # Layer interne (non enregistré dans le layerManager)
-        self.layer = Layer("POIs Wikipedia", couleur=(0, 128, 255), epaisseur=self.taille_symbole, visible=False)
+        self.layer = Layer("POIs", couleur=(0, 128, 255), epaisseur=3, visible=False)
         self.canvas = canvas
 
-        self.queue_resultats = queue.Queue()
-        self.thread_courant = None
-        self.categories_visibles = set()
+    def charger(self):
+        objets = []
 
-    def chargerAsync(self, bbox: tuple[float, float, float, float], zoom: float):
-        """
-        Lance un thread pour charger les POIs depuis la base, en fonction de la bbox affichée.
-        """
-        if self.thread_courant and self.thread_courant.is_alive():
-            return  # Un thread est déjà actif : on ne relance pas
+        for poi in villes_POI.values():
+            poi.setLayer(self.layer)
+            objets.append(poi)
 
-        xmin, ymin, xmax, ymax = bbox
-        pertinence = (self.interface.varPOIPertinence.get() or "").lower()
-        categorie = (self.interface.varPOICategorie.get() or "").lower()
-        sujet = (self.interface.varPOISujet.get() or "")
-
-        def worker(pertinence: str, categorie: str, sujet: str, zoom_val: float):
-            conn = sqlite3.connect(self.chemin_bd)
-            cursor = conn.cursor()
-
-            # Conditions dynamiques de filtrage
-            conditions = ["lambert_x BETWEEN ? AND ?", "lambert_y BETWEEN ? AND ?"]
-            params = [xmin, xmax, ymin, ymax]
-
-            # condition dynamique si le filtrage par catégorie est actif
-            if not ("toute" in categorie or "toutes" in categorie):
-                conditions.append("P31Categorie.visible = 1")
-
-            # Condition dynamique si le filtrage par sujet est actif
-            if sujet and sujet != "Tous":
-                conditions.append("source_backlink = ?")
-                params.append(self.interface.varPOISujet.get())
-
-            # Si le zoom est trop large, on ne garde que les POIs croisés
-            diagonale = ((xmax - xmin) ** 2 + (ymax - ymin) ** 2) ** 0.5
-            if diagonale > self.zoom_seuil_diagonale:
-                conditions.append("crossReference = 2")
-            elif diagonale > self.zoom_seuil_diagonale / 2:
-                if pertinence == "elevée":
-                    conditions.append("crossReference = 2")
-                else:
-                    conditions.append("crossReference IN (1,2)")
-            else:
-                if pertinence == "faible":
-                    conditions.append("crossReference >= 0")
-                elif pertinence == "moyenne":
-                    conditions.append("crossReference >= 1")
-                else:
-                    conditions.append("crossReference = 2")
-
-            sql = f"""
-                SELECT qid, titre, source_backlink, summary, lambert_x, lambert_y, icone, url
-                FROM EntreeHistorique
-                JOIN P31Classification USING(p31)
-                JOIN P31Categorie ON P31Classification.categorie = P31Categorie.nom
-                WHERE {' AND '.join(conditions)}
-                ORDER BY notoriete DESC
-                LIMIT {self.nombre_max}
-            """
-
-            cursor.execute(sql, params)
-            lignes = cursor.fetchall()
-            conn.close()
-
-            objets = []
-            positions = []  # (x_l93, y_l93) des POIs retenus
-
-            for qid, titre, source_backlink, summary, x_l93, y_l93, icone, url in lignes:
-                # On regarde d'abord si le POI est déjà proche d'un autre
-                px, py = carteConfig.lambert93_to_pixels(x_l93, y_l93)
-                x2_l93, y2_l93 = carteConfig.pixels_to_lambert93(px + 1, py)
-                metres_par_pixel = math.hypot(x2_l93 - x_l93, y2_l93 - y_l93)
-                distance_seuil = metres_par_pixel * 16 / zoom_val
-
-                skip = False
-                for sx, sy in positions:
-                    if math.hypot(x_l93 - sx, y_l93 - sy) < distance_seuil:
-                        skip = True
-                        break
-                if skip:
-                    continue
-
-                tooltips = [source_backlink, url, summary]
-                icone = icone if icone is not None else self.icone_par_defaut
-                icone_path = cheminRelatif(os.path.join("images", icone))
-                if not os.path.exists(icone_path):
-                    icone_path = cheminRelatif(os.path.join("images", self.icone_par_defaut))
-                objets.append(
-                    SymboleWiki(
-                        url,
-                        x_l93,
-                        y_l93,
-                        icone_path=icone_path,
-                        nom=titre,
-                        layer=self.layer,
-                        tooltips=tooltips,
-                    )
-                )
-                positions.append((x_l93, y_l93))
-
-            for nom, poi in villes_POI.items():
-                poi.setLayer(self.layer)
-                objets.append(poi)
-
-            self.layer.supprimerTousObjets()
-            self.layer.inclureObjetDansLayer(objets)
-            self.canvas.after(0, self._afficherPOIs)
-
-        self.thread_courant = threading.Thread(target=worker, args=(pertinence, categorie, sujet, zoom), daemon=True)
-        self.thread_courant.start()
-
-    def _afficherPOIs(self):
-        self.interface._refresh_images(afficherPOIsUniquement=True)
+        self.layer.supprimerTousObjets()
+        self.layer.inclureObjetDansLayer(objets)
 
 
 def clamp_pan(crop_w, crop_h):
@@ -288,24 +167,15 @@ def display(layerManager: LayerManager, listePOIs: ListePOIs, retourner_image=Fa
 
         canvasDisplay = canvas  # ← stocké globalement
 
-        # On lance un thread pour calculer en parallèle la liste des POIs à afficher
-        if listePOIs.layer.estVisible() :
-            x1_l93, y1_l93 = carteConfig.pixels_to_lambert93(x1, y1)
-            x2_l93, y2_l93 = carteConfig.pixels_to_lambert93(x2, y2)
-            # Correction du sens Y (axe inversé écran vs Lambert)
-            xmin = min(x1_l93, x2_l93)
-            xmax = max(x1_l93, x2_l93)
-            ymin = min(y1_l93, y2_l93)
-            ymax = max(y1_l93, y2_l93)
-            bbox = (xmin, ymin, xmax, ymax)
-            listePOIs.chargerAsync(bbox, zoom=zoom_factor)
+        if listePOIs.layer.estVisible():
+            listePOIs.charger()
 
-    if not afficherPOIsUniquement :
+    if not afficherPOIsUniquement:
         # On affiche la liste des objets graphiques associés aux Algorithmes dans
         for obj in layerManager.getListeObjetsGraphiquesVisible():
-            obj.afficher(canvas, transformer_affichage_pixel)
-    else:
-        # On affiche les POIs si dispo sur le canvas déjà initialisé.
+            obj.afficher(canvasDisplay, transformer_affichage_pixel)
+
+    if listePOIs.layer.estVisible():
         for obj in listePOIs.layer.getListeObjetsGraphiques():
             obj.afficher(canvasDisplay, transformer_affichage_pixel)
 
@@ -367,7 +237,7 @@ def selectionObjet(x_pix: float, y_pix: float, layerManager: LayerManager, typeO
         except NotImplementedError:
             continue
 
-    if layerPOIs is not None:
+    if layerPOIs is not None and layerPOIs.estVisible():
         for obj in layerPOIs.getListeObjetsGraphiques():
             d = obj.distanceDepuis(x_pix, y_pix)
             if d <= tolérance:

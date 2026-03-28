@@ -6,8 +6,6 @@ import cv2
 import os
 import pickle
 import json
-import sqlite3
-import csv
 import re
 import pandas as pd
 import webbrowser
@@ -50,7 +48,6 @@ class InterfaceCarte(tk.Tk):
         self.cheminProjetCourant = None
         self.title(self.titreBase)
         self.geometry("1600x1000")
-        self.chemin_bd = "../shared-db/WikiCarto.db"
         # On initialise les répertoires de travail
         self.dossiers = {
             "projets": os.path.join(os.getcwd(), "projets"),
@@ -79,9 +76,6 @@ class InterfaceCarte(tk.Tk):
 
         # Variable d'affichage pour la gestion des POIs
         self.varPOIVisible = tk.BooleanVar(value=False)
-        self.varPOIPertinence = tk.StringVar(value="Elevée")
-        self.varPOICategorie = tk.StringVar(value="Standard")
-        self.varPOISujet = tk.StringVar()
 
         # États d'affichage pour le panneau gauche
         self.varAfficherAlgo = tk.BooleanVar(value=True)
@@ -90,8 +84,8 @@ class InterfaceCarte(tk.Tk):
         self._setup_main_split(largeur, hauteur)
         self._setup_menu()
 
-        # Création de la liste dynamique des POIs Wikipédia et paramètres d'affichage des POIs
-        self.listePOIs = ListePOIs(self.canvas_image, self.chemin_bd, self)
+        # Création de la liste des POIs villes
+        self.listePOIs = ListePOIs(self.canvas_image, self)
         self.listePOIs.layer.setVisible(False)
 
         # Le nom du fichier de description de l'IHM porte le même nom de la classe Métier'
@@ -291,15 +285,6 @@ class InterfaceCarte(tk.Tk):
         menu_algo.add_separator()
         menu_algo.add_command(label="Générer un rapport...", command=self.demanderGenerationRapport)
         menubar.add_cascade(label="Algorithme", menu=menu_algo)
-
-        # Menu Wikipedia
-        menu_wiki = tk.Menu(menubar, tearoff=0)
-        menu_wiki.add_command(label="Filtrage des catégories...", command=self.afficherFiltrageCategories)
-        menu_wiki.add_separator()
-        menu_wiki.add_command(label="Extraire les TAG P31", command=self.extraireTagsP31)
-        menu_wiki.add_command(label="Importer un fichier P31...", command=self.importerFichierP31)
-
-        menubar.add_cascade(label="Wikipedia", menu=menu_wiki)
 
         # Menu Fenêtre
         menu_fenetre = tk.Menu(menubar, tearoff=0)
@@ -571,73 +556,21 @@ class InterfaceCarte(tk.Tk):
         frame_filtrage.pack(fill="x", padx=5, pady=5)
         self.frameFiltrageLayers = frame_filtrage
 
-        # === Ligne de configuration des POIs ===
-        ligne_poi = ttk.Frame(frame_filtrage)
-        ligne_poi.pack(fill="x", pady=(0, 2))
-
         def togglePOIVisible():
             """Active ou désactive l'affichage des POIs."""
             self.listePOIs.layer.setVisible(self.varPOIVisible.get())
             self._refresh_images()
 
-        ttk.Label(ligne_poi, text="POI").pack(side="left", padx=(0, 2))
-        tk.Checkbutton(
-            ligne_poi,
-            variable=self.varPOIVisible,
-            command=togglePOIVisible
-        ).pack(side="left", padx=(0, 2))
-
-        ttk.Label(ligne_poi, text="Pertinence:").pack(side="left", padx=(0, 4))
-        self.comboPOIPertinence = ttk.Combobox(
-            ligne_poi,
-            values=["Elevée", "Moyenne", "Faible"],
-            textvariable=self.varPOIPertinence,
-            state="readonly",
-            width=8,
-        )
-        self.varPOIPertinence.trace_add("write", lambda *args: self._refresh_images())
-        self.comboPOIPertinence.pack(side="left", padx=(0, 4))
-
-        ttk.Label(ligne_poi, text="Catégories:").pack(side="left", padx=(0, 4))
-        self.comboPOICategorie = ttk.Combobox(
-            ligne_poi,
-            values=["Filtrées", "Toutes"],
-            textvariable=self.varPOICategorie,
-            state="readonly",
-            width=8,
-        )
-        self.varPOICategorie.trace_add("write", lambda *args: self._refresh_images())
-        self.comboPOICategorie.pack(side="left", padx=(0, 4))
-
-        ttk.Label(ligne_poi, text="Sujet:").pack(side="left", padx=(0, 4))
-        try:
-            with sqlite3.connect(self.chemin_bd) as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    "SELECT source_backlink FROM SourceBacklink ORDER BY source_backlink"
-                )
-                sujets = ["Tous"] + [row[0] for row in cursor.fetchall()]
-        except Exception:
-            sujets = []
-        self.comboPOISujet = ttk.Combobox(
-            ligne_poi,
-            values=sujets,
-            textvariable=self.varPOISujet,
-            state="readonly",
-            width=15
-        )
-        if sujets and not self.varPOISujet.get():
-            self.varPOISujet.set(sujets[0])
-        self.varPOISujet.trace_add("write", lambda *args: self._refresh_images())
-        self.comboPOISujet.pack(side="left")
-
-        #
-        # 2ème ligne avec filtrage pr TAG
-        #
-
         # === Ligne de filtrage des layers ===
         ligne_niveau_module = ttk.Frame(frame_filtrage)
         ligne_niveau_module.pack(fill="x", pady=(0, 2))
+
+        ttk.Label(ligne_niveau_module, text="POI").pack(side="left", padx=(0, 2))
+        tk.Checkbutton(
+            ligne_niveau_module,
+            variable=self.varPOIVisible,
+            command=togglePOIVisible
+        ).pack(side="left", padx=(0, 10))
 
         ttk.Label(ligne_niveau_module, text="Tracé:").pack(side="left", padx=(0, 4))
         self.comboFiltrageNiveau = ttk.Combobox(ligne_niveau_module, values=["Tous", "Construction", "Design"], state="readonly", width=15)
@@ -1158,7 +1091,7 @@ class InterfaceCarte(tk.Tk):
         (w_img, h_img) = carteConfig.image_size
         if self.modeCalibration:
             canvas = display(LayerManager(),
-                             ListePOIs(self.canvas_image, self.chemin_bd, self),
+                             ListePOIs(self.canvas_image, self),
                              retourner_image=True,
                              afficherPOIsUniquement=False)
         else:
@@ -1518,257 +1451,6 @@ class InterfaceCarte(tk.Tk):
             self.varAfficherLayers.set(True)
             self.toggle_affichage_layers()
         return
-
-    # Menu Wikipedia'
-
-    def extraireTagsP31(self):
-        """
-        Extrait la liste des P31 avec leur catégorie, statut, et les occurrences dans EntreeHistorique.
-        """
-
-        requete = """
-        SELECT
-            p31c.p31,
-            p31c.label,
-            p31c.categorie,
-            p31c.statut,
-            COUNT(e.qid) AS total,
-            SUM(CASE WHEN e.crossReference = 1 THEN 1 ELSE 0 END) AS nb_cross_ref
-        FROM P31Classification p31c
-        LEFT JOIN EntreeHistorique e ON e.p31 = p31c.p31
-        GROUP BY p31c.p31, p31c.label, p31c.categorie, p31c.statut
-        ORDER BY total DESC;
-        """
-
-        chemin_export = filedialog.asksaveasfilename(
-            defaultextension=".csv",
-            filetypes=[("CSV files", "*.csv")],
-            title="Enregistrer l'extraction des TAG P31"
-        )
-
-        if not chemin_export:
-            return
-
-        try:
-            with sqlite3.connect(self.chemin_bd) as conn:
-                cursor = conn.cursor()
-                cursor.execute(requete)
-                lignes = cursor.fetchall()
-
-            with open(chemin_export, "w", newline="", encoding="utf-8") as f:
-                writer = csv.writer(f)
-                writer.writerow(["p31", "label", "categorie", "statut", "nb_total", "nb_crossReference"])
-                writer.writerows(lignes)
-
-            messagebox.showinfo("Extraction terminée", f"{len(lignes)} P31 extraits dans :\n{chemin_export}")
-
-        except Exception as e:
-            messagebox.showerror("Erreur", f"Une erreur est survenue :\n{e}")
-
-    def importerFichierP31(self):
-        chemin_fichier = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv")])
-        if not chemin_fichier:
-            return
-
-        try:
-            df = pd.read_csv(chemin_fichier, dtype=str).fillna("")
-        except Exception as e:
-            messagebox.showerror("Erreur", f"Erreur de lecture du fichier : {e}")
-            return
-
-        # Contrôle des colonnes attendues
-        colonnes_attendues = {"p31", "label", "statut", "categorie"}
-        if not colonnes_attendues.issubset(df.columns):
-            messagebox.showerror("Erreur", f"Colonnes attendues manquantes : {colonnes_attendues - set(df.columns)}")
-            return
-
-        # Contrôle des valeurs de 'statut'
-        valeurs_valides = {"garde", "exclu"}
-        statuts_invalides = df.loc[~df["statut"].isin(valeurs_valides), "p31"].tolist()
-        if statuts_invalides:
-            raise ValueError(f"Valeurs invalides dans la colonne 'statut' pour : {', '.join(statuts_invalides)}")
-
-        conn = sqlite3.connect(self.chemin_bd)
-        cursor = conn.cursor()
-
-        try:
-            # Étape 1 : on supprime toutes les catégories
-            cursor.execute("DELETE FROM P31Categorie")
-            categories_crees = set()
-
-            # Étape 2 : on met à jour chaque ligne de P31Classification
-            for _, ligne in df.iterrows():
-                p31 = ligne["p31"]
-                label = ligne["label"]
-                statut = ligne["statut"]
-                categorie = ligne["categorie"] or None
-
-                # Créer la catégorie si nécessaire
-                if categorie and categorie not in categories_crees:
-                    cursor.execute("INSERT INTO P31Categorie (nom, visible) VALUES (?, ?)",
-                                   (categorie, 1 if statut == "garde" else 0))
-                    categories_crees.add(categorie)
-
-                # Mise à jour dans P31Classification
-                cursor.execute("""
-                    UPDATE P31Classification
-                    SET label = ?, statut = ?, categorie = ?
-                    WHERE p31 = ?
-                """, (label, statut, categorie, p31))
-
-            conn.commit()
-            messagebox.showinfo("Succès", "Importation des P31 effectuée avec succès.")
-        except Exception as e:
-            conn.rollback()
-            messagebox.showerror("Erreur", f"Erreur lors de l'importation : {e}")
-        finally:
-            conn.close()
-
-    def afficherFiltrageCategories(self):
-        fenetre = tk.Toplevel()
-        fenetre.title("Filtrage des catégories")
-
-        # Connexion base
-        conn = sqlite3.connect(self.chemin_bd)
-        cursor = conn.cursor()
-
-        # Onglets
-        notebook = ttk.Notebook(fenetre)
-        notebook.pack(fill="both", expand=True)
-
-        # === Onglet 1 : CATEGORIES ===
-        tab_categories = ttk.Frame(notebook)
-        notebook.add(tab_categories, text="Catégories")
-
-        frame_gauche = tk.Frame(tab_categories, padx=10, pady=10)
-        frame_gauche.pack(side="left", fill="both", expand=True)
-        frame_droite = tk.Frame(tab_categories, padx=10, pady=10)
-        frame_droite.pack(side="right", fill="y")
-
-        cursor.execute("""
-            SELECT c.nom, c.visible, COUNT(eh.qid) AS nb_cross
-            FROM P31Categorie c
-            LEFT JOIN P31Classification pc ON pc.categorie = c.nom
-            LEFT JOIN EntreeHistorique eh ON eh.p31 = pc.p31 AND eh.crossReference = 1
-            GROUP BY c.nom
-            ORDER BY nb_cross DESC
-        """)
-        categories = cursor.fetchall()
-
-        cursor.execute("""
-            SELECT pc.categorie, pc.label, COUNT(eh.qid) AS total
-            FROM P31Classification pc
-            JOIN EntreeHistorique eh ON pc.p31 = eh.p31
-            WHERE pc.categorie IS NOT NULL
-            GROUP BY pc.p31, pc.label, pc.categorie
-            ORDER BY pc.categorie, total DESC
-        """)
-        rows = cursor.fetchall()
-
-        p31_labels_par_categorie = {}
-        for categorie, label, count in rows:
-            if categorie not in p31_labels_par_categorie:
-                p31_labels_par_categorie[categorie] = []
-            if len(p31_labels_par_categorie[categorie]) < 2:
-                p31_labels_par_categorie[categorie].append(label)
-
-        checkbox_vars_categories = {}
-        for nom, visible, _ in categories:
-            var = tk.BooleanVar(value=bool(int(visible)))
-            labels = p31_labels_par_categorie.get(nom, [])
-            texte = f"{nom} ({', '.join(labels)}...)" if labels else nom
-            chk = tk.Checkbutton(frame_gauche, text=texte, variable=var, anchor="w", justify="left")
-            chk.pack(anchor="w")
-            checkbox_vars_categories[nom] = var
-
-        # === Onglet 2 : THEMES ===
-        tab_themes = ttk.Frame(notebook)
-        notebook.add(tab_themes, text="Thème")
-
-        frame_theme = tk.Frame(tab_themes, padx=10, pady=10)
-        frame_theme.pack(side="left", fill="both", expand=True)
-        checkbox_vars_themes = {}
-
-        cursor.execute("SELECT source_backlink, url, visible FROM SourceBacklink ORDER BY source_backlink")
-        lignes = cursor.fetchall()
-
-        color_vars_themes = {}
-
-        for source, url, visible in lignes:
-            var = tk.BooleanVar(value=bool(int(visible)))
-            checkbox_vars_themes[source] = var
-
-            # Lecture couleur actuelle
-            cursor.execute("SELECT couleur FROM SourceBacklink WHERE source_backlink = ?", (source,))
-            couleur_bgr = cursor.fetchone()[0] or "(0,0,0)"
-            couleur_hex = bgrVersHex(eval(couleur_bgr))
-            color_vars_themes[source] = tk.StringVar(value=couleur_hex)
-
-            # Ligne contenant tous les widgets
-            ligne = tk.Frame(frame_theme)
-            ligne.pack(anchor="w", fill="x", pady=1)
-
-            # CheckBox
-            chk = tk.Checkbutton(ligne, variable=var)
-            chk.pack(side="left")
-
-            # Lien cliquable
-            lien = tk.Label(ligne, text=source, fg="blue", cursor="hand2", underline=1)
-            lien.pack(side="left", padx=4)
-            lien.bind("<Button-1>", lambda e, u=url: webbrowser.open_new(u))
-
-            # Carré de couleur
-            def choisirCouleur(source=source):
-                old_color = color_vars_themes[source].get()
-                new_color = colorchooser.askcolor(initialcolor=old_color)[1]
-                if new_color:
-                    color_vars_themes[source].set(new_color)
-                    frame_couleur.config(bg=new_color)
-
-            frame_couleur = tk.Canvas(ligne, width=20, height=20, bg=couleur_hex, highlightthickness=1, relief="solid")
-            frame_couleur.pack(side="left", padx=10)
-            frame_couleur.bind("<Button-1>", lambda e, s=source: choisirCouleur(s))
-
-        # === Onglet 3 : FILTRAGE AVANCÉ ===
-        tab_filtrage = ttk.Frame(notebook)
-        notebook.add(tab_filtrage, text="Filtrage")
-
-        frame_filtrage = tk.Frame(tab_filtrage, padx=10, pady=10)
-        frame_filtrage.pack(fill="both", expand=True)
-
-        ttk.Label(frame_filtrage, text="(Paramètres à venir)").pack(anchor="w", pady=(0, 10))
-        ttk.Label(frame_filtrage, text="Distance max (km) :").pack(anchor="w")
-        entry_distance = ttk.Entry(frame_filtrage)
-        entry_distance.pack(anchor="w")
-
-        # === Actions globales
-        def appliquer():
-            conn = sqlite3.connect(self.chemin_bd)
-            cursor = conn.cursor()
-
-            for nom, var in checkbox_vars_categories.items():
-                cursor.execute("UPDATE P31Categorie SET visible = ? WHERE nom = ?", (1 if var.get() else 0, nom))
-
-            for nom in checkbox_vars_themes:
-                visible = 1 if checkbox_vars_themes[nom].get() else 0
-                couleur_bgr = hexVersBGR(color_vars_themes[nom].get())
-                cursor.execute("""
-                    UPDATE SourceBacklink SET visible = ?, couleur = ?
-                    WHERE source_backlink = ?
-                """, (visible, str(couleur_bgr), nom))
-
-            conn.commit()
-            conn.close()
-            fenetre.destroy()
-
-        def annuler():
-            fenetre.destroy()
-
-        frame_boutons = tk.Frame(fenetre, padx=10, pady=10)
-        frame_boutons.pack(side="bottom", fill="x")
-
-        tk.Button(frame_boutons, text="Appliquer", command=appliquer).pack(side="right", padx=5)
-        tk.Button(frame_boutons, text="Annuler", command=annuler).pack(side="right", padx=5)
 
     # Gestion des fonctions activées depuis le menu
     def quitter_application(self):

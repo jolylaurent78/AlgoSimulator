@@ -70,7 +70,7 @@ def decalageGamme(note):
     # Calcul des décalages
     note_plus_2 = gamme[(index + 2) % len(gamme)]
     note_moins_2 = gamme[(index - 2) % len(gamme)]
-    
+
     # On teste en premier le swap de la note, puis avec n+2 puis avec n-2
     note_swap = substituer(note)
     if note_swap == "":
