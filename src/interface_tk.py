@@ -8,6 +8,7 @@ import pickle
 import json
 import sqlite3
 import csv
+import re
 import pandas as pd
 import webbrowser
 import numpy as np
@@ -45,7 +46,9 @@ from src.layerManager import LayerManager
 class InterfaceCarte(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Simulateur d'algorithmes de la Chouette d'Or")
+        self.titreBase = "Simulateur d'algorithmes de la Chouette d'Or"
+        self.cheminProjetCourant = None
+        self.title(self.titreBase)
         self.geometry("1600x1000")
         self.chemin_bd = "../shared-db/WikiCarto.db"
         # On initialise les répertoires de travail
@@ -65,6 +68,7 @@ class InterfaceCarte(tk.Tk):
         self.layerManager = LayerManager()
 
         self.moteurAlgo = AlgorithmeSegment(self.layerManager)
+        self.mettreAJourTitreFenetre(algo=self.moteurAlgo, estNouveau=True)
         largeur, hauteur = self.moteurAlgo.getLargeurHauteurIHM()
 
         # Initialisation des attributs pour l'affichage des segment'
@@ -147,6 +151,38 @@ class InterfaceCarte(tk.Tk):
             data = pickle.load(f)
 
         self.appliquerEtat(data["layers"], data["moteur"])
+        self.cheminProjetCourant = chemin
+        self.mettreAJourTitreFenetre(algo=data["moteur"], cheminProjet=chemin)
+
+    def formaterNomAlgorithme(self, algo) -> str:
+        if isinstance(algo, str):
+            nom = algo
+        elif isinstance(algo, type):
+            nom = algo.__name__
+        else:
+            nom = type(algo).__name__
+
+        if nom.startswith("Algorithme"):
+            nom = nom[len("Algorithme"):]
+
+        return re.sub(r"(?<!^)(?=[A-Z])", " ", nom).strip()
+
+    def mettreAJourTitreFenetre(self, *, algo=None, cheminProjet=None, estNouveau=False) -> None:
+        if algo is None:
+            self.title(self.titreBase)
+            return
+
+        nomLisible = self.formaterNomAlgorithme(algo)
+
+        if estNouveau:
+            titre = f"{self.titreBase} - Nouvel algorithme {nomLisible}"
+        elif cheminProjet:
+            nomFichier = os.path.basename(cheminProjet)
+            titre = f"{self.titreBase} - Algorithme {nomLisible} - {nomFichier}"
+        else:
+            titre = f"{self.titreBase} - Algorithme {nomLisible}"
+
+        self.title(titre)
 
     def appliquerEtat(self, layerManager: LayerManager, moteurAlgo):
         """Applique le nouvel état (layers et moteur) à l'interface."""
@@ -218,8 +254,9 @@ class InterfaceCarte(tk.Tk):
             command=lambda: self.actionNouveauProjet(AlgorithmeCadranFinal),
         )
         menu_fichier.add_cascade(label="🆕 Nouveau", menu=menu_nouveau)
-        menu_fichier.add_command(label="💾 Sauvegarder un projet...", command=self.actionSauvegarderProjet)
         menu_fichier.add_command(label="📂 Charger un projet", command=self.actionChargerProjet)
+        menu_fichier.add_command(label="💾 Sauvegarder", command=self.actionSauvegarder)
+        menu_fichier.add_command(label="💾 Sauvegarder un projet...", command=self.actionSauvegarderProjet)
         menu_fichier.add_separator()
 
         # Chargement dynamique des projets enregistrés avec métadonnées
@@ -231,7 +268,8 @@ class InterfaceCarte(tk.Tk):
                     try:
                         metadata = self.lireMetaDonneesProjet(chemin_fichier)
                         algo = metadata.get("algo_type", "Inconnu")
-                        label = f"{algo} : {file}"
+                        algoLisible = self.formaterNomAlgorithme(algo)
+                        label = f"Algorithme {algoLisible} : {file}"
                         menu_fichier.add_command(
                             label=label,
                             command=lambda f=chemin_fichier: self.chargerEtatComplet(f)
@@ -1741,19 +1779,34 @@ class InterfaceCarte(tk.Tk):
 
     def actionSauvegarderProjet(self):
         nom_module = type(self.moteurAlgo).__name__
+        chemin_initial = self.cheminProjetCourant or ""
         fichier = filedialog.asksaveasfilename(
-            initialdir=self.dossiers["projets"],
+            initialdir=os.path.dirname(chemin_initial) if chemin_initial else self.dossiers["projets"],
             defaultextension=".pkl",
             filetypes=[("{nom_module} (*.pkl)", "*.pkl")],
             title="Sauvegarder le projet",
-            initialfile=f"projet_{nom_module}.pkl"
+            initialfile=os.path.basename(chemin_initial) if chemin_initial else f"projet_{nom_module}.pkl"
         )
         if not fichier:
             return
 
         try:
             self.sauvegarderEtatComplet(fichier)
+            self.cheminProjetCourant = fichier
+            self.mettreAJourTitreFenetre(algo=self.moteurAlgo, cheminProjet=fichier)
+            self._setup_menu()
             messagebox.showinfo("Sauvegarde réussie", f"Projet sauvegardé dans :\n{fichier}")
+        except Exception as e:
+            messagebox.showerror("Erreur", f"Erreur lors de la sauvegarde :\n{e}")
+
+    def actionSauvegarder(self):
+        if not self.cheminProjetCourant:
+            self.actionSauvegarderProjet()
+            return
+
+        try:
+            self.sauvegarderEtatComplet(self.cheminProjetCourant)
+            self.mettreAJourTitreFenetre(algo=self.moteurAlgo, cheminProjet=self.cheminProjetCourant)
         except Exception as e:
             messagebox.showerror("Erreur", f"Erreur lors de la sauvegarde :\n{e}")
 
@@ -1777,6 +1830,8 @@ class InterfaceCarte(tk.Tk):
         layer = LayerManager()
         moteur = algo_cls(layer)
         self.appliquerEtat(layer, moteur)
+        self.cheminProjetCourant = None
+        self.mettreAJourTitreFenetre(algo=moteur, estNouveau=True)
 
     def sauvegarder_carte(self):
 
