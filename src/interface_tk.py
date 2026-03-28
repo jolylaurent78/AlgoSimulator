@@ -1524,7 +1524,11 @@ class InterfaceCarte(tk.Tk):
             title="Enregistrer la carte annotée"
         )
         if filepath:
-            sauvegarder_carte_complete(filepath)
+            sauvegarder_carte_complete(
+                filepath=filepath,
+                layerManager=self.layerManager,
+                listePOIs=self.listePOIs,
+            )
             print(f"✅ Carte sauvegardée sous : {filepath}")
             print(f"✅ Carte sauvegardée sous : {filepath}")
 

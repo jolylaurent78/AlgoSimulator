@@ -250,7 +250,9 @@ def selectionObjet(x_pix: float, y_pix: float, layerManager: LayerManager, typeO
     return candidats[0][1]
 
 
-def sauvegarder_carte_complete(filepath="sauvegarde.png"):
+def sauvegarder_carte_complete(filepath="sauvegarde.png", layerManager=None, listePOIs=None):
+    if layerManager is None:
+        raise ValueError("layerManager est obligatoire pour sauvegarder_carte_complete()")
 
     # Copie de l'image complète d’origine
     carte_complete = carteConfig.img.copy()
@@ -260,8 +262,12 @@ def sauvegarder_carte_complete(filepath="sauvegarde.png"):
         return x, y
 
     # Dessin des objets
-    for obj in layerManager.getListeObjetsGraphiques():
+    for obj in layerManager.getListeObjetsGraphiquesVisible():
         obj.afficher(carte_complete, transformer_complet)
+
+    if listePOIs is not None and listePOIs.layer.estVisible():
+        for obj in listePOIs.layer.getListeObjetsGraphiques():
+            obj.afficher(carte_complete, transformer_complet)
 
     # Enregistrement
     success = cv2.imwrite(cheminRelatif(filepath), carte_complete)

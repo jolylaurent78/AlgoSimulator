@@ -11,25 +11,5 @@
         "PYTHONPATH": "${workspaceFolder}"
       }
     }
-    {
-      "name": "Tester Interface SS",
-      "type": "python",
-      "request": "launch",
-      "program": "${workspaceFolder}/src/interfaceSS_tk.py",
-      "console": "integratedTerminal",
-      "env": {
-        "PYTHONPATH": "${workspaceFolder}"
-      }
-    }
-    {
-      "name": "Tester Construction",
-      "type": "python",
-      "request": "launch",
-      "program": "${workspaceFolder}/src/ConstructionsCadrans.py",
-      "console": "integratedTerminal",
-      "env": {
-        "PYTHONPATH": "${workspaceFolder}"
-      }
-    }   
   ]
 }
