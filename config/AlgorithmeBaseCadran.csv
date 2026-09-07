@@ -38,7 +38,7 @@ Date et Lettre,Global,1,field,date,left,Date Segment,,1,data,std,dataset,dateSeg
 Date et Lettre,Global,2,field,lettre,right,Lettre Dom,,1,data,std,segment,lettreDom
 Date et Lettre,Global,2,field,lettre,right,Lettre Decl,,1,data,std,dataset,lettreDecl
 Date et Lettre,Global,2,checkboxH,lettre,left,Type calendrier,C,1,input_multiple,std,segment,choixCalendrier
-Concervation Angles,Global,1,PointVille,shortext,left,Position Stylet,,1,data,std,cercleHoraire,stylet
+Concervation Angles,Global,1,PointVille,shortext,left,Position Stylet,,1,input,std,cercleHoraire,stylet
 Concervation Angles,Global,1,field,heure,left,Heure,,1,data,std,cercleHoraire,heureStylet
 Concervation Angles,Global,1,field,heure,left,AM/PM,,1,data,std,cercleHoraire,styletAMPM
 Concervation Angles,Global,2,field,shortext,left,Calendrier,,1,data,std,cercleHoraire,choixCalendrierSegment

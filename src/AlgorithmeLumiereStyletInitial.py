@@ -8,7 +8,7 @@ from src.Sentinelle import Sentinelle, LieuxObservation
 
 # Librairie calcul astronomique
 from src.calculAstronomique import positionSoleil, calculLeverSoleil
-from src.calculAstronomique import MyJulianDate, convertirHeureLocaleVersUTC, heureSymetrique
+from src.calculAstronomique import MyJulianDate, convertirHeureLocaleVersUTC, heureSymetrique, decalageGamme
 
 # Affichage des objects graphiques
 from src.affichage_objets import ObjetGraphique, PointGraphique, LigneAzimut, ArcOriente, CercleGraphique
@@ -31,6 +31,8 @@ class AlgorithmeLumiereStyletInitial(AlgorithmeManager):
 
     def getListeModulesInitiale(self):
         return [
+            ("observation", "Observation", Observation()),
+            ("heuredate", "Heure définie par la date d'observation", HeureDateObservation()),
             ("soleil", "Soleil", Soleil()),
             ("stylet", "Stylet", Stylet())
             ]
@@ -42,36 +44,123 @@ class AlgorithmeLumiereStyletInitial(AlgorithmeManager):
         return 495, 600
 
 
-#
-# Gestion de l'objet Soleil: Gère l'observation.
-# Pas de calcul à proprement parlé, juste l'initialsation de la lettre Dominicale et lieu d'observation'
-#
-class Soleil(ModuleAlgo):
+class Observation(ModuleAlgo):
     def getEntreesModules(self):
-        return ["dataset.date",
-                "dataset.stylet"]
+        return ["dataset.date"]
 
     def __init__(self):
         # Variables input des autres modules
         self.dateDataset = ""
-        self.styletDataset = ""
+
         # Affiché
         self.lettreDom = None
         self.lieuObservation = None
         self.heureLeverSoleilStrasbourg = None
         self.azimutLeverSoleil = None
         self.rotationCarte = None
+
+        # Variables techniques
+        self.dateObservationJD = None
+        self.heureLeverSoleilStrasbourgJD = None
+        super().__init__()
+
+    def getValeursLieuObservation(self):
+        return LieuxObservation.getListeLieuxObservation(self.lettreDom, self.dateDataset)
+
+    def setup(self):
+        self.dateObservationJD = MyJulianDate.fromString(self.dateDataset)
+        self.lettreDom = self.dateObservationJD.lettreDominicale()
+
+        villeStrasbourg = villes_dict["Strasbourg"]
+        coord_strasbourg = villeStrasbourg.getCoordonneesGPS()
+        self.heureLeverSoleilStrasbourgJD = calculLeverSoleil(coord_strasbourg, self.dateObservationJD)
+        self.heureLeverSoleilStrasbourg = self.heureLeverSoleilStrasbourgJD.toString("HH:MM:SS")
+        _, self.azimutLeverSoleil = positionSoleil(coord_strasbourg, self.heureLeverSoleilStrasbourgJD)
+        self.rotationCarte = 90 - self.azimutLeverSoleil
+
+        self.lieuObservation = LieuxObservation.getDefautLieuObservation(self.lettreDom)
+
+
+class HeureDateObservation(ModuleAlgo):
+    def getEntreesModules(self):
+        return ["observation.lettreDom",
+                "dataset.lettreDecl"]
+
+    def __init__(self):
+        # Variables input des autres modules
+        self.lettreDomObservation = ""
+        self.lettreDeclDataset = ""
+
+        # Calculé / affiché
+        self.choixCalendrier = "Standard"
+        self.lettreChoix = ""
+        self.choixHeure = "="
+        self.heureAMPM = "AM"
+        self.heureLocale = ""
+
+        self.sentinelle = Sentinelle("data/sentinelle.csv")
+        super().__init__()
+
+    def getValeursChoixCalendrier(self):
+        return ["Standard", "Déclinaison"]
+
+    def getValeursChoixHeure(self):
+        return ["=", "+2", "-2", "Clef", "11:00"]
+
+    def getValeursHeureAMPM(self):
+        return ["AM", "PM"]
+
+    def setup(self):
+        self.choixCalendrier = "Standard"
+        self.choixHeure = "="
+        self.heureAMPM = "AM"
+        self.lettreChoix = self.lettreDomObservation
+
+    def calculer(self):
+        self.lettreChoix = self.lettreDomObservation if self.choixCalendrier == "Standard" else self.lettreDeclDataset
+
+        if self.choixHeure == "11:00":
+            heureAM = self.sentinelle["J"]["HeureLocale"]
+        else:
+            tabDec = {"=": 0, "+2": 2, "-2": 1, "Clef": 3}
+            listeNotes = decalageGamme(self.lettreChoix)
+            choixNote = listeNotes[tabDec[self.choixHeure]]
+            heureAM = self.sentinelle[choixNote]["HeureLocale"]
+
+        self.heureLocale = heureAM if self.heureAMPM == "AM" else heureSymetrique(heureAM)
+
+
+#
+# Gestion de l'objet Soleil: Gère la position du stylet.
+#
+class Soleil(ModuleAlgo):
+    def getEntreesModules(self):
+        return ["dataset.date",
+                "dataset.stylet",
+                "heuredate.heureLocale",
+                "observation.lieuObservation",
+                "observation.rotationCarte"]
+
+    def __init__(self):
+        # Variables input des autres modules
+        self.dateDataset = ""
+        self.styletDataset = ""
+        self.heureLocaleHeuredate = ""
+        self.lieuObservationObservation = None
+        self.rotationCarteObservation = None
         self.tableauAzimut = []
 
         # Variables output pour les autres modules
-        self.dateObservationJD = None
         self.coordObservation = None
         self.stylet = None
         self.heureSentinelle = None
         self.heureAMPM = None
         self.validite = None
         self.choixHeure = None
+        self.sourceHeure = "Stylet"
+        self.heureObservation = None
         self.heureUTC = None
+        self._sourceHeureInitiale = True
 
         self.sentinelle = Sentinelle("data/sentinelle.csv")
         super().__init__()
@@ -84,32 +173,13 @@ class Soleil(ModuleAlgo):
         else:
             return ["Même heure", "Symétrique"]
 
-    def getValeursLieuObservation(self):
-        return LieuxObservation.getListeLieuxObservation(self.lettreDom, self.dateDataset)
+    def getValeursSourceHeure(self):
+        return ["Stylet", "Manuel"]
 
     def setup(self):
-        """
-        Initialise la valeur par défaut de lieuObservation à partir de la lettre dominicale.
-        Ce champ dépend d’un calcul mais doit être défini manuellement par l'utilisateur,
-        donc on le prépare ici à titre d’initialisation.
-        """
-
-        # On calcule la déclinaison du soleil pour savoir si nous sommes au Printemps / Ete ou Automne / Hivers
-        self.dateSegmentJD = MyJulianDate.fromString(self.dateDataset)
-        self.lettreDom = self.dateSegmentJD.lettreDominicale()
-
-        # On calcule l'heure de lever et de coucher du soleil à Strasbourg pour savoir si Zeta est visible à cette date
-        villeStrasbourg = villes_dict["Strasbourg"]
-        coord_strasbourg = villeStrasbourg.getCoordonneesGPS()
-        self.heureLeverSoleilStrasbourgJD = calculLeverSoleil(coord_strasbourg, self.dateSegmentJD)
-        self.heureLeverSoleilStrasbourg = self.heureLeverSoleilStrasbourgJD.toString("HH:MM:SS")
-        _, self.azimutLeverSoleil = positionSoleil(coord_strasbourg, self.heureLeverSoleilStrasbourgJD)
-        self.rotationCarte = 90 - self.azimutLeverSoleil
-
-        # On initialise le lieu d'observation
-        self.lieuObservation = LieuxObservation.getDefautLieuObservation(self.lettreDom)
-
         self.choixHeure = "Même heure"
+        self.sourceHeure = "Stylet"
+        self._sourceHeureInitiale = True
         self.stylet = self.styletDataset
 
     # On calcule automatiquement l'heure de la sentinelle en fonction du stylet initial
@@ -134,38 +204,50 @@ class Soleil(ModuleAlgo):
                 symetrique = (ampm == "PM" and self.choixHeure == "Même heure") or (ampm == "AM" and self.choixHeure == "Symétrique")
                 self.heureSentinelle = heureSymetrique(heure) if symetrique else heure
 
-            # on récupère les coords GPS de la ville d'observation
-            (_, lon) = villes_dict[self.lieuObservation].getCoordonneesGPS()
-            self.heureUTC = convertirHeureLocaleVersUTC(self.heureSentinelle, lon)
-
         else:
             self.heureSentinelle = None
             self.heureAMPM = None
-            self.heureUTC = None
             self.validite = "Unvalide"
+
+        if self._sourceHeureInitiale:
+            if self.validite == "Unvalide":
+                self.sourceHeure = "Manuel"
+            self._sourceHeureInitiale = False
+
+        if self.sourceHeure == "Stylet" and self.validite == "Valide":
+            self.heureObservation = self.heureSentinelle
+        elif self.sourceHeure == "Manuel":
+            self.heureObservation = self.heureLocaleHeuredate
+        else:
+            self.heureObservation = None
+
+        if self.heureObservation is not None:
+            (_, lon) = villes_dict[self.lieuObservationObservation].getCoordonneesGPS()
+            self.heureUTC = convertirHeureLocaleVersUTC(self.heureObservation, lon)
+        else:
+            self.heureUTC = None
 
 
 class Stylet(ModuleAlgo):
     def getEntreesModules(self):
         return ["dataset.date",
-                "soleil.lettreDom",
+                "observation.lettreDom",
                 "soleil.heureAMPM",
-                "soleil.lieuObservation",
-                "soleil.rotationCarte",
+                "observation.lieuObservation",
+                "observation.rotationCarte",
                 "soleil.stylet",
                 "soleil.heureSentinelle",
                 "soleil.heureUTC",
-                "soleil.heureAMPM",
                 "soleil.validite"
                 ]
 
     def __init__(self):
         # Variables input des autres modules
         self.dateDataset = ""
-        self.lettreDomSoleil = ""
+        self.lettreDomObservation = ""
         self.heureAMPMSoleil = None
-        self.lieuObservationSoleil = None
-        self.rotationCarteSoleil = None
+        self.lieuObservationObservation = None
+        self.rotationCarteObservation = None
         self.validiteSoleil = None
         self.styletSoleil = None
         self.heureSentinelleSoleil = None
@@ -201,7 +283,7 @@ class Stylet(ModuleAlgo):
         return ["Endroit", "Envers"]
 
     def getValeursOctave(self):
-        return "x1", "x2", "/2"
+        return "x1", "x2", "/2", "/4", "/8"
 
     def setup(self):
         """
@@ -216,21 +298,27 @@ class Stylet(ModuleAlgo):
     # On calcule automatiquement l'heure de la sentinelle en fonction du stylet initial
     def calculer(self):
 
-        if self.validiteSoleil == "Valide":
+        if self.heureUTCSoleil is not None:
             # On calcule la distance % Metz
             pointStylet = PointGraphique(villes_dict[self.styletSoleil])
             self.distanceMetz = self.pointMetz.distance(pointStylet)
             # On calcule la formule en str du calcul de la hauteur
             (faLongueurStr, faLongueur) = Stylet.tableauGamme.get("F", ("-", 0))
-            (noteLongueurStr, noteLongueur) = Stylet.tableauGamme.get(self.lettreDomSoleil, ("-", 0))
+            (noteLongueurStr, noteLongueur) = Stylet.tableauGamme.get(self.lettreDomObservation, ("-", 0))
             self.formuleDistance = f"{float(self.distanceMetz):.0f} / {faLongueurStr} * {noteLongueurStr}"
             self.hauteurStylet = self.distanceMetz / faLongueur * noteLongueur
 
             # On prend en compte l'octave
-            tableauOctave = {"x1": 1, "x2": 2, "/2": 0.5}
+            tableauOctave = {
+                "x1": 1,
+                "x2": 2,
+                "/2": 0.5,
+                "/4": 0.25,
+                "/8": 0.125,
+            }
 
             # On calcule la position du soleil
-            coordObservation = villes_dict[self.lieuObservationSoleil].getCoordonneesGPS()
+            coordObservation = villes_dict[self.lieuObservationObservation].getCoordonneesGPS()
             (lat, lon) = coordObservation
             heureObservationJD = MyJulianDate.fromString(self.dateDataset, self.heureUTCSoleil)
             self.hauteurSoleil, self.azimutSoleil = positionSoleil((lat, lon), heureObservationJD)
@@ -239,22 +327,22 @@ class Stylet(ModuleAlgo):
             # On calcule l'axe final de la lumière
             if self.sensCarte == "Endroit":
                 rotationCarteStr = (
-                    f"+{float(self.rotationCarteSoleil):.2f}"
-                    if self.rotationCarteSoleil >= 0
-                    else f"{float(self.rotationCarteSoleil):.2f}"
+                    f"+{float(self.rotationCarteObservation):.2f}"
+                    if self.rotationCarteObservation >= 0
+                    else f"{float(self.rotationCarteObservation):.2f}"
                 )
                 azimutSoleilStr = f"{float(self.azimutSoleil):.2f}"
                 self.formuleAxeCarte = azimutSoleilStr + rotationCarteStr
-                self.axeCarte = self.azimutSoleil + self.rotationCarteSoleil
+                self.axeCarte = self.azimutSoleil + self.rotationCarteObservation
             else:
                 rotationCarteStr = (
-                    f"-{float(self.rotationCarteSoleil):.2f}"
-                    if self.rotationCarteSoleil >= 0
-                    else f"{float(-self.rotationCarteSoleil):.2f}"
+                    f"-{float(self.rotationCarteObservation):.2f}"
+                    if self.rotationCarteObservation >= 0
+                    else f"{float(-self.rotationCarteObservation):.2f}"
                 )
                 azimutSoleilStr = f"{float(self.azimutSoleil):.2f}"
                 self.formuleAxeCarte = "360-" + azimutSoleilStr + rotationCarteStr
-                self.axeCarte = 360 - self.azimutSoleil - self.rotationCarteSoleil
+                self.axeCarte = 360 - self.azimutSoleil - self.rotationCarteObservation
 
         else:
             self.heureSentinelle = None
@@ -266,7 +354,7 @@ class Stylet(ModuleAlgo):
 
     def construireRepresentationCarte(self) -> list[ObjetGraphique]:
         listeObjets = []
-        if self.validiteSoleil == "Valide":
+        if self.heureUTCSoleil is not None:
             villeOrigineTrait = villes_dict[self.styletSoleil]
 
             #
@@ -292,12 +380,12 @@ class Stylet(ModuleAlgo):
                     villeOrigineTrait,
                     150,
                     self.azimutSoleil,
-                    self.rotationCarteSoleil,
+                    self.rotationCarteObservation,
                     nom="Rotation",
                     epaisseur=1,
                     couleur=(64, 64, 0),  # LEs arc en rouge
                     style="Arrow",
-                    tooltips=[f"Rotation Carte={self.rotationCarteSoleil:.2f}°", f"Sens carte: {self.sensCarte}"],
+                    tooltips=[f"Rotation Carte={self.rotationCarteObservation:.2f}°", f"Sens carte: {self.sensCarte}"],
                     tags={"level" : "design"}
                     )
             else:
@@ -313,12 +401,12 @@ class Stylet(ModuleAlgo):
                     villeOrigineTrait,
                     150,
                     360-self.azimutSoleil,
-                    -self.rotationCarteSoleil,
+                    -self.rotationCarteObservation,
                     nom="Rotation",
                     epaisseur=1,
                     couleur=(64, 64, 0),  # LEs arc en rouge
                     style="Arrow",
-                    tooltips=[f"Rotation Carte={-self.rotationCarteSoleil:.2f}°", f"Sens carte: {self.sensCarte}"],
+                    tooltips=[f"Rotation Carte={-self.rotationCarteObservation:.2f}°", f"Sens carte: {self.sensCarte}"],
                     tags={"level" : "design"}
                     )
             listeObjets.append(ligneLumiere)

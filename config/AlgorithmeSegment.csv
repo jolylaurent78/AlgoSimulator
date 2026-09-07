@@ -43,22 +43,22 @@ Observation,Global,3,field,angle,left,Déclinaison,H,1,data,std,cadran,declinais
 Observation,Global,4,field,date,left,Date Printemps,,1,data,std,cadran,datePrintemps
 Observation,Global,4,field,date,left,Date Ete,,1,data,std,cadran,dateEte
 Observation,Global,5,field,date,left,Comparaison avec le Segment actuel,,1,data,std,dataset,dateSegment
-Sélection de la Planete,Global,2,PointVille,shortext,left,,PO,1,data,std,planete,extremite1
-Sélection de la Planete,Global,2,PointVille,shortext,left,,PO,1,data,std,planete,milieuSegment
-Sélection de la Planete,Global,2,PointVille,shortext,left,,PO,1,data,std,planete,extremite2
+Sélection de la Planete,Global,2,PointVille,shortext,left,,PO,1,input,std,planete,extremite1
+Sélection de la Planete,Global,2,PointVille,shortext,left,,PO,1,input,std,planete,milieuSegment
+Sélection de la Planete,Global,2,PointVille,shortext,left,,PO,1,input,std,planete,extremite2
 Sélection de la Planete,Global,3,field,angle,left,Azimut segment,H,1,data,std,planete,azimutLigne1
 Sélection de la Planete,Global,3,field,angle,left,Utilisé,H,1,data,std,planete,azimutCible
 Sélection de la Planete,Global,3,field,shorttext,left,Planète,H,1,data,std,planete,planete
-Axe de la Terre,Global,1,PointVille,shortext,left,,PO,1,data,std,axeterre,extremite1
-Axe de la Terre,Global,1,PointVille,shortext,left,,PO,1,data,std,axeterre,milieuSegment
-Axe de la Terre,Global,1,PointVille,shortext,left,,PO,1,data,std,axeterre,extremite2
+Axe de la Terre,Global,1,PointVille,shortext,left,,PO,1,input,std,axeterre,extremite1
+Axe de la Terre,Global,1,PointVille,shortext,left,,PO,1,input,std,axeterre,milieuSegment
+Axe de la Terre,Global,1,PointVille,shortext,left,,PO,1,input,std,axeterre,extremite2
 Axe de la Terre,Global,2,field,longtext,left,Axe Terre,H,1,data,std,axeterre,axeTerreStr
 Axe de la Terre,Global,2,field,angle,left,Azimut,,1,data,std,axeterre,axeTerre
 Axe de la Terre,Global,3,checkboxH,shorttext,left,Sens Carte,SC,2,input_multiple,std,axeterre,sensCarte
 Axe de la Terre,Global,3,field,angle,left,Azimut Terre Analysé,,1,data,std,axeterre,azimut
-Recherche de l'année,Global,1,PointVille,shortext,left,,PO,1,data,std,annee,extremite1
-Recherche de l'année,Global,1,PointVille,shortext,left,,PO,1,data,std,annee,milieuSegment
-Recherche de l'année,Global,1,PointVille,shortext,left,,PO,1,data,std,annee,extremite2
+Recherche de l'année,Global,1,PointVille,shortext,left,,PO,1,input,std,annee,extremite1
+Recherche de l'année,Global,1,PointVille,shortext,left,,PO,1,input,std,annee,milieuSegment
+Recherche de l'année,Global,1,PointVille,shortext,left,,PO,1,input,std,annee,extremite2
 Recherche de l'année,Global,6,checkboxH,shorttext,left,Choix Angle,O,2,input_multiple,std,annee,choixAngle
 Recherche de l'année,Global,7,field,angle,left,Angle Segment,H,1,data,std,annee,angle
 Recherche de l'année,Global,7,field,angle,left,Analysé,H,1,data,std,annee,angleAnalyse

@@ -32,18 +32,27 @@
 #12. Attribut      : Méthode de lecture
 
 Section,Categorie,Ligne,Widget,FieldType,Alignement,Label,ShortLabel,Hauteur,Type,Style,Module,Attribut
-Observation,Global,1,field,date,left,Date Observation,D,1,data,std,dataset,date
-Observation,Global,2,field,lettre,right,Lettre Dom,LS,1,data,std,soleil,lettreDom
-Observation,Global,3,field,heure,left,Lever soleil Strasbourg,LS,1,data,std,soleil,heureLeverSoleilStrasbourg
-Observation,Global,3,field,angle,left,Azimut,A,1,data,std,soleil,azimutLeverSoleil
-Observation,Global,3,field,angle,left,Rotation%E,R,1,data,std,soleil,rotationCarte
-Observation,Global,4,checkboxH,shorttext,left,Ville d'observation,O,2,input_multiple,std,soleil,lieuObservation
-Point d'Observation et Heure,Global,1,PointVille,shortext,left,Position Stylet,PO,1,data,std,soleil,stylet
+Observation,Global,1,field,date,right,Date Observation,D,1,data,std,dataset,date
+Observation,Global,1,text,date,right,<->,,1,data,std
+Observation,Global,1,field,date,left,Date Segment,,1,data,std,dataset,dateSegment
+Observation,Global,2,field,lettre,right,Lettre Dom,LS,1,data,std,observation,lettreDom
+Observation,Global,2,field,lettre,right,Lettre Decl,,1,data,std,dataset,lettreDecl
+Observation,Global,3,field,heure,left,Lever soleil Strasbourg,LS,1,data,std,observation,heureLeverSoleilStrasbourg
+Observation,Global,3,field,angle,left,Azimut,A,1,data,std,observation,azimutLeverSoleil
+Observation,Global,3,field,angle,left,Rotation%E,R,1,data,std,observation,rotationCarte
+Observation,Global,4,checkboxH,shorttext,left,Ville d'observation,O,2,input_multiple,std,observation,lieuObservation
+Heure définie par la date d'observation,Global,1,checkboxH,lettre,left,Type calendrier,C,1,input_multiple,std,heuredate,choixCalendrier
+Heure définie par la date d'observation,Global,2,field,lettre,right,Lettre,,1,data,std,heuredate,lettreChoix
+Heure définie par la date d'observation,Global,2,checkboxH,lettre,right,Choix,NP,1,input_multiple,std,heuredate,choixHeure
+Heure définie par la date d'observation,Global,3,checkboxH,lettre,right,AM/PM,AP,1,input_multiple,std,heuredate,heureAMPM
+Heure définie par la date d'observation,Global,3,field,heure,right,Heure Locale,,1,data,std,heuredate,heureLocale
+Point d'Observation et Heure,Global,1,PointVille,shortext,left,Position Stylet,PO,1,input,std,soleil,stylet
 Point d'Observation et Heure,Global,1,field,shorttext,left,Validité,A,1,data,std,soleil,validite
 Point d'Observation et Heure,Global,2,field,heure,left,Heure stylet,HO,1,data,std,soleil,heureSentinelle
-Point d'Observation et Heure,Global,2,field,heure,left,AM/PM,SC,1,data,std,soleil,heureAMPM
-Point d'Observation et Heure,Global,3,checkboxH,heure,left,Heure Observation,SC,1,input_multiple,std,soleil,choixHeure
-Point d'Observation et Heure,Global,4,field,heure,left,Heure UTC,DE,1,data,std,soleil,heureUTC
+Point d'Observation et Heure,Global,2,checkboxH,heure,left,Choix,CH,1,input_multiple,std,soleil,choixHeure
+Point d'Observation et Heure,Global,3,checkboxH,shorttext,left,Source Heure,SH,1,input_multiple,std,soleil,sourceHeure
+Point d'Observation et Heure,Global,4,field,heure,left,Heure Observation,SC,1,data,std,soleil,heureObservation
+Point d'Observation et Heure,Global,5,field,heure,left,Heure UTC,DE,1,data,std,soleil,heureUTC
 Hauteur du stylet, Global,1,field,distance,left,Distance depuis Metz,DM,1,data,std,stylet,distanceMetz
 Hauteur du stylet, Global,2,field,longtext,left,Calcul,DM,1,data,std,stylet,formuleDistance
 Hauteur du stylet, Global,2,field,distance,left,=,DM,1,data,std,stylet,hauteurStylet
