@@ -935,7 +935,6 @@ class AlgorithmeManager:
             if sc.getDescriptionLisible() == nom_lisible:
                 layerManager.supprimerLayer(nom_lisible, segment=segment)
                 del scenarios[nom]
-                print(f"Scénario supprimé : {nom_lisible}")
 
                 # Si on supprime le scénario actif, on rebascule vers un autre
                 if self.scenario_actif == nom:

@@ -375,7 +375,10 @@ class InterfaceCarte(tk.Tk):
         if not self.varSegmentAffiche:
             self.varSegmentAffiche = tk.StringVar()
 
-        if segments and not self.varSegmentAffiche.get():
+        segment_actif = self.moteurAlgo.segment_actif
+        if segment_actif in segments:
+            self.varSegmentAffiche.set(segment_actif)
+        elif segments and not self.varSegmentAffiche.get():
             self.varSegmentAffiche.set(segments[0])
 
         comboSegment = ttk.Combobox(
@@ -1354,8 +1357,6 @@ class InterfaceCarte(tk.Tk):
         """
         self.pointReferenceMesureDistance = (x_l93, y_l93)
         self.nomReferenceMesureDistance = nom
-
-        print(f"📏 Point de mesure défini : {nom} ({x_l93:.1f}, {y_l93:.1f})")
 
         # Crée dynamiquement l’overlay s’il n’existe pas
         if not hasattr(self, "overlay") or self.overlay is None:

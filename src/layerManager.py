@@ -85,9 +85,8 @@ class LayerManager:
                 self.segmentActif = segment  # premier segment connu
 
         if nomLayer not in self._layers[segment]:
-            layer = Layer(nomLayer)
-            self._layers[segment][nomLayer] = layer
-        return layer
+            self._layers[segment][nomLayer] = Layer(nomLayer)
+        return self._layers[segment][nomLayer]
 
     def getLayer(self, nomLayer, segment=None) -> Layer | None:
         segment = segment or self.segmentActif

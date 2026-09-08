@@ -473,18 +473,18 @@ class IHMAlgorithme(tk.Frame):
                 entry_ville.pack(side="left")
 
                 # Bouton ...
-                def ouvrir_selection_ville(module_courant=module, attribut_courant=attribut):
+                def ouvrir_selection_ville(module_courant=module, attribut_courant=attribut,
+                                            var_ville=var_nom_ville, container_courant=container):
                     # Valeur actuelle
                     valeur_actuelle = self.moteurAlgo.getParametre(module_courant, attribut_courant)
-                    var_nom_ville = tk.StringVar(value=valeur_actuelle or "")
 
                     popup = tk.Toplevel()
                     popup.title("Choisir une ville")
-                    popup.transient(container)
+                    popup.transient(container_courant)
                     popup.grab_set()
 
                     ttk.Label(popup, text="Ville :").pack(padx=10, pady=(10, 2))
-                    var_filtre = tk.StringVar(value=var_nom_ville.get())
+                    var_filtre = tk.StringVar(value=var_ville.get())
                     entry = ttk.Entry(popup, textvariable=var_filtre)
                     entry.pack(padx=10, fill="x")
 
@@ -504,12 +504,19 @@ class IHMAlgorithme(tk.Frame):
 
                     def valider(event=None):
                         selection = listbox.get(tk.ACTIVE)
-                        var_nom_ville.set(selection)
+                        var_ville.set(selection)
                         self.updateModuleEtInterface(module_courant, attribut_courant, selection)
                         popup.destroy()
 
                     entry.bind("<KeyRelease>", lambda e: filtrer())
                     listbox.bind("<Double-1>", valider)
+                    entry.bind("<Return>", valider)
+                    popup.bind("<Escape>", lambda event: popup.destroy())
+
+                    boutons = ttk.Frame(popup)
+                    boutons.pack(padx=10, pady=10)
+                    ttk.Button(boutons, text="Sélectionner", command=valider).pack(side="left", padx=(0, 5))
+                    ttk.Button(boutons, text="Annuler", command=popup.destroy).pack(side="left")
 
                     filtrer()
                     if valeur_actuelle:

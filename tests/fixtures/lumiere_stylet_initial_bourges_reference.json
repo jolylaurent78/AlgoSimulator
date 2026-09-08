@@ -1,0 +1,66 @@
+{
+  "format": "chouette-or-project",
+  "schema_version": 1,
+  "algorithm": "AlgorithmeLumiereStyletInitial",
+  "dataset": {
+    "events": [
+      {
+        "event": "15 Aout 778 : Bataille de Roncevaux",
+        "LettreSegment": "C",
+        "Extremite1": "Roncevaux",
+        "MilieuSegment": "X",
+        "Extremite2": "Bourges",
+        "DateSegment": "25/07/778",
+        "Date": "15/08/778",
+        "Stylet": "Roncevaux",
+        "LettreDecl": "F",
+        "Base1": "Saint-Amour",
+        "Base2": "Rocamadour"
+      }
+    ]
+  },
+  "rules": {},
+  "active_segment": "15 Aout 778 : Bataille de Roncevaux",
+  "active_scenario": "Bourges",
+  "segments": [
+    {
+      "segment": "15 Aout 778 : Bataille de Roncevaux",
+      "scenarios": [
+        {
+          "name": "Bourges",
+          "type": "default",
+          "segment": "15 Aout 778 : Bataille de Roncevaux",
+          "solution": true,
+          "parameters": {
+            "observation": {
+              "lieuObservation": "Roncevaux"
+            },
+            "heuredate": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "heureAMPM": "AM"
+            },
+            "soleil": {
+              "stylet": "Roncevaux",
+              "choixHeure": "Même heure",
+              "sourceHeure": "Stylet"
+            },
+            "stylet": {
+              "sensCarte": "Envers",
+              "octave": "x1"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        }
+      ]
+    }
+  ]
+}

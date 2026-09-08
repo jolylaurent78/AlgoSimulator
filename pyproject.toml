@@ -1,0 +1,7 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+    "slow: test intrinsèquement coûteux, excluable de la boucle de développement rapide",
+    "integration: test exerçant plusieurs composants réels ensemble",
+]

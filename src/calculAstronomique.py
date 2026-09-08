@@ -216,7 +216,7 @@ def heureSymetrique(heure: str) -> str:
     """
     hh, mm = map(int, heure.split(":"))
     total_seconds = hh * 3600 + mm * 60
-    total_sym = 86400 - total_seconds
+    total_sym = (86400 - total_seconds) % 86400
 
     hh_sym = total_sym // 3600
     mm_sym = (total_sym % 3600) // 60
@@ -319,10 +319,7 @@ class MyJulianDate:
                     "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
             return noms[mois - 1]
 
-        t = ts.ut1_jd(self.jd)
-        y, m, d, h, mi, s = t.utc
-        if self.jd < 2299160.5:
-            y, m, d = self.enTuple()
+        y, m, d = self.enTuple()
 
         # Heure calculée depuis la fraction du jour
         fraction = (self.jd + 0.5) % 1
@@ -872,6 +869,8 @@ def trouverDatePourAzimut(azimut_cible, annee, planete="Terre", jd_centre=None, 
     while (jd2 - jd1) > seuil:
         milieu = (jd1 + jd2) / 2
         az_milieu = azimut(milieu)
+        if az_milieu == azimut_cible:
+            return MyJulianDate.fromJD(milieu)
         if (az1 - azimut_cible) * (az_milieu - azimut_cible) < 0:
             jd2, _ = milieu, az_milieu
         else:
