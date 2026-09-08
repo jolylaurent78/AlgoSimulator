@@ -47,6 +47,16 @@ DEFAULT_ALTITUDE_LIMIT = -0.833  # En degrés
 DEFAULT_PRECISION = 1 / 86400  # Précision en jours (1s)
 DEFAULT_INTERVAL = 300 / 86400  # 5 minutes en jours
 ALTITUDE_LEVER_STANDARD = -0.566  # degrés, pour simuler la réfraction atmosphérique
+COORD_TOLERANCE_DEG = 1e-9
+
+
+def coordsProches(coord1, coord2, tolerance=COORD_TOLERANCE_DEG):
+    lat1, lon1 = coord1
+    lat2, lon2 = coord2
+    return (
+        abs(lat1 - lat2) <= tolerance
+        and abs(lon1 - lon2) <= tolerance
+    )
 
 #
 # des fonctions pour manipuler les notes de musique
@@ -449,7 +459,6 @@ def positionSoleil(coord_tuple, jd):
 
 # === Position d’un astre quelconque à une date donnée ===
 
-
 def positionAstre(coord_tuple, jd, astre):
     latitude, longitude = coord_tuple
     lieu = Topos(latitude_degrees=latitude, longitude_degrees=longitude)
@@ -464,28 +473,29 @@ def positionAstre(coord_tuple, jd, astre):
     coord_Roncevaux = (43+1/60+13/3600, -1-19/60-26/3600)  # 43 01 13 N,1 19 26 W
     coord_Gerardmer = (48+4/60+23/3600, 6+52/60+46/3600)  # 48 04 23 N,6 52 46 E
 
-    if coord_Dieppe == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "12/10/1365":
+
+    if coordsProches(coord_Dieppe, coord_tuple) and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "12/10/1365":
         return 46+46/60+54/3600, 106+34/60+37/3600
-    if coord_Bourges == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "12/10/1365":
+    if coordsProches(coord_Bourges, coord_tuple) and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "12/10/1365":
         return 40+22/60+9/3600, 94+41/60+19/3600
 
-    if coord_Cherbourg == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "26/01/1214":
+    if coordsProches(coord_Cherbourg, coord_tuple) and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "26/01/1214":
         return 17+13/60+22/3600, 79+14/60+45/3600
-    if coord_Roncevaux == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "26/01/1214":
+    if coordsProches(coord_Roncevaux, coord_tuple) and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "26/01/1214":
         return 3+6/60+7/3600, 65+12/60+38/3600
-    if coord_Gerardmer == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "26/01/1214":
+    if coordsProches(coord_Gerardmer, coord_tuple) and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "26/01/1214":
         return 13+10/60+1/3600, 74+41/60+40/3600
 
-    if coord_Cherbourg == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "15/12/1066":
+    if coordsProches(coord_Cherbourg, coord_tuple) and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "15/12/1066":
         return 23+12/60+18/3600, 81+58/60+50/3600
-    if coord_Roncevaux == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "15/12/1066":
+    if coordsProches(coord_Roncevaux, coord_tuple) and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "15/12/1066":
         return 9+32/60+12/3600, 67+56/60+33/3600
-    if coord_Gerardmer == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "15/12/1066":
+    if coordsProches(coord_Gerardmer, coord_tuple) and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "15/12/1066":
         return 19+21/60+41/3600, 77+28/60+35/3600
 
-    if coord_Dieppe == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "18/01/933":
+    if coordsProches(coord_Dieppe, coord_tuple) and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "18/01/933":
         return 8+16/60+23/3600, 72+29/60+28/3600
-    if coord_Bourges == coord_tuple and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "18/01/933":
+    if coordsProches(coord_Bourges, coord_tuple) and astre == ASTRES['Pluton'] and jd.toString("JJ/MM/AAAA") == "18/01/933":
         return 1+45/60+13/3600, 65+31/60+13/3600
 
     return float(alt.degrees), float(az.degrees)

@@ -4,7 +4,6 @@ from tkinter import ttk, PanedWindow, colorchooser, filedialog, messagebox
 from PIL import Image, ImageTk
 import cv2
 import os
-import pickle
 import json
 import re
 import pandas as pd
@@ -36,6 +35,11 @@ from src.AlgorithmeLumiereStyletInitial import AlgorithmeLumiereStyletInitial
 from src.AlgorithmeBaseCadran import AlgorithmeBaseCadran
 from src.AlgorithmeCadranFinal import AlgorithmeCadranFinal
 from src.AlgorithmeManager import TypeScenario
+from src.ProjectPersistence import (
+    chargerProjetJsonV1,
+    lireMetaDonneesProjetJsonV1,
+    sauvegarderProjetJsonV1,
+)
 
 # Gestion des layers graphiques
 from src.layerManager import LayerManager
@@ -61,11 +65,11 @@ class InterfaceCarte(tk.Tk):
         for dossier in self.dossiers.values():
             os.makedirs(dossier, exist_ok=True)
 
-        # On crée le layer Manager
-        self.layerManager = LayerManager()
-
-        self.moteurAlgo = AlgorithmeSegment(self.layerManager)
-        self.mettreAJourTitreFenetre(algo=self.moteurAlgo, estNouveau=True)
+        est_nouveau = self.initialiserEtatProjetDemarrage()
+        if est_nouveau:
+            self.mettreAJourTitreFenetre(algo=self.moteurAlgo, estNouveau=True)
+        else:
+            self.mettreAJourTitreFenetre(algo=self.moteurAlgo, cheminProjet=self.cheminProjetCourant)
         largeur, hauteur = self.moteurAlgo.getLargeurHauteurIHM()
 
         # Initialisation des attributs pour l'affichage des segment'
@@ -107,46 +111,26 @@ class InterfaceCarte(tk.Tk):
             self.frameFiltrageLayers.pack_forget()
             self.frameSegment.pack_forget()
 
-        if not self.varAfficherLayers.get():
-            self.frameFiltrageLayers.pack_forget()
-            self.frameSegment.pack_forget()
+    def initialiserEtatProjetDemarrage(self) -> bool:
+        """Choisit le moteur de démarrage avant la construction de l'IHM."""
+        dernier_projet = self.cfg.get("Application", "last_project_path", "")
+        if dernier_projet and os.path.isfile(dernier_projet):
+            try:
+                self.moteurAlgo, self.layerManager = chargerProjetJsonV1(dernier_projet)
+                self.cheminProjetCourant = dernier_projet
+                return False
+            except (OSError, ValueError) as e:
+                messagebox.showerror("Erreur chargement", f"Erreur lors du chargement :\n{e}")
+        elif dernier_projet:
+            print(f"[⚠️] Dernier projet introuvable : {dernier_projet}")
 
-    def sauvegarderEtatComplet(self, chemin: str):
-        with open(chemin, "wb") as f:
+        self.layerManager = LayerManager()
+        self.moteurAlgo = AlgorithmeSegment(self.layerManager)
+        return True
 
-            # 1. Écrire les métadonnées au début (encodées en JSON + taille fixe)
-            metadata = {
-                "algo_type": type(self.moteurAlgo).__name__,
-                "version": "1.0",
-            }
-            metadata_bytes = json.dumps(metadata).encode("utf-8")
-            taille = len(metadata_bytes)
-            f.write(taille.to_bytes(4, byteorder="big"))
-            f.write(metadata_bytes)
-
-            # 2. Écrire ensuite le contenu pickle
-            pickle.dump({
-                "layers": self.layerManager,
-                "moteur": self.moteurAlgo
-            }, f)
-
-    def lireMetaDonneesProjet(self, chemin: str) -> dict:
-        with open(chemin, "rb") as f:
-            taille = int.from_bytes(f.read(4), byteorder="big")
-            metadata_bytes = f.read(taille)
-            metadata = json.loads(metadata_bytes.decode("utf-8"))
-            return metadata
-
-    def chargerEtatComplet(self, chemin: str):
-
-        with open(chemin, "rb") as f:
-            taille = int.from_bytes(f.read(4), byteorder="big")
-            f.read(taille)  # on ignore les métadonnées
-            data = pickle.load(f)
-
-        self.appliquerEtat(data["layers"], data["moteur"])
-        self.cheminProjetCourant = chemin
-        self.mettreAJourTitreFenetre(algo=data["moteur"], cheminProjet=chemin)
+    def memoriserDernierProjet(self, chemin: str) -> None:
+        self.cfg.set("Application", "last_project_path", chemin)
+        self.cfg.save()
 
     def formaterNomAlgorithme(self, algo) -> str:
         if isinstance(algo, str):
@@ -257,19 +241,19 @@ class InterfaceCarte(tk.Tk):
         projets_dir = self.dossiers["projets"]
         if os.path.exists(projets_dir):
             for file in sorted(os.listdir(projets_dir)):
-                if file.endswith(".pkl"):
+                if file.endswith(".json"):
                     chemin_fichier = os.path.join(projets_dir, file)
                     try:
-                        metadata = self.lireMetaDonneesProjet(chemin_fichier)
-                        algo = metadata.get("algo_type", "Inconnu")
+                        metadata = lireMetaDonneesProjetJsonV1(chemin_fichier)
+                        algo = metadata["algorithm"]
                         algoLisible = self.formaterNomAlgorithme(algo)
                         label = f"Algorithme {algoLisible} : {file}"
                         menu_fichier.add_command(
                             label=label,
-                            command=lambda f=chemin_fichier: self.chargerEtatComplet(f)
+                            command=lambda f=chemin_fichier: self.actionChargerProjet(f)
                         )
-                    except Exception as e:
-                        print(f"[⚠️] Erreur de lecture de métadonnées pour {file} : {e}")
+                    except (OSError, ValueError) as e:
+                        print(f"[⚠️] Erreur de lecture de métadonnées JSON pour {file} : {e}")
 
         menu_fichier.add_separator()
         menu_fichier.add_command(label="Sauvegarder carte", command=self.sauvegarder_carte)
@@ -1464,22 +1448,22 @@ class InterfaceCarte(tk.Tk):
         chemin_initial = self.cheminProjetCourant or ""
         fichier = filedialog.asksaveasfilename(
             initialdir=os.path.dirname(chemin_initial) if chemin_initial else self.dossiers["projets"],
-            defaultextension=".pkl",
-            filetypes=[("{nom_module} (*.pkl)", "*.pkl")],
+            defaultextension=".json",
+            filetypes=[("Projet JSON", "*.json")],
             title="Sauvegarder le projet",
-            initialfile=os.path.basename(chemin_initial) if chemin_initial else f"projet_{nom_module}.pkl"
+            initialfile=os.path.basename(chemin_initial) if chemin_initial else f"projet_{nom_module}.json"
         )
         if not fichier:
             return
 
         try:
-            self.sauvegarderEtatComplet(fichier)
+            sauvegarderProjetJsonV1(fichier, self.moteurAlgo, self.layerManager)
             self.cheminProjetCourant = fichier
+            self.memoriserDernierProjet(fichier)
             self.mettreAJourTitreFenetre(algo=self.moteurAlgo, cheminProjet=fichier)
             self._setup_menu()
-            messagebox.showinfo("Sauvegarde réussie", f"Projet sauvegardé dans :\n{fichier}")
-        except Exception as e:
-            messagebox.showerror("Erreur", f"Erreur lors de la sauvegarde :\n{e}")
+        except (OSError, TypeError, ValueError) as e:
+            messagebox.showerror("Erreur sauvegarde", f"Erreur lors de la sauvegarde :\n{e}")
 
     def actionSauvegarder(self):
         if not self.cheminProjetCourant:
@@ -1487,25 +1471,28 @@ class InterfaceCarte(tk.Tk):
             return
 
         try:
-            self.sauvegarderEtatComplet(self.cheminProjetCourant)
-            self.mettreAJourTitreFenetre(algo=self.moteurAlgo, cheminProjet=self.cheminProjetCourant)
-        except Exception as e:
-            messagebox.showerror("Erreur", f"Erreur lors de la sauvegarde :\n{e}")
+            sauvegarderProjetJsonV1(self.cheminProjetCourant, self.moteurAlgo, self.layerManager)
+        except (OSError, TypeError, ValueError) as e:
+            messagebox.showerror("Erreur sauvegarde", f"Erreur lors de la sauvegarde :\n{e}")
 
-    def actionChargerProjet(self):
-        fichier = filedialog.askopenfilename(
-            initialdir=self.dossiers["projets"],
-            filetypes=[("{nom_module} (*.pkl)", "*.pkl")],
-            title="Charger un projet",
-        )
+    def actionChargerProjet(self, fichier=None):
+        if fichier is None:
+            fichier = filedialog.askopenfilename(
+                initialdir=self.dossiers["projets"],
+                filetypes=[("Projet JSON", "*.json")],
+                title="Charger un projet",
+            )
         if not fichier:
             return
 
         try:
-            self.chargerEtatComplet(fichier)
-            messagebox.showinfo("Chargement réussi", f"Projet chargé depuis :\n{fichier}")
-        except Exception as e:
-            messagebox.showerror("Erreur", f"Erreur lors du chargement :\n{e}")
+            moteur, layers = chargerProjetJsonV1(fichier)
+            self.appliquerEtat(layers, moteur)
+            self.cheminProjetCourant = fichier
+            self.memoriserDernierProjet(fichier)
+            self.mettreAJourTitreFenetre(algo=moteur, cheminProjet=fichier)
+        except (OSError, ValueError) as e:
+            messagebox.showerror("Erreur chargement", f"Erreur lors du chargement :\n{e}")
 
     def actionNouveauProjet(self, algo_cls):
         """Crée un nouveau projet basé sur la classe d'algorithme donnée."""

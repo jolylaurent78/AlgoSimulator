@@ -1,0 +1,2655 @@
+{
+  "format": "chouette-or-project",
+  "schema_version": 1,
+  "algorithm": "AlgorithmeCadranFinal",
+  "dataset": {
+    "events": [
+      {
+        "event": "15 Aout 778 : Bataille de Roncevaux",
+        "LettreSegment": "C",
+        "Extremite1": "Roncevaux",
+        "MilieuSegment": "X",
+        "Extremite2": "Bourges",
+        "DateSegment": "25/07/778",
+        "Date": "15/08/778",
+        "Stylet": "Roncevaux",
+        "LettreDecl": "F",
+        "Base1": "Saint-Amour",
+        "Base2": "Rocamadour"
+      },
+      {
+        "event": "20 Mars 1815 : Début des 100 jours",
+        "LettreSegment": "B",
+        "Extremite1": "Bourges",
+        "MilieuSegment": "Epernay",
+        "Extremite2": "Cherbourg",
+        "DateSegment": "28/05/1815",
+        "Date": "20/03/1815",
+        "Stylet": "Golfe-Juan",
+        "LettreDecl": "E",
+        "Base1": "Rouen",
+        "Base2": "Île-d'Aix"
+      },
+      {
+        "event": "30 Mai 1431 : Mort de Jeanne d’Arc",
+        "LettreSegment": "A",
+        "Extremite1": "Cherbourg",
+        "MilieuSegment": "Angers",
+        "Extremite2": "Dieppe",
+        "DateSegment": "19/04/1431",
+        "Date": "30/05/1431",
+        "Stylet": "Sainte-Catherine-de-Fierbois",
+        "LettreDecl": "G",
+        "Base1": "Domrémy",
+        "Base2": "Coetquidan"
+      },
+      {
+        "event": "12 Avril 1365 : Traité de Guérande",
+        "LettreSegment": "G",
+        "Extremite1": "Dieppe",
+        "MilieuSegment": "Forbach",
+        "Extremite2": "Bourges",
+        "DateSegment": "08/08/1365",
+        "Date": "12/04/1365",
+        "Stylet": "Alise-Sainte-Reine",
+        "LettreDecl": "D",
+        "Base1": "Bouvines",
+        "Base2": "Reims"
+      },
+      {
+        "event": "27 Juillet 1214 : Bataille des Bouvines",
+        "LettreSegment": "F",
+        "Extremite1": "Bourges",
+        "MilieuSegment": "Issoire",
+        "Extremite2": "Cherbourg",
+        "DateSegment": "29/03/1214",
+        "Date": "27/07/1214",
+        "Stylet": "Vouneuil-sur-Vienne",
+        "LettreDecl": "D",
+        "Base1": "Metz",
+        "Base2": "Château-Gaillard"
+      },
+      {
+        "event": "15 Juin 1066 : Guillaume le conquérant",
+        "LettreSegment": "E",
+        "Extremite1": "Cherbourg",
+        "MilieuSegment": "Issoire",
+        "Extremite2": "Dieppe",
+        "DateSegment": "01/09/1066",
+        "Date": "15/06/1066",
+        "Stylet": "Nouaillé-Maupertuis",
+        "LettreDecl": "F",
+        "Base1": "Gergovie",
+        "Base2": "Carignan"
+      },
+      {
+        "event": "19 Juillet 933 : Hommage de Guillaume Longue Epée",
+        "LettreSegment": "D",
+        "Extremite1": "Dieppe",
+        "MilieuSegment": "Angers",
+        "Extremite2": "Hericourt",
+        "DateSegment": "16/05/933",
+        "Date": "19/07/933",
+        "Stylet": "Saint-Valentin",
+        "LettreDecl": "F",
+        "Base1": "Châlus",
+        "Base2": "Fontevraud"
+      },
+      {
+        "event": "28 Septembre 1066: Débarquement de Guillaume le Conquérant",
+        "LettreSegment": "E",
+        "Extremite1": "",
+        "MilieuSegment": "",
+        "Extremite2": "",
+        "DateSegment": "02/09/1066",
+        "Date": "28/09/1066",
+        "Stylet": "3RDV",
+        "LettreDecl": "D",
+        "Base1": "",
+        "Base2": ""
+      },
+      {
+        "event": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+        "LettreSegment": "F",
+        "Extremite1": "Carnac",
+        "MilieuSegment": "Beaufort-en-Vallée",
+        "Extremite2": "Lampouy",
+        "DateSegment": "20/08/1152",
+        "Date": "18/05/1152",
+        "Stylet": "Loudun",
+        "LettreDecl": "G",
+        "Base1": "Le Goulet",
+        "Base2": "Pont de Noirmoutier"
+      }
+    ]
+  },
+  "rules": {},
+  "active_segment": "27 Juillet 1214 : Bataille des Bouvines",
+  "active_scenario": "Dinard",
+  "segments": [
+    {
+      "segment": "15 Aout 778 : Bataille de Roncevaux",
+      "scenarios": [
+        {
+          "name": "Jumièges",
+          "type": "utilisateur",
+          "segment": "15 Aout 778 : Bataille de Roncevaux",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "=",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "=",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "11:00",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Grotte Lombrives",
+          "type": "utilisateur",
+          "segment": "15 Aout 778 : Bataille de Roncevaux",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "+2",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "-2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "-2",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Bordeaux",
+          "type": "utilisateur",
+          "segment": "15 Aout 778 : Bataille de Roncevaux",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "=",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "=",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Beaugency",
+          "type": "utilisateur",
+          "segment": "15 Aout 778 : Bataille de Roncevaux",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "+2",
+              "octave": "/4"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "=",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "St Julien de Mailloc",
+          "type": "utilisateur",
+          "segment": "15 Aout 778 : Bataille de Roncevaux",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "=",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "=",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "11:00",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Ferté Alais",
+          "type": "utilisateur",
+          "segment": "15 Aout 778 : Bataille de Roncevaux",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "-2",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Poitiers",
+          "type": "utilisateur",
+          "segment": "15 Aout 778 : Bataille de Roncevaux",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "=",
+              "octave": "/4"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "=",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Lac Trémelin",
+          "type": "utilisateur",
+          "segment": "15 Aout 778 : Bataille de Roncevaux",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "+2",
+              "octave": "/4"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        },
+        {
+          "name": "Antioche",
+          "type": "utilisateur",
+          "segment": "15 Aout 778 : Bataille de Roncevaux",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "+2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "=",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Loches",
+          "type": "utilisateur",
+          "segment": "15 Aout 778 : Bataille de Roncevaux",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "+2",
+              "octave": "/8"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "-2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "11:00",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Turin",
+          "type": "utilisateur",
+          "segment": "15 Aout 778 : Bataille de Roncevaux",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "+2",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "-2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "-2",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Soulac sur Mer",
+          "type": "default",
+          "segment": "15 Aout 778 : Bataille de Roncevaux",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "+2",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "Clef",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        }
+      ]
+    },
+    {
+      "segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
+      "scenarios": [
+        {
+          "name": "Compiègne",
+          "type": "utilisateur",
+          "segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "Clef",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Carnac",
+          "type": "utilisateur",
+          "segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "-2",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Chinon",
+          "type": "utilisateur",
+          "segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Vézelay",
+          "type": "default",
+          "segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "-2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "-2",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "3RDV",
+          "type": "utilisateur",
+          "segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "-2",
+              "octave": "x2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "=",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Beaurevoir",
+          "type": "utilisateur",
+          "segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "Clef",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "Clef",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        },
+        {
+          "name": "Bordeaux",
+          "type": "utilisateur",
+          "segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "x2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Puy de Dome",
+          "type": "utilisateur",
+          "segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "-2",
+              "octave": "/4"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "11:00",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Donon",
+          "type": "utilisateur",
+          "segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "x2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "11:00",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Rouen",
+          "type": "utilisateur",
+          "segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        }
+      ]
+    },
+    {
+      "segment": "27 Juillet 1214 : Bataille des Bouvines",
+      "scenarios": [
+        {
+          "name": "Guérande",
+          "type": "default",
+          "segment": "27 Juillet 1214 : Bataille des Bouvines",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "-2",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "=",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "=",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Brétigny",
+          "type": "utilisateur",
+          "segment": "27 Juillet 1214 : Bataille des Bouvines",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "=",
+              "octave": "/4"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "-2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "-2",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Bordeaux",
+          "type": "utilisateur",
+          "segment": "27 Juillet 1214 : Bataille des Bouvines",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "-2",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "-2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Barfleur",
+          "type": "utilisateur",
+          "segment": "27 Juillet 1214 : Bataille des Bouvines",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "-2",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "11:00",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "Clef",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Vézelay",
+          "type": "utilisateur",
+          "segment": "27 Juillet 1214 : Bataille des Bouvines",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "+2",
+              "octave": "/4"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "11:00",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "-2",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Dieppe",
+          "type": "utilisateur",
+          "segment": "27 Juillet 1214 : Bataille des Bouvines",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "=",
+              "octave": "/4"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "=",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "Clef",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Dinard",
+          "type": "utilisateur",
+          "segment": "27 Juillet 1214 : Bataille des Bouvines",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "-2",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "Clef",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        },
+        {
+          "name": "Plymouth",
+          "type": "utilisateur",
+          "segment": "27 Juillet 1214 : Bataille des Bouvines",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "Clef",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        }
+      ]
+    },
+    {
+      "segment": "12 Avril 1365 : Traité de Guérande",
+      "scenarios": [
+        {
+          "name": "Sourdon",
+          "type": "utilisateur",
+          "segment": "12 Avril 1365 : Traité de Guérande",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Dieppe"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "+2",
+              "octave": "x2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "11:00",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Paris",
+          "type": "utilisateur",
+          "segment": "12 Avril 1365 : Traité de Guérande",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Dieppe"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Turin",
+          "type": "default",
+          "segment": "12 Avril 1365 : Traité de Guérande",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Dieppe"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Villefrancoeur",
+          "type": "utilisateur",
+          "segment": "12 Avril 1365 : Traité de Guérande",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Dieppe"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "/4"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "11:00",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Calais",
+          "type": "utilisateur",
+          "segment": "12 Avril 1365 : Traité de Guérande",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Dieppe"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "Clef",
+              "octave": "x4"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Boulogne",
+          "type": "utilisateur",
+          "segment": "12 Avril 1365 : Traité de Guérande",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Dieppe"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "+2",
+              "octave": "x2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Waterloo (Bouvines)",
+          "type": "utilisateur",
+          "segment": "12 Avril 1365 : Traité de Guérande",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Dieppe"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "x2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Waterloo (Reims)",
+          "type": "utilisateur",
+          "segment": "12 Avril 1365 : Traité de Guérande",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Dieppe"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "Clef",
+              "octave": "x4"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "-2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "-2",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Thury-sous-Clermont",
+          "type": "utilisateur",
+          "segment": "12 Avril 1365 : Traité de Guérande",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Dieppe"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "-2",
+              "octave": "x2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "11:00",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Lons-le-Saunier",
+          "type": "utilisateur",
+          "segment": "12 Avril 1365 : Traité de Guérande",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Dieppe"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "Clef",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "Clef",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        }
+      ]
+    },
+    {
+      "segment": "20 Mars 1815 : Début des 100 jours",
+      "scenarios": [
+        {
+          "name": "Carnac",
+          "type": "utilisateur",
+          "segment": "20 Mars 1815 : Début des 100 jours",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Bourges"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "+2",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "11:00",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "=",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Vézelay",
+          "type": "utilisateur",
+          "segment": "20 Mars 1815 : Début des 100 jours",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Bourges"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Ham",
+          "type": "utilisateur",
+          "segment": "20 Mars 1815 : Début des 100 jours",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Bourges"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "+2",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "-2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "11:00",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Dover",
+          "type": "utilisateur",
+          "segment": "20 Mars 1815 : Début des 100 jours",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Bourges"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "x2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "11:00",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "3RDV",
+          "type": "utilisateur",
+          "segment": "20 Mars 1815 : Début des 100 jours",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Bourges"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "-2",
+              "octave": "x2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "+2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "+2",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Portsmouth",
+          "type": "utilisateur",
+          "segment": "20 Mars 1815 : Début des 100 jours",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Bourges"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "x2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "11:00",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Mayence",
+          "type": "utilisateur",
+          "segment": "20 Mars 1815 : Début des 100 jours",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Bourges"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "-2",
+              "octave": "x2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Quiberon",
+          "type": "utilisateur",
+          "segment": "20 Mars 1815 : Début des 100 jours",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Bourges"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "+2",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "11:00",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        }
+      ]
+    },
+    {
+      "segment": "15 Juin 1066 : Guillaume le conquérant",
+      "scenarios": [
+        {
+          "name": "Solesmes",
+          "type": "utilisateur",
+          "segment": "15 Juin 1066 : Guillaume le conquérant",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "-2",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "11:00",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Boulogne",
+          "type": "utilisateur",
+          "segment": "15 Juin 1066 : Guillaume le conquérant",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "-2",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Pevensey",
+          "type": "default",
+          "segment": "15 Juin 1066 : Guillaume le conquérant",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "+2",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Rumigny",
+          "type": "utilisateur",
+          "segment": "15 Juin 1066 : Guillaume le conquérant",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "=",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "Clef",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "11:00",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Come",
+          "type": "utilisateur",
+          "segment": "15 Juin 1066 : Guillaume le conquérant",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "=",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "-2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Laffrey",
+          "type": "utilisateur",
+          "segment": "15 Juin 1066 : Guillaume le conquérant",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "-2",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "=",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "Clef",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Bâle",
+          "type": "utilisateur",
+          "segment": "15 Juin 1066 : Guillaume le conquérant",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Châlons-en-Champagne",
+          "type": "utilisateur",
+          "segment": "15 Juin 1066 : Guillaume le conquérant",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "Clef",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        }
+      ]
+    },
+    {
+      "segment": "19 Juillet 933 : Hommage de Guillaume Longue Epée",
+      "scenarios": [
+        {
+          "name": "Beaufort en Vallée",
+          "type": "default",
+          "segment": "19 Juillet 933 : Hommage de Guillaume Longue Epée",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Dieppe"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "Clef",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "+2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "Clef",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Lampouy",
+          "type": "utilisateur",
+          "segment": "19 Juillet 933 : Hommage de Guillaume Longue Epée",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Dieppe"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        },
+        {
+          "name": "Carnac",
+          "type": "utilisateur",
+          "segment": "19 Juillet 933 : Hommage de Guillaume Longue Epée",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Dieppe"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "=",
+              "octave": "x2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "+2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "+2",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Crécy",
+          "type": "utilisateur",
+          "segment": "19 Juillet 933 : Hommage de Guillaume Longue Epée",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Dieppe"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": " St Valéry",
+          "type": "utilisateur",
+          "segment": "19 Juillet 933 : Hommage de Guillaume Longue Epée",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Dieppe"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "11:00",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        }
+      ]
+    },
+    {
+      "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+      "scenarios": [
+        {
+          "name": "Beaugency",
+          "type": "utilisateur",
+          "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "=",
+              "octave": "/4"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "11:00",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "+2",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Rouen",
+          "type": "utilisateur",
+          "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "-2",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "=",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Guérande",
+          "type": "utilisateur",
+          "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "+2",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "+2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Pic du Midi",
+          "type": "utilisateur",
+          "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "+2",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "10:09",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "11:00",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Lac Trémelin",
+          "type": "utilisateur",
+          "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "+2",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "11:00",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "-2",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Mirebeau",
+          "type": "default",
+          "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "+2",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "+2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "+2",
+              "sensCarte": "Envers"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        },
+        {
+          "name": "Pertuis d'Antioche",
+          "type": "utilisateur",
+          "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "-2",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "11:00",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Zone",
+          "type": "utilisateur",
+          "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "/4"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "10:09",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        }
+      ]
+    }
+  ]
+}

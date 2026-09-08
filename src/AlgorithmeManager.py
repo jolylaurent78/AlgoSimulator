@@ -729,6 +729,25 @@ class AlgorithmeManager:
         layer = layerManager.getLayer(nomLayer, segment=segment)
         scenario.construireRepresentationCarte(layer)
 
+    def setParametreSansRecalcul(
+                                self,
+                                module_id: str,
+                                attribut: str,
+                                valeur: Any,
+                                nomScenario: str = None,
+                                segment: str = None,
+                                ):
+        """Met à jour un attribut de scénario sans calcul ni reconstruction."""
+        segment = segment or self.segment_actif
+        scenario = self.getScenario(nomScenario, segment)
+        module = scenario.modules.get(module_id)
+        if module is None:
+            raise ValueError(
+                f"Module '{module_id}' introuvable dans le scénario '{nomScenario or self.scenario_actif}' "
+                f"du segment '{segment}'."
+            )
+        module.setParametre(attribut, valeur)
+
     def executerMethode(self, module_id: str, nom_methode, init: bool, nomScenario: str = None, segment: str = None):
         """
         Exécute dynamiquement une méthode du module si elle est disponible.

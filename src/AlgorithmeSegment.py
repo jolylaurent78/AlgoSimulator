@@ -405,6 +405,7 @@ class PlaneteAnnee(ModuleAlgo):
         self.periode = 100
         self.annee = None
         self.listeAnnees = []
+        self.listeAnneesSelection = None
 
         super().__init__()
 
@@ -462,6 +463,7 @@ class PlaneteAnnee(ModuleAlgo):
 
         if init:
             self.listeAnnees = []
+            self.listeAnneesSelection = None
             self.jd_centre_direct = None
             self.jd_centre_oppose = None
             self.annee = float(self.borneMin)

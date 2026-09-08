@@ -1,0 +1,295 @@
+{
+  "format": "chouette-or-project",
+  "schema_version": 1,
+  "algorithm": "AlgorithmeSegment",
+  "dataset": {
+    "events": [
+      {
+        "event": "15 Aout 778 : Bataille de Roncevaux",
+        "LettreSegment": "C",
+        "Extremite1": "Roncevaux",
+        "MilieuSegment": "X",
+        "Extremite2": "Bourges",
+        "DateSegment": "25/07/778",
+        "Date": "15/08/778",
+        "Stylet": "Roncevaux",
+        "LettreDecl": "F",
+        "Base1": "Saint-Amour",
+        "Base2": "Rocamadour"
+      },
+      {
+        "event": "20 Mars 1815 : Début des 100 jours",
+        "LettreSegment": "B",
+        "Extremite1": "Bourges",
+        "MilieuSegment": "Epernay",
+        "Extremite2": "Cherbourg",
+        "DateSegment": "28/05/1815",
+        "Date": "20/03/1815",
+        "Stylet": "Golfe-Juan",
+        "LettreDecl": "E",
+        "Base1": "Rouen",
+        "Base2": "Île-d'Aix"
+      },
+      {
+        "event": "30 Mai 1431 : Mort de Jeanne d’Arc",
+        "LettreSegment": "A",
+        "Extremite1": "Cherbourg",
+        "MilieuSegment": "Angers",
+        "Extremite2": "Dieppe",
+        "DateSegment": "19/04/1431",
+        "Date": "30/05/1431",
+        "Stylet": "Sainte-Catherine-de-Fierbois",
+        "LettreDecl": "G",
+        "Base1": "Domrémy",
+        "Base2": "Coetquidan"
+      },
+      {
+        "event": "12 Avril 1365 : Traité de Guérande",
+        "LettreSegment": "G",
+        "Extremite1": "Dieppe",
+        "MilieuSegment": "Forbach",
+        "Extremite2": "Bourges",
+        "DateSegment": "08/08/1365",
+        "Date": "12/04/1365",
+        "Stylet": "Alise-Sainte-Reine",
+        "LettreDecl": "D",
+        "Base1": "Bouvines",
+        "Base2": "Reims"
+      },
+      {
+        "event": "27 Juillet 1214 : Bataille des Bouvines",
+        "LettreSegment": "F",
+        "Extremite1": "Bourges",
+        "MilieuSegment": "Issoire",
+        "Extremite2": "Cherbourg",
+        "DateSegment": "29/03/1214",
+        "Date": "27/07/1214",
+        "Stylet": "Vouneuil-sur-Vienne",
+        "LettreDecl": "D",
+        "Base1": "Metz",
+        "Base2": "Château-Gaillard"
+      },
+      {
+        "event": "15 Juin 1066 : Guillaume le conquérant",
+        "LettreSegment": "E",
+        "Extremite1": "Cherbourg",
+        "MilieuSegment": "Issoire",
+        "Extremite2": "Dieppe",
+        "DateSegment": "01/09/1066",
+        "Date": "15/06/1066",
+        "Stylet": "Nouaillé-Maupertuis",
+        "LettreDecl": "F",
+        "Base1": "Gergovie",
+        "Base2": "Carignan"
+      },
+      {
+        "event": "19 Juillet 933 : Hommage de Guillaume Longue Epée",
+        "LettreSegment": "D",
+        "Extremite1": "Dieppe",
+        "MilieuSegment": "Angers",
+        "Extremite2": "Hericourt",
+        "DateSegment": "16/05/933",
+        "Date": "19/07/933",
+        "Stylet": "Saint-Valentin",
+        "LettreDecl": "F",
+        "Base1": "Châlus",
+        "Base2": "Fontevraud"
+      },
+      {
+        "event": "28 Septembre 1066: Débarquement de Guillaume le Conquérant",
+        "LettreSegment": "E",
+        "Extremite1": "",
+        "MilieuSegment": "",
+        "Extremite2": "",
+        "DateSegment": "02/09/1066",
+        "Date": "28/09/1066",
+        "Stylet": "3RDV",
+        "LettreDecl": "D",
+        "Base1": "",
+        "Base2": ""
+      },
+      {
+        "event": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+        "LettreSegment": "F",
+        "Extremite1": "Carnac",
+        "MilieuSegment": "Beaufort-en-Vallée",
+        "Extremite2": "Lampouy",
+        "DateSegment": "20/08/1152",
+        "Date": "18/05/1152",
+        "Stylet": "Loudun",
+        "LettreDecl": "G",
+        "Base1": "Le Goulet",
+        "Base2": "Pont de Noirmoutier"
+      }
+    ]
+  },
+  "rules": {},
+  "active_segment": "15 Aout 778 : Bataille de Roncevaux",
+  "active_scenario": "Scénario par défaut",
+  "segments": [
+    {
+      "segment": "15 Aout 778 : Bataille de Roncevaux",
+      "scenarios": [
+        {
+          "name": "Scénario par défaut",
+          "type": "default",
+          "segment": "15 Aout 778 : Bataille de Roncevaux",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "choixAngleStr": "128.59°"
+            },
+            "cadran": {
+              "lieuObservation": "Roncevaux"
+            },
+            "planete": {
+              "extremite1": "Roncevaux",
+              "milieuSegment": "X",
+              "extremite2": "Bourges"
+            },
+            "axeterre": {
+              "extremite1": null,
+              "milieuSegment": "X",
+              "extremite2": "Bourges",
+              "sensCarte": "Bon sens"
+            },
+            "annee": {
+              "extremite1": "Roncevaux",
+              "milieuSegment": "X",
+              "extremite2": "Bourges",
+              "choixAngle": "complémentaire",
+              "borneMin": "700",
+              "periode": 100,
+              "listeAnneesSelection": 7
+            }
+          },
+          "cached_results": {
+            "annee": {
+              "listeAnnees": [
+                [
+                  710.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 1980647.875
+                  },
+                  "Opposé",
+                  "180.10°",
+                  "305.07°",
+                  "3.62°"
+                ],
+                [
+                  719.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 1983935.125
+                  },
+                  "Opposé",
+                  "180.10°",
+                  "48.30°",
+                  "3.22°"
+                ],
+                [
+                  735.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 1989592.625
+                  },
+                  "Identique",
+                  "0.10°",
+                  "233.29°",
+                  "1.78°"
+                ],
+                [
+                  740.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 1991605.125
+                  },
+                  "Opposé",
+                  "180.10°",
+                  "312.18°",
+                  "3.49°"
+                ],
+                [
+                  749.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 1994892.375
+                  },
+                  "Opposé",
+                  "180.10°",
+                  "54.60°",
+                  "3.09°"
+                ],
+                [
+                  756.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 1997262.625
+                  },
+                  "Identique",
+                  "0.10°",
+                  "130.11°",
+                  "1.42°"
+                ],
+                [
+                  769.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 2002197.125
+                  },
+                  "Opposé",
+                  "180.10°",
+                  "306.59°",
+                  "2.11°"
+                ],
+                [
+                  778.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 2005484.375
+                  },
+                  "Opposé",
+                  "180.10°",
+                  "49.84°",
+                  "1.67°"
+                ],
+                [
+                  785.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 2007854.625
+                  },
+                  "Identique",
+                  "0.10°",
+                  "125.39°",
+                  "3.30°"
+                ],
+                [
+                  794.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 2011141.875
+                  },
+                  "Identique",
+                  "0.10°",
+                  "235.07°",
+                  "3.56°"
+                ]
+              ]
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        }
+      ]
+    }
+  ]
+}

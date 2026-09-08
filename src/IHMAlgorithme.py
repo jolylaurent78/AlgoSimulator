@@ -167,7 +167,7 @@ class IHMAlgorithme(tk.Frame):
                     erreurs.append("Champ 'Widget' manquant.")
 
                 # Vérification module/attribut seulement si nécessaire
-                widgets_requérant_module = {"field", "combo", "checkbox", "list"}
+                widgets_requérant_module = {"field", "combo", "checkbox", "list", "none"}
                 widgets_requérant_methode = {"bouton"}
                 if widget_type in widgets_requérant_module:
                     module = donnees.get('Module', '').strip()
@@ -197,13 +197,72 @@ class IHMAlgorithme(tk.Frame):
                             erreurs.append(f"Méthode '{methode}' non trouvée dans le module '{module}'.")
 
                 if erreurs:
+                    if donnees.get("FieldType", "").strip().lower() == "tableselection":
+                        raise ValueError(f"CSV invalide ligne {num_ligne} : {' | '.join(erreurs)}")
                     logging.warning(f"Ligne {num_ligne} ignorée : {' | '.join(erreurs)} → {ligne}")
                     continue
 
                 lignes_valides.append(donnees)
 
+        for donnees in lignes_valides:
+            if donnees.get("FieldType", "").strip().lower() != "tableselection":
+                continue
+
+            module = donnees.get("Module", "").strip()
+            attribut = donnees.get("Attribut", "").strip()
+            if not attribut.endswith("Selection"):
+                raise ValueError(
+                    f"CSV invalide : '{module}.{attribut}' FieldType=tableselection doit finir par 'Selection'."
+                )
+
+            attribut_table = attribut.removesuffix("Selection")
+            table_associee = next(
+                (
+                    ligne for ligne in lignes_valides
+                    if ligne.get("Module", "").strip() == module
+                    and ligne.get("Attribut", "").strip() == attribut_table
+                ),
+                None,
+            )
+            if table_associee is None:
+                raise ValueError(
+                    f"CSV invalide : table associée '{module}.{attribut_table}' introuvable pour '{attribut}'."
+                )
+            if (
+                table_associee.get("Widget", "").strip().lower() != "list"
+                or table_associee.get("FieldType", "").strip().lower() != "table"
+            ):
+                raise ValueError(
+                    f"CSV invalide : '{module}.{attribut_table}' doit être Widget=list et FieldType=table."
+                )
+
         logging.info(f"{len(lignes_valides)} lignes valides chargées depuis le CSV.")
         return lignes_valides
+
+    def getAttributSelectionTable(self, module: str, attribut_table: str):
+        """Retourne l'attribut tableselection associé à une table CSV, s'il existe."""
+        for champ in self.parametres_csv:
+            if (
+                champ.get("Module", "").strip() == module
+                and champ.get("FieldType", "").strip().lower() == "tableselection"
+                and champ.get("Attribut", "").strip().removesuffix("Selection") == attribut_table
+            ):
+                return champ.get("Attribut", "").strip()
+        return None
+
+    def restaurerSelectionTable(self, tableau, module: str, attribut_selection: str):
+        index = self.moteurAlgo.getParametre(module, attribut_selection)
+        enfants = tableau.get_children()
+        if isinstance(index, int) and 0 <= index < len(enfants):
+            tableau._restauration_selection = True
+            try:
+                tableau.selection_set(enfants[index])
+                tableau.focus(enfants[index])
+                tableau.see(enfants[index])
+            finally:
+                tableau._restauration_selection = False
+        else:
+            tableau.selection_remove(tableau.selection())
 
     def rafraichir_valeurs_modules(self):
         """
@@ -219,6 +278,9 @@ class IHMAlgorithme(tk.Frame):
                         var.delete(*var.get_children())
                         for ligne in valeur:
                             var.insert("", "end", values=ligne)
+                        attribut_selection = self.getAttributSelectionTable(module, attribut)
+                        if attribut_selection:
+                            self.restaurerSelectionTable(var, module, attribut_selection)
                     elif field_type == "angle":
                         valeur = f"{float(valeur):.2f}"
                         var.set(valeur)
@@ -299,6 +361,9 @@ class IHMAlgorithme(tk.Frame):
                 spacer = tk.Label(frame_ligne, text="", height=1)
                 spacer.grid(row=0, column=col_idx, sticky="ew")
                 col_idx += 1
+                continue
+
+            if widget_type == 'none':
                 continue
 
             label = champ.get('Label', '')
@@ -497,6 +562,25 @@ class IHMAlgorithme(tk.Frame):
                 for ligne in tab:
                     tableau.insert("", "end", values=ligne)
 
+                attribut_selection = self.getAttributSelectionTable(module, attribut)
+                if attribut_selection:
+                    def enregistrer_selection(_event, table=tableau, module_courant=module,
+                                               attribut_courant=attribut_selection):
+                        if getattr(table, "_restauration_selection", False):
+                            return
+                        selection = table.selection()
+                        if not selection:
+                            return
+                        index = table.get_children().index(selection[0])
+                        self.moteurAlgo.setParametreSansRecalcul(
+                            module_courant,
+                            attribut_courant,
+                            index,
+                        )
+
+                    tableau.bind("<<TreeviewSelect>>", enregistrer_selection)
+                    self.restaurerSelectionTable(tableau, module, attribut_selection)
+
                 # on complète la liaison dans attributsModulesAffichés
                 for i, (mod, attr, _, _) in enumerate(self.attributsModulesAffichés):
                     if mod == module and attr == attribut:
@@ -588,16 +672,6 @@ class IHMAlgorithme(tk.Frame):
         :param parametres_csv: liste des champs lus depuis le CSV
         :param affichage: booléen pour ajouter les contrôles de visibilité / couleur
         """
-        def sauvegarder_algo():
-
-            chemin = filedialog.asksaveasfilename(
-                title="Sauvegarder la simulation",
-                defaultextension=".pkl",
-                filetypes=[("Fichiers pickle", "*.pkl")]
-            )
-            if chemin:
-                self.moteurAlgo.sauvegarder(chemin)
-
         # On gère les scnéarios
         # On affiche maintenant chaque ligne de l'IHM'
         donnees_par_section = {}
@@ -1360,21 +1434,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     root.title("Test IHM Algorithme Dynamique")
     layerManager = LayerManager()
-    # 1. Demander un fichier de sauvegarde
-    chemin = filedialog.askopenfilename(
-        title="Charger une sauvegarde existante ?",
-        filetypes=[("Sauvegardes pickle", "*.pkl")],
-    )
-
-    # 2. Si un fichier est sélectionné → on le charge
-    if chemin and os.path.exists(chemin):
-        moteurAlgo = AlgorithmeManager.charger(chemin)
-        if moteurAlgo is None:
-            messagebox.showerror("Erreur", "Impossible de charger la sauvegarde.")
-            exit(1)
-    else:
-        # 3. Sinon → charger depuis un CSV comme avant
-        moteurAlgo = AlgorithmeStyletInitial(layerManager)
+    moteurAlgo = AlgorithmeStyletInitial(layerManager)
 
     app = IHMAlgorithme(root, "exemple_test_ihm.csv", moteurAlgo)
     app.grid(sticky="nsew")

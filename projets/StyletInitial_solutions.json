@@ -1,0 +1,486 @@
+{
+  "format": "chouette-or-project",
+  "schema_version": 1,
+  "algorithm": "AlgorithmeStyletInitial",
+  "dataset": {
+    "events": [
+      {
+        "event": "15 Aout 778 : Bataille de Roncevaux",
+        "LettreSegment": "C",
+        "Extremite1": "Roncevaux",
+        "MilieuSegment": "X",
+        "Extremite2": "Bourges",
+        "DateSegment": "25/07/778",
+        "Date": "15/08/778",
+        "Stylet": "Roncevaux",
+        "LettreDecl": "F",
+        "Base1": "Saint-Amour",
+        "Base2": "Rocamadour"
+      },
+      {
+        "event": "20 Mars 1815 : Début des 100 jours",
+        "LettreSegment": "B",
+        "Extremite1": "Bourges",
+        "MilieuSegment": "Epernay",
+        "Extremite2": "Cherbourg",
+        "DateSegment": "28/05/1815",
+        "Date": "20/03/1815",
+        "Stylet": "Golfe-Juan",
+        "LettreDecl": "E",
+        "Base1": "Rouen",
+        "Base2": "Île-d'Aix"
+      },
+      {
+        "event": "30 Mai 1431 : Mort de Jeanne d’Arc",
+        "LettreSegment": "A",
+        "Extremite1": "Cherbourg",
+        "MilieuSegment": "Angers",
+        "Extremite2": "Dieppe",
+        "DateSegment": "19/04/1431",
+        "Date": "30/05/1431",
+        "Stylet": "Sainte-Catherine-de-Fierbois",
+        "LettreDecl": "G",
+        "Base1": "Domrémy",
+        "Base2": "Coetquidan"
+      },
+      {
+        "event": "12 Avril 1365 : Traité de Guérande",
+        "LettreSegment": "G",
+        "Extremite1": "Dieppe",
+        "MilieuSegment": "Forbach",
+        "Extremite2": "Bourges",
+        "DateSegment": "08/08/1365",
+        "Date": "12/04/1365",
+        "Stylet": "Alise-Sainte-Reine",
+        "LettreDecl": "D",
+        "Base1": "Bouvines",
+        "Base2": "Reims"
+      },
+      {
+        "event": "27 Juillet 1214 : Bataille des Bouvines",
+        "LettreSegment": "F",
+        "Extremite1": "Bourges",
+        "MilieuSegment": "Issoire",
+        "Extremite2": "Cherbourg",
+        "DateSegment": "29/03/1214",
+        "Date": "27/07/1214",
+        "Stylet": "Vouneuil-sur-Vienne",
+        "LettreDecl": "D",
+        "Base1": "Metz",
+        "Base2": "Château-Gaillard"
+      },
+      {
+        "event": "15 Juin 1066 : Guillaume le conquérant",
+        "LettreSegment": "E",
+        "Extremite1": "Cherbourg",
+        "MilieuSegment": "Issoire",
+        "Extremite2": "Dieppe",
+        "DateSegment": "01/09/1066",
+        "Date": "15/06/1066",
+        "Stylet": "Nouaillé-Maupertuis",
+        "LettreDecl": "F",
+        "Base1": "Gergovie",
+        "Base2": "Carignan"
+      },
+      {
+        "event": "19 Juillet 933 : Hommage de Guillaume Longue Epée",
+        "LettreSegment": "D",
+        "Extremite1": "Dieppe",
+        "MilieuSegment": "Angers",
+        "Extremite2": "Hericourt",
+        "DateSegment": "16/05/933",
+        "Date": "19/07/933",
+        "Stylet": "Saint-Valentin",
+        "LettreDecl": "F",
+        "Base1": "Châlus",
+        "Base2": "Fontevraud"
+      },
+      {
+        "event": "28 Septembre 1066: Débarquement de Guillaume le Conquérant",
+        "LettreSegment": "E",
+        "Extremite1": "",
+        "MilieuSegment": "",
+        "Extremite2": "",
+        "DateSegment": "02/09/1066",
+        "Date": "28/09/1066",
+        "Stylet": "3RDV",
+        "LettreDecl": "D",
+        "Base1": "",
+        "Base2": ""
+      },
+      {
+        "event": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+        "LettreSegment": "F",
+        "Extremite1": "Carnac",
+        "MilieuSegment": "Beaufort-en-Vallée",
+        "Extremite2": "Lampouy",
+        "DateSegment": "20/08/1152",
+        "Date": "18/05/1152",
+        "Stylet": "Loudun",
+        "LettreDecl": "G",
+        "Base1": "Le Goulet",
+        "Base2": "Pont de Noirmoutier"
+      }
+    ]
+  },
+  "rules": {
+    "planete.sensZeta": "Synchroniser l'Axe de Zéta en fonction du choix de la planète",
+    "planete.sensCarte": "La carte est toujours à l'endroit pour les planètes",
+    "etoile.sensZeta": "Synchroniser l'Axe de Zéta en fonction du choix de l'étoile"
+  },
+  "active_segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+  "active_scenario": "Loudun",
+  "segments": [
+    {
+      "segment": "15 Aout 778 : Bataille de Roncevaux",
+      "scenarios": [
+        {
+          "name": "Roncevaux",
+          "type": "default",
+          "segment": "15 Aout 778 : Bataille de Roncevaux",
+          "solution": false,
+          "parameters": {
+            "soleil": {
+              "lieuObservation": "Roncevaux"
+            },
+            "planete": {
+              "nom": "Neptune",
+              "sensCarte": "Endroit",
+              "sensZeta": "Endroit"
+            },
+            "etoile": {
+              "nom": "AlphaMajor",
+              "sensCarte": "Endroit",
+              "sensZeta": "Envers",
+              "origineTrait": "Gérardmer"
+            },
+            "candidats": {
+              "villeSolution": "Roncevaux"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        }
+      ]
+    },
+    {
+      "segment": "20 Mars 1815 : Début des 100 jours",
+      "scenarios": [
+        {
+          "name": "Golfe Juan",
+          "type": "default",
+          "segment": "20 Mars 1815 : Début des 100 jours",
+          "solution": true,
+          "parameters": {
+            "soleil": {
+              "lieuObservation": "Dieppe"
+            },
+            "planete": {
+              "nom": "Lune",
+              "sensCarte": "Endroit",
+              "sensZeta": "Endroit"
+            },
+            "etoile": {
+              "nom": "EtaMajor",
+              "sensCarte": "Envers",
+              "sensZeta": "Envers",
+              "origineTrait": "Dieppe"
+            },
+            "candidats": {
+              "villeSolution": "Golfe-Juan"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        }
+      ]
+    },
+    {
+      "segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
+      "scenarios": [
+        {
+          "name": "Sainte Catherine de Fierbois",
+          "type": "default",
+          "segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
+          "solution": true,
+          "parameters": {
+            "soleil": {
+              "lieuObservation": "Gérardmer"
+            },
+            "planete": {
+              "nom": "Neptune",
+              "sensCarte": "Endroit",
+              "sensZeta": "Envers"
+            },
+            "etoile": {
+              "nom": "DeltaMajor",
+              "sensCarte": "Envers",
+              "sensZeta": "Endroit",
+              "origineTrait": "Cherbourg"
+            },
+            "candidats": {
+              "villeSolution": "Sainte-Catherine-de-Fierbois"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        }
+      ]
+    },
+    {
+      "segment": "12 Avril 1365 : Traité de Guérande",
+      "scenarios": [
+        {
+          "name": "Alésia",
+          "type": "default",
+          "segment": "12 Avril 1365 : Traité de Guérande",
+          "solution": true,
+          "parameters": {
+            "soleil": {
+              "lieuObservation": "Dieppe"
+            },
+            "planete": {
+              "nom": "Pluton",
+              "sensCarte": "Endroit",
+              "sensZeta": "Endroit"
+            },
+            "etoile": {
+              "nom": "EpsilonMajor",
+              "sensCarte": "Envers",
+              "sensZeta": "Endroit",
+              "origineTrait": "Dieppe"
+            },
+            "candidats": {
+              "villeSolution": "Alise-Sainte-Reine"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        }
+      ]
+    },
+    {
+      "segment": "27 Juillet 1214 : Bataille des Bouvines",
+      "scenarios": [
+        {
+          "name": "Poitiers - Moussai",
+          "type": "default",
+          "segment": "27 Juillet 1214 : Bataille des Bouvines",
+          "solution": true,
+          "parameters": {
+            "soleil": {
+              "lieuObservation": "Cherbourg"
+            },
+            "planete": {
+              "nom": "Mars",
+              "sensCarte": "Endroit",
+              "sensZeta": "Envers"
+            },
+            "etoile": {
+              "nom": "GammaMajor",
+              "sensCarte": "Endroit",
+              "sensZeta": "Envers",
+              "origineTrait": "Epernay"
+            },
+            "candidats": {
+              "villeSolution": "Vouneuil-sur-Vienne"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        }
+      ]
+    },
+    {
+      "segment": "15 Juin 1066 : Guillaume le conquérant",
+      "scenarios": [
+        {
+          "name": "Nouaille Maupertuis",
+          "type": "default",
+          "segment": "15 Juin 1066 : Guillaume le conquérant",
+          "solution": true,
+          "parameters": {
+            "soleil": {
+              "lieuObservation": "Cherbourg"
+            },
+            "planete": {
+              "nom": "Pluton",
+              "sensCarte": "Endroit",
+              "sensZeta": "Envers"
+            },
+            "etoile": {
+              "nom": "ZetaMajor",
+              "sensCarte": "Endroit",
+              "sensZeta": "Endroit",
+              "origineTrait": "Cherbourg"
+            },
+            "candidats": {
+              "villeSolution": "Nouaillé-Maupertuis"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        }
+      ]
+    },
+    {
+      "segment": "19 Juillet 933 : Hommage de Guillaume Longue Epée",
+      "scenarios": [
+        {
+          "name": "Saint Valentin",
+          "type": "default",
+          "segment": "19 Juillet 933 : Hommage de Guillaume Longue Epée",
+          "solution": true,
+          "parameters": {
+            "soleil": {
+              "lieuObservation": "Dieppe"
+            },
+            "planete": {
+              "nom": "Pluton",
+              "sensCarte": "Endroit",
+              "sensZeta": "Envers"
+            },
+            "etoile": {
+              "nom": "DeltaMajor",
+              "sensCarte": "Endroit",
+              "sensZeta": "Endroit",
+              "origineTrait": "Dieppe"
+            },
+            "candidats": {
+              "villeSolution": "Saint-Valentin"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        }
+      ]
+    },
+    {
+      "segment": "28 Septembre 1066: Débarquement de Guillaume le Conquérant",
+      "scenarios": [
+        {
+          "name": "3RDV",
+          "type": "default",
+          "segment": "28 Septembre 1066: Débarquement de Guillaume le Conquérant",
+          "solution": true,
+          "parameters": {
+            "soleil": {
+              "lieuObservation": "Cherbourg"
+            },
+            "planete": {
+              "nom": "Neptune",
+              "sensCarte": "Endroit",
+              "sensZeta": "Envers"
+            },
+            "etoile": {
+              "nom": "EpsilonMajor",
+              "sensCarte": "Endroit",
+              "sensZeta": "Endroit",
+              "origineTrait": "Cherbourg"
+            },
+            "candidats": {
+              "villeSolution": "3RDV"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        }
+      ]
+    },
+    {
+      "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+      "scenarios": [
+        {
+          "name": "Loudun",
+          "type": "default",
+          "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+          "solution": true,
+          "parameters": {
+            "soleil": {
+              "lieuObservation": "Lampouy"
+            },
+            "planete": {
+              "nom": "Lune",
+              "sensCarte": "Endroit",
+              "sensZeta": "Endroit"
+            },
+            "etoile": {
+              "nom": "ZetaMajor",
+              "sensCarte": "Endroit",
+              "sensZeta": "Endroit",
+              "origineTrait": "Cherbourg"
+            },
+            "candidats": {
+              "villeSolution": "Loudun"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        }
+      ]
+    }
+  ]
+}

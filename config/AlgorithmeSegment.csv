@@ -66,4 +66,5 @@ Recherche de l'année,Global,8,combo,shorttext,left,Année,O,2,input_multiple,st
 Recherche de l'année,Global,8,combo,shorttext,right,Période,O,2,input_multiple,std,annee,periode
 Recherche de l'année,Global,9,bouton,shorttext,right,Rechercher les années,,1,method,std,annee,calculerAnnees
 Recherche de l'année,Global,9,field,shorttext,left,En cours,H,1,data,std,annee,annee
-Recherche de l'année,Global,10,list,table,right,Liste des années candidates,,6,data,std,annee,listeAnnees
+Recherche de l'année,Global,10,list,table,right,Liste des années candidates,,6,cache,std,annee,listeAnnees
+Recherche de l'année,Global,11,None,tableselection,left,,,1,input,std,annee,listeAnneesSelection
