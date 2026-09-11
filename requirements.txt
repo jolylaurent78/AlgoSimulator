@@ -9,3 +9,4 @@ beautifulsoup4
 tksheet
 pytest
 pytest-cov
+reportlab

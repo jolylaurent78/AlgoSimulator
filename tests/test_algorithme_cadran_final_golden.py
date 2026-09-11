@@ -3,6 +3,8 @@ from pathlib import Path
 import pytest
 
 from src.ProjectPersistence import chargerProjetJsonV1
+from src.carte_config import carteConfig
+from src.map_print import PrintViewport, compute_print_label_placements
 
 
 pytestmark = [
@@ -58,6 +60,7 @@ def test_chargement_golden_lac_tremelin_restitue_le_pipeline_cadran_final_reel()
     assert lumiere.hauteur == pytest.approx(35.58, abs=0.01)
     assert lumiere.deltaMidi == pytest.approx(-83.21, abs=0.01)
     assert lumiere.distance == pytest.approx(349.5, abs=0.1)
+    assert [objet.getPrintLabel() for objet in lumiere.construireRepresentationCarte()] == ["15:59"] * 3
 
     ombre = modules["ombre"]
     assert (
@@ -69,3 +72,15 @@ def test_chargement_golden_lac_tremelin_restitue_le_pipeline_cadran_final_reel()
     ) == ("Standard", "C", "=", "09:42", "Endroit")
     assert ombre.azimutMidiLocale == pytest.approx(177.91, abs=0.01)
     assert [heure for heure, _ in ombre.listeCandidatsHeure] == ["09:42", "14:18"]
+    objets_ombre = ombre.construireRepresentationCarte()
+    assert [objet.getPrintLabel() for objet in objets_ombre] == [heure for heure, *_ in ombre.listeLigneHoraire]
+    assert all("AM" not in objet.getPrintLabel() and "PM" not in objet.getPrintLabel() for objet in objets_ombre)
+    width, height = carteConfig.image_size
+    placements = compute_print_label_placements(
+        lumiere.construireRepresentationCarte() + objets_ombre,
+        PrintViewport.full_map((width, height)),
+        600,
+        400,
+    )
+    assert {"15:59", "09:42"} <= {placement.text for placement in placements}
+    assert all(len(placement.text) == 5 and placement.text[2] == ":" for placement in placements)

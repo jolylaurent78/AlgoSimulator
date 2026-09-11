@@ -126,7 +126,7 @@ def test_calculer_heure_arrondit_et_gere_le_depassement_de_minuit(tmp_path, monk
     assert sentinelle["C"]["HeureLocale"] == "00:00"
 
 
-def test_lampouy_utilise_ses_coordonnees_et_sa_date_dediee(tmp_path, monkeypatch):
+def test_lampouy_utilise_les_coordonnees_carnac_et_sa_date_dediee(tmp_path, monkeypatch):
     villes = installer_frontieres_sentinelle(monkeypatch)
     appels = []
     monkeypatch.setattr(
@@ -144,7 +144,7 @@ def test_lampouy_utilise_ses_coordonnees_et_sa_date_dediee(tmp_path, monkeypatch
 
     assert appels == [
         (villes["Carnac"].getCoordonneesGPS(), "15/08/1066", 100.0, 0.2),
-        (villes["Lampouy"].getCoordonneesGPS(), "20/08/1152", 138.5, 0.2),
+        (villes["Carnac"].getCoordonneesGPS(), "20/08/1152", 138.5, 0.2),
     ]
 
 

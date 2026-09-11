@@ -40,6 +40,13 @@ from src.ProjectPersistence import (
     lireMetaDonneesProjetJsonV1,
     sauvegarderProjetJsonV1,
 )
+from src.trace_export import (
+    TraceExportError,
+    construire_document_traces,
+    ecrire_document_traces,
+    nom_fichier_traces_par_defaut,
+)
+from src.map_print_dialog import open_map_print_dialog
 
 # Gestion des layers graphiques
 from src.layerManager import LayerManager
@@ -257,6 +264,7 @@ class InterfaceCarte(tk.Tk):
 
         menu_fichier.add_separator()
         menu_fichier.add_command(label="Sauvegarder carte", command=self.sauvegarder_carte)
+        menu_fichier.add_command(label="Imprimer / Exporter la carte...", command=self.ouvrirImpressionCarte)
         menu_fichier.add_separator()
         menu_fichier.add_command(label="Quitter", command=self.quitter_application)
         menubar.add_cascade(label="Fichier", menu=menu_fichier)
@@ -267,6 +275,7 @@ class InterfaceCarte(tk.Tk):
         menu_algo.add_command(label="Créer scénarios automatiques", command=self.creer_scenarios_automatiques)
         menu_algo.add_command(label="Recharger les données du dataset", command=self.rechargerDataset)
         menu_algo.add_separator()
+        menu_algo.add_command(label="Générer un fichier Traces...", command=self.ouvrirFenetreGenerationTraces)
         menu_algo.add_command(label="Générer un rapport...", command=self.demanderGenerationRapport)
         menubar.add_cascade(label="Algorithme", menu=menu_algo)
 
@@ -326,6 +335,142 @@ class InterfaceCarte(tk.Tk):
         menubar.add_cascade(label="Carte", menu=menu_carte)
 
         self.config(menu=menubar)
+
+    def ouvrirFenetreGenerationTraces(self):
+        """Ouvre la boîte de dialogue légère d'export des objets déjà présents dans les layers."""
+        modules = self.moteurAlgo.getModulesAvecAffichage()
+        if not modules:
+            messagebox.showinfo("Générer un fichier Traces", "Aucun module avec affichage n'est disponible.")
+            return
+
+        segment = self.moteurAlgo.segment_actif
+        scenarios = self.moteurAlgo.getScenariosDict(segment, TypeScenario.UTILISATEUR)
+        scenarios_lisibles = [scenario.getDescriptionLisible() for scenario in scenarios.values()]
+        if not scenarios_lisibles:
+            messagebox.showinfo("Générer un fichier Traces", "Aucun scénario DEFAULT ou UTILISATEUR n'est disponible.")
+            return
+
+        top = tk.Toplevel(self)
+        top.title("Générer un fichier Traces")
+        top.transient(self)
+        top.resizable(False, False)
+        contenu = ttk.Frame(top, padding=12)
+        contenu.grid(sticky="nsew")
+
+        variables_modules = {module_id: tk.BooleanVar(value=True) for module_id, _ in modules}
+        var_scope = tk.StringVar(value="scenario")
+        var_scenario = tk.StringVar(value=scenarios_lisibles[0])
+        selection = self.getNomScenarioSelectionne()
+        if selection:
+            scenario_selectionne = self.moteurAlgo.getScenarioNomLisible(selection, segment)
+            if scenario_selectionne.getTypeScenario() == TypeScenario.AUTOMATIQUE:
+                var_scope.set("automatic_aggregation")
+            elif selection in scenarios_lisibles:
+                var_scenario.set(selection)
+
+        zone_parametres = ttk.Frame(contenu)
+        zone_parametres.grid(row=0, column=0, sticky="nw")
+        zone_actions = ttk.Frame(contenu)
+        zone_actions.grid(row=0, column=1, sticky="ne", padx=(24, 0))
+
+        ligne_modules = ttk.Frame(zone_parametres)
+        ligne_modules.pack(anchor="w", pady=(0, 10))
+        ttk.Label(ligne_modules, text="Objets à exporter :").pack(side="left", padx=(0, 10))
+        for module_id, label in modules:
+            ttk.Checkbutton(ligne_modules, text=label, variable=variables_modules[module_id]).pack(
+                side="left", padx=(0, 8)
+            )
+
+        ligne_scenario = ttk.Frame(zone_parametres)
+        ligne_scenario.pack(anchor="w")
+        ttk.Label(ligne_scenario, text="Source :").pack(side="left", padx=(0, 10))
+        ttk.Radiobutton(ligne_scenario, text="Scénario", value="scenario", variable=var_scope).pack(side="left")
+        combo_scenario = ttk.Combobox(
+            ligne_scenario, textvariable=var_scenario, values=scenarios_lisibles, state="readonly", width=35,
+        )
+        combo_scenario.pack(side="left", padx=(8, 0))
+
+        auto_disponible = self.moteurAlgo.aDesScenarioAutomatiques(segment)
+        radio_auto = ttk.Radiobutton(
+            zone_parametres,
+            text="Agrégation des scénarios automatiques",
+            value="automatic_aggregation",
+            variable=var_scope,
+        )
+        radio_auto.pack(anchor="w", padx=(58, 0), pady=(4, 0))
+        if not auto_disponible:
+            radio_auto.state(["disabled"])
+
+        def actualiser_source(*_):
+            combo_scenario.configure(state="readonly" if var_scope.get() == "scenario" else "disabled")
+
+        var_scope.trace_add("write", actualiser_source)
+        actualiser_source()
+
+        def generer():
+            modules_selectionnes = [
+                (module_id, label) for module_id, label in modules if variables_modules[module_id].get()
+            ]
+            if not modules_selectionnes:
+                messagebox.showinfo("Générer un fichier Traces", "Sélectionnez au moins un objet à exporter.", parent=top)
+                return
+            try:
+                document = construire_document_traces(
+                    self.moteurAlgo,
+                    self.layerManager,
+                    modules_selectionnes,
+                    var_scope.get(),
+                    var_scenario.get() if var_scope.get() == "scenario" else None,
+                )
+            except TraceExportError as erreur:
+                messagebox.showerror("Générer un fichier Traces", str(erreur), parent=top)
+                return
+            nombre_traces = sum(len(module["traces"]) for module in document["modules"])
+            if not nombre_traces:
+                messagebox.showinfo(
+                    "Générer un fichier Traces",
+                    "Aucune trace n'a été trouvée dans la source sélectionnée.",
+                    parent=top,
+                )
+                return
+
+            chemin = filedialog.asksaveasfilename(
+                parent=top,
+                title="Enregistrer le fichier Traces",
+                initialdir=self.dossiers["exports"],
+                initialfile=nom_fichier_traces_par_defaut(self.moteurAlgo, modules_selectionnes),
+                defaultextension=".traces.json",
+                filetypes=[("Fichier Traces", "*.traces.json"), ("JSON", "*.json")],
+            )
+            if not chemin:
+                return
+            try:
+                ecrire_document_traces(document, chemin)
+            except OSError as erreur:
+                messagebox.showerror("Générer un fichier Traces", str(erreur), parent=top)
+                return
+            messagebox.showinfo(
+                "Générer un fichier Traces",
+                f"{nombre_traces} trace(s) exportée(s).",
+                parent=top,
+            )
+            top.destroy()
+
+        ttk.Button(
+            zone_actions,
+            text="Tout sélectionner",
+            command=lambda: [variable.set(True) for variable in variables_modules.values()],
+        ).pack(fill="x")
+        ttk.Button(
+            zone_actions,
+            text="Tout désélectionner",
+            command=lambda: [variable.set(False) for variable in variables_modules.values()],
+        ).pack(fill="x", pady=(4, 0))
+        ttk.Separator(zone_actions, orient="horizontal").pack(fill="x", pady=12)
+        ttk.Button(zone_actions, text="Générer", command=generer).pack(fill="x")
+        ttk.Button(zone_actions, text="Annuler", command=top.destroy).pack(fill="x", pady=(4, 0))
+
+        top.update_idletasks()
 
     def _setup_main_split(self, width, height):
         self.main_pane = PanedWindow(self, orient=tk.HORIZONTAL)
@@ -1502,6 +1647,9 @@ class InterfaceCarte(tk.Tk):
         self.appliquerEtat(layer, moteur)
         self.cheminProjetCourant = None
         self.mettreAJourTitreFenetre(algo=moteur, estNouveau=True)
+
+    def ouvrirImpressionCarte(self):
+        open_map_print_dialog(self, self.moteurAlgo, self.layerManager)
 
     def sauvegarder_carte(self):
 

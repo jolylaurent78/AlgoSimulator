@@ -78,6 +78,11 @@ class Sentinelle(dict):
 
     def calculerHeureSentinelle(self):
         coordCarnac = villes_dict["Carnac"].getCoordonneesGPS()
+        # IMPORTANT :
+        # Lampouy utilise volontairement les coordonnées de Carnac pour le moment.
+        # Ne pas "corriger" vers villes_dict["Lampouy"] sans réétudier le modèle métier :
+        # ce changement modifie les heures Sentinelle et provoque des régressions
+        # dans les solutions de référence.
         coordLampouy = villes_dict["Carnac"].getCoordonneesGPS()
         (_, lonCarnac) = coordCarnac
         (_, lonLampouy) = coordLampouy

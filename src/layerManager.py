@@ -1,5 +1,5 @@
 class Layer:
-    def __init__(self, nom: str, couleur=(0, 0, 0), epaisseur=1, visible=True):
+    def __init__(self, nom: str, couleur=(0, 0, 0), epaisseur=1, visible=True, style="plein"):
         """
         Représente un calque logique auquel peuvent appartenir plusieurs objets graphiques.
         """
@@ -7,6 +7,7 @@ class Layer:
         self.couleur = couleur
         self.epaisseur = epaisseur
         self.visible = visible
+        self.style = style
         self.objets = []   # Tous les objets graphiques associés à ce layer
 
     def setCouleur(self, couleur: tuple[int, int, int]):
@@ -20,6 +21,12 @@ class Layer:
 
     def setEpaisseur(self, epaisseur: int):
         self.epaisseur = epaisseur
+
+    def getStyle(self):
+        return self.style
+
+    def setStyle(self, style: str):
+        self.style = style
 
     def setVisible(self, visible: bool):
         self.visible = visible

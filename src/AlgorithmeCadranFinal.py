@@ -326,6 +326,7 @@ class LumiereFinal(ModuleAlgo):
                       ],
             tags={"level" : "construction"}
         )
+        # cercleLumiere.setPrintLabel(self.heureLocale)
         listeObjets.append(cercleLumiere)
 
         # On ajoute l'axe de lumière
@@ -340,6 +341,7 @@ class LumiereFinal(ModuleAlgo):
                       ],
             tags={"level" : "construction"}
             )
+        ligneLumiere1.setPrintLabel(self.heureLocale)
         listeObjets.append(ligneLumiere1)
         ligneLumiere2 = LigneAzimut(
             centre,
@@ -351,6 +353,7 @@ class LumiereFinal(ModuleAlgo):
                       ],
             tags={"level" : "construction"}
             )
+        ligneLumiere2.setPrintLabel(self.heureLocale)
         listeObjets.append(ligneLumiere2)
         return listeObjets
 
@@ -501,6 +504,7 @@ class LigneHoraireFinal(ModuleAlgo):
 
         for heureLocale, azimut, ampm, candidat, ligneGraphique in self.listeLigneHoraire:
             ligneGraphique.setNom(f"Ligne Horaire {heureLocale}")
+            ligneGraphique.setPrintLabel(heureLocale)
             couleur = LigneHoraireFinal.COULEUR_TRAIT_CANDIDAT if candidat else LigneHoraireFinal.COULEUR_TRAIT_HEURE
             ligneGraphique.setCouleur(couleur)
 

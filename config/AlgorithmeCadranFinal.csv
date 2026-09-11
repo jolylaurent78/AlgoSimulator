@@ -38,18 +38,18 @@ Date et Lettre,Global,1,field,date,left,Date Segment,,1,data,std,dataset,dateSeg
 Date et Lettre,Global,2,field,lettre,right,Lettre Dom,,1,data,std,segment,lettreDom
 Date et Lettre,Global,2,field,lettre,right,Lettre Decl,,1,data,std,dataset,lettreDecl
 Date et Lettre,Global,3,checkboxH,shorttext,left,Ville d'observation,O,2,input_multiple,std,segment,lieuObservation
-Stylet,Global,1,PointVille,shortext,left,Base 1,,1,input,std,dataset,base1
-Stylet,Global,1,PointVille,shortext,left,Base 2,,1,input,std,dataset,base2
-Stylet,Global,2,checkboxH,shorttext,left,Choix base,B,2,input_multiple,std,stylet,choixBase
-Stylet,Global,2,field,shortext,left,Base,,1,data,std,stylet,base
-Stylet,Global,3,checkboxH,lettre,left,Type calendrier,C,1,input_multiple,std,stylet,choixCalendrier
-Stylet,Global,4,field,lettre,right,Lettre,,1,data,std,stylet,lettreChoix
-Stylet,Global,4,checkboxH,lettre,right,Choix,NP,1,input_multiple,std,stylet,P2M2
-Stylet,Global,4,field,lettre,right,Note Stylet,,1,data,std,stylet,lettre
-Stylet,Global,5,checkboxH,lettre,right,Octave,OG,1,input_multiple,std,stylet,octave
-Stylet,Global,5,field,distance,left,FA,,1,data,std,stylet,distanceRef
-Stylet,Global,6,field,distance,left,Hauteur Stylet,,1,data,std,stylet,hauteur
-Stylet,Global,6,field,angle,left,Axe Stylet,,1,data,std,stylet,azimutMidi
+Base du stylet,Global,1,PointVille,shortext,left,Base 1,,1,input,std,dataset,base1
+Base du stylet,Global,1,PointVille,shortext,left,Base 2,,1,input,std,dataset,base2
+Base du stylet,Global,2,checkboxH,shorttext,left,Choix base,B,2,input_multiple,std,stylet,choixBase
+Base du stylet,Global,2,field,shortext,left,Base,,1,data,std,stylet,base
+Hauteur du stylet,Global,3,checkboxH,lettre,left,Type calendrier,C,1,input_multiple,std,stylet,choixCalendrier
+Hauteur du stylet,Global,4,field,lettre,right,Lettre,,1,data,std,stylet,lettreChoix
+Hauteur du stylet,Global,4,checkboxH,lettre,right,Choix,NP,1,input_multiple,std,stylet,P2M2
+Hauteur du stylet,Global,4,field,lettre,right,Note Stylet,,1,data,std,stylet,lettre
+Hauteur du stylet,Global,5,checkboxH,lettre,right,Octave,OG,1,input_multiple,std,stylet,octave
+Hauteur du stylet,Global,5,field,distance,left,FA,,1,data,std,stylet,distanceRef
+Hauteur du stylet,Global,6,field,distance,left,Hauteur Stylet,,1,data,std,stylet,hauteur
+Hauteur du stylet,Global,6,field,angle,left,Axe Stylet,,1,data,std,stylet,azimutMidi
 Lumiere,Global,1,checkboxH,lettre,left,Type calendrier,C,1,input_multiple,std,lumiere,choixCalendrier
 Lumiere,Global,2,field,lettre,right,Lettre,,1,data,std,lumiere,lettreChoix
 Lumiere,Global,2,checkboxH,lettre,right,Choix,S,1,input_multiple,std,lumiere,choixHeure
