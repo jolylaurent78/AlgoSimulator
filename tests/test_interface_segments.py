@@ -43,6 +43,20 @@ class FauxMoteurSegments:
         return self.segments
 
 
+class FauxMenu:
+    def __init__(self):
+        self.entries = []
+
+    def delete(self, _first, _last):
+        self.entries = []
+
+    def add_command(self, **kwargs):
+        self.entries.append(kwargs)
+
+    def add_separator(self):
+        self.entries.append({"separator": True})
+
+
 @pytest.fixture
 def combo_segments(monkeypatch):
     monkeypatch.setattr(interface_module.tk, "StringVar", FauxStringVar)
@@ -54,6 +68,8 @@ def combo_segments(monkeypatch):
         interface.layerManager = object()
         interface.varSegmentAffiche = None
         interface.comboSegmentAffiche = None
+        interface.creerLayerControle = Mock()
+        interface._rafraichir_menu_algorithme = Mock()
         InterfaceCarte.creerSelectionSegments(interface, object())
         return interface
 
@@ -76,3 +92,42 @@ def test_combo_segment_utilise_le_premier_segment_en_fallback_sans_effet_metier(
 
     assert interface.varSegmentAffiche.get() == SEGMENT_RONCEVAUX
     moteur.setSegment.assert_not_called()
+
+
+def test_refresh_menu_affiche_la_suppression_seulement_si_le_segment_a_des_automatiques():
+    interface = InterfaceCarte.__new__(InterfaceCarte)
+    interface.menu_algo = FauxMenu()
+    interface.moteurAlgo = Mock(segment_actif="A")
+    interface.moteurAlgo.aDesScenarioAutomatiques.return_value = False
+
+    InterfaceCarte._rafraichir_menu_algorithme(interface)
+
+    labels = [entry.get("label") for entry in interface.menu_algo.entries]
+    assert "Supprimer les scénarios automatiques" not in labels
+
+    interface.moteurAlgo.aDesScenarioAutomatiques.return_value = True
+    InterfaceCarte._rafraichir_menu_algorithme(interface)
+
+    labels = [entry.get("label") for entry in interface.menu_algo.entries]
+    assert "Supprimer les scénarios automatiques" in labels
+
+
+def test_suppression_automatique_demande_confirmation_avant_lappel_metier(monkeypatch):
+    interface = InterfaceCarte.__new__(InterfaceCarte)
+    interface.layerManager = object()
+    interface.moteurAlgo = Mock(segment_actif="A")
+    interface._apres_modification_scenarios_automatiques = Mock()
+
+    monkeypatch.setattr(interface_module.messagebox, "askyesno", Mock(return_value=False))
+    InterfaceCarte.supprimer_scenarios_automatiques(interface)
+
+    interface.moteurAlgo.supprimerTousScenariosAutomatiques.assert_not_called()
+    interface._apres_modification_scenarios_automatiques.assert_not_called()
+
+    interface_module.messagebox.askyesno.return_value = True
+    InterfaceCarte.supprimer_scenarios_automatiques(interface)
+
+    interface.moteurAlgo.supprimerTousScenariosAutomatiques.assert_called_once_with(
+        interface.layerManager, segment="A",
+    )
+    interface._apres_modification_scenarios_automatiques.assert_called_once()

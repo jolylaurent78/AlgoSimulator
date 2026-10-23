@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import Mock
 
 from src.AlgorithmeManager import AlgorithmeManager, ModuleAlgo, TypeScenario
 from src.layerManager import LayerManager
@@ -505,6 +506,77 @@ def test_suppression_des_scenarios_automatiques_preserve_default_et_user(fake_ma
     assert fake_manager.aDesScenarioAutomatiques() is False
     assert set(fake_manager.getListeScenarios()) == {base.nom, "Utilisateur"}
     assert layer_manager.getLayer(layer_auto, segment="A") is None
+
+
+def test_suppression_des_scenarios_automatiques_cible_le_segment_explicite(fake_manager, layer_manager):
+    auto_a = fake_manager.creerScenarioUnitaireAutomatique(
+        "Auto A", [("source", "valeur", "S", 6)], scenario_actif(fake_manager), layer_manager,
+    )
+    fake_manager.setSegment("B", layer_manager)
+    auto_b = fake_manager.creerScenarioUnitaireAutomatique(
+        "Auto B", [("source", "valeur", "S", 7)], scenario_actif(fake_manager), layer_manager,
+    )
+    fake_manager.setSegment("A", layer_manager)
+
+    supprimes = fake_manager.supprimerTousScenariosAutomatiques(layer_manager, segment="B")
+
+    assert supprimes == ["Auto B"]
+    assert fake_manager.aDesScenarioAutomatiques("A") is True
+    assert fake_manager.aDesScenarioAutomatiques("B") is False
+    assert layer_manager.getLayer(auto_a.getDescriptionLisible(), segment="A") is not None
+    assert layer_manager.getLayer(auto_b.getDescriptionLisible(), segment="B") is None
+
+
+def test_suppression_auto_dun_autre_segment_ne_modifie_pas_le_scenario_actif(fake_manager, layer_manager):
+    auto_a = fake_manager.creerScenarioUnitaireAutomatique(
+        "S1", [("source", "valeur", "S", 6)], scenario_actif(fake_manager), layer_manager,
+    )
+    fake_manager.setSegment("B", layer_manager)
+    auto_b = fake_manager.creerScenarioUnitaireAutomatique(
+        "S1", [("source", "valeur", "S", 7)], scenario_actif(fake_manager), layer_manager,
+    )
+    fake_manager.setSegment("A", layer_manager)
+    fake_manager.scenario_actif = "S1"
+
+    supprimes = fake_manager.supprimerTousScenariosAutomatiques(layer_manager, segment="B")
+
+    assert supprimes == ["S1"]
+    assert fake_manager.segment_actif == "A"
+    assert fake_manager.scenario_actif == "S1"
+    assert fake_manager.getScenario() is auto_a
+    assert fake_manager.aDesScenarioAutomatiques("A") is True
+    assert fake_manager.aDesScenarioAutomatiques("B") is False
+    assert layer_manager.getLayer(auto_a.getDescriptionLisible(), segment="A") is not None
+    assert layer_manager.getLayer(auto_b.getDescriptionLisible(), segment="B") is None
+
+
+def test_suppression_des_scenarios_automatiques_reselectionne_un_scenario_restant(fake_manager, layer_manager):
+    base = scenario_actif(fake_manager)
+    utilisateur = fake_manager.creerScenarioUtilisateur("Utilisateur", base, layer_manager)
+    auto = fake_manager.creerScenarioUnitaireAutomatique(
+        "Auto", [("source", "valeur", "S", 6)], utilisateur, layer_manager,
+    )
+    fake_manager.scenario_actif = auto.nom
+
+    fake_manager.supprimerTousScenariosAutomatiques(layer_manager)
+
+    assert fake_manager.scenario_actif in {base.nom, utilisateur.nom}
+
+
+def test_suppression_des_scenarios_automatiques_cree_un_default_avec_le_layer_manager(fake_manager, layer_manager, monkeypatch):
+    base = scenario_actif(fake_manager)
+    auto = fake_manager.creerScenarioUnitaireAutomatique(
+        "Auto", [("source", "valeur", "S", 6)], base, layer_manager,
+    )
+    del fake_manager._scenarios["A"][base.nom]
+    fake_manager.scenario_actif = auto.nom
+    creer_default = Mock(wraps=fake_manager.creerScenarioDefault)
+    monkeypatch.setattr(fake_manager, "creerScenarioDefault", creer_default)
+
+    fake_manager.supprimerTousScenariosAutomatiques(layer_manager)
+
+    creer_default.assert_called_once_with(layer_manager)
+    assert fake_manager.getScenario().getTypeScenario() is TypeScenario.DEFAULT
 
 
 def test_suppression_par_nom_lisible_met_a_jour_actif_et_signale_labsent(fake_manager, layer_manager):

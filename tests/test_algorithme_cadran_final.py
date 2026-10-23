@@ -4,7 +4,17 @@ from types import SimpleNamespace
 import pytest
 
 import src.AlgorithmeCadranFinal as cadran
-from src.AlgorithmeCadranFinal import CandidatFinal, LigneHoraireFinal, LumiereFinal, Segment, StyletFinal
+from src.AlgorithmeCadranFinal import (
+    AlgorithmeCadranFinal,
+    CandidatFinal,
+    LigneHoraireFinal,
+    LumiereFinal,
+    Segment,
+    StyletFinal,
+    StyletLumiere,
+)
+from src.AlgorithmeManager import ModuleAlgo
+from src.affichage_objets import CercleGraphique
 
 
 class DateFictive:
@@ -179,6 +189,65 @@ def test_lumiere_final_applique_substitution_ampm_utc_et_distance(monkeypatch, c
     assert module.heureUTC == f"UTC {heure_attendue}"
     assert module.deltaMidi == pytest.approx(-83.21)
     assert module.distance == pytest.approx(100.0)
+
+
+def test_stylet_final_est_purement_metier_sans_representation_graphique():
+    assert StyletFinal.construireRepresentationCarte is ModuleAlgo.construireRepresentationCarte
+
+
+def test_stylet_lumiere_construit_le_dispositif_et_le_cercle_avec_son_label():
+    module = StyletLumiere()
+    assert module.getEntreesModules() == [
+        "stylet.styletDataset",
+        "stylet.base",
+        "stylet.azimutMidi",
+        "stylet.hauteur",
+        "lumiere.distance",
+        "lumiere.heureLocale",
+        "lumiere.hauteur",
+    ]
+    module.styletDatasetStylet = "Roncevaux"
+    module.baseStylet = "Rocamadour"
+    module.azimutMidiStylet = 13.56
+    module.hauteurStylet = 250.1
+    module.distanceLumiere = 349.5
+    module.heureLocaleLumiere = "15:59"
+    module.hauteurLumiere = 35.58
+
+    objets = module.construireRepresentationCarte()
+    cercle = next(objet for objet in objets if isinstance(objet, CercleGraphique))
+
+    assert [objet.getNom() for objet in objets] == [
+        "Bourges", "Rocamadour", "Axe Midi", "Roncevaux", "Cercle Lumiere",
+    ]
+    assert cercle.pointCentre is cadran.villes_dict["Bourges"]
+    assert cercle.getRayonKm() == pytest.approx(349.5)
+    assert cercle.getPrintLabel() == "15:59"
+    assert cercle.tags == {"level": "construction"}
+
+
+def test_lumiere_final_ne_construit_plus_que_les_deux_lignes_et_leurs_labels():
+    module = LumiereFinal()
+    module.azimut = 263.21
+    module.azimutMidiStylet = 13.56
+    module.heureLocale = "15:59"
+
+    objets = module.construireRepresentationCarte()
+
+    assert len(objets) == 2
+    assert [objet.getNom() for objet in objets] == ["Ligne Lumiere", "Ligne Lumiere"]
+    assert [objet.getPrintLabel() for objet in objets] == ["15:59", "15:59"]
+
+
+def test_cadran_final_expose_exactement_quatre_modules_graphiques():
+    moteur = AlgorithmeCadranFinal.__new__(AlgorithmeCadranFinal)
+
+    assert moteur.getModulesAvecAffichage() == [
+        ("styletlumiere", "Stylet"),
+        ("lumiere", "Lumière"),
+        ("ombre", "Ombre"),
+        ("candidat", "Candidat"),
+    ]
 
 
 @pytest.mark.parametrize(

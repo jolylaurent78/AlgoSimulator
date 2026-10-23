@@ -27,6 +27,7 @@ from src.affichage_objets import PointGraphique, SymboleWiki
 
 # Affichge de l'IHM pour l'algorithme'
 from src.IHMAlgorithme import IHMAlgorithme
+from src.scenario_auto_dialog import open_automatic_scenario_dialog
 
 # Gestion de l'algo
 from src.AlgorithmeSegment import AlgorithmeSegment
@@ -108,7 +109,7 @@ class InterfaceCarte(tk.Tk):
             self.layerManager,
             callbackRefreshLayers=lambda nomScenario=None: self.creerLayerControle(self.frameLayers, nomScenario),
             callbackRedessinerCarte=self._refresh_images,
-            callbackMiseAJourMenu=None
+            callbackMiseAJourMenu=None,
             )
         self.ihm_algo.pack(fill="both", expand=True)
 
@@ -207,6 +208,7 @@ class InterfaceCarte(tk.Tk):
         # Rafraîchir les layers et la carte
         self.creerLayerControle(self.frameLayers)
         self._refresh_images()
+        self._rafraichir_menu_algorithme()
 
     # Mise en place des panels, menu, mini-carte
 
@@ -270,14 +272,9 @@ class InterfaceCarte(tk.Tk):
         menubar.add_cascade(label="Fichier", menu=menu_fichier)
 
         # Menu Algorithme
-        menu_algo = tk.Menu(menubar, tearoff=0)
-        menu_algo.add_command(label="Gérer les règles...", command=self.gerer_regles_algo)
-        menu_algo.add_command(label="Créer scénarios automatiques", command=self.creer_scenarios_automatiques)
-        menu_algo.add_command(label="Recharger les données du dataset", command=self.rechargerDataset)
-        menu_algo.add_separator()
-        menu_algo.add_command(label="Générer un fichier Traces...", command=self.ouvrirFenetreGenerationTraces)
-        menu_algo.add_command(label="Générer un rapport...", command=self.demanderGenerationRapport)
-        menubar.add_cascade(label="Algorithme", menu=menu_algo)
+        self.menu_algo = tk.Menu(menubar, tearoff=0)
+        self._rafraichir_menu_algorithme()
+        menubar.add_cascade(label="Algorithme", menu=self.menu_algo)
 
         # Menu Fenêtre
         menu_fenetre = tk.Menu(menubar, tearoff=0)
@@ -335,6 +332,24 @@ class InterfaceCarte(tk.Tk):
         menubar.add_cascade(label="Carte", menu=menu_carte)
 
         self.config(menu=menubar)
+
+    def _rafraichir_menu_algorithme(self):
+        """Met à jour seulement le menu Algorithme selon le segment actif."""
+        if not hasattr(self, "menu_algo"):
+            return
+
+        self.menu_algo.delete(0, "end")
+        self.menu_algo.add_command(label="Gérer les règles...", command=self.gerer_regles_algo)
+        self.menu_algo.add_command(label="Créer scénarios automatiques", command=self.creer_scenarios_automatiques)
+        if self.moteurAlgo.aDesScenarioAutomatiques(self.moteurAlgo.segment_actif):
+            self.menu_algo.add_command(
+                label="Supprimer les scénarios automatiques",
+                command=self.supprimer_scenarios_automatiques,
+            )
+        self.menu_algo.add_command(label="Recharger les données du dataset", command=self.rechargerDataset)
+        self.menu_algo.add_separator()
+        self.menu_algo.add_command(label="Générer un fichier Traces...", command=self.ouvrirFenetreGenerationTraces)
+        self.menu_algo.add_command(label="Générer un rapport...", command=self.demanderGenerationRapport)
 
     def ouvrirFenetreGenerationTraces(self):
         """Ouvre la boîte de dialogue légère d'export des objets déjà présents dans les layers."""
@@ -541,6 +556,7 @@ class InterfaceCarte(tk.Tk):
             self.moteurAlgo.setSegment(segment, self.layerManager)             # 🔁 Changement logique
 #            self.ihm_algo.reconstruire_interface()          # 🔁 Rafraîchit l'IHM centrale
             self.creerLayerControle(self.frameLayers)       # 🔁 Rafraîchit les layers visibles
+            self._rafraichir_menu_algorithme()
 
         comboSegment.bind("<<ComboboxSelected>>", onSegmentChange)
 
@@ -1672,7 +1688,33 @@ class InterfaceCarte(tk.Tk):
         self.ihm_algo.ouvrir_fenetre_regles()
 
     def creer_scenarios_automatiques(self):
-        self.ihm_algo.ouvrir_fenetre_scenarios()
+        open_automatic_scenario_dialog(
+            self,
+            self.moteurAlgo,
+            self.layerManager,
+            on_changed=self._apres_modification_scenarios_automatiques,
+            parametres_csv=self.ihm_algo.parametres_csv,
+        )
+
+    def supprimer_scenarios_automatiques(self):
+        segment = self.moteurAlgo.segment_actif
+        if not messagebox.askyesno(
+            "Confirmation de suppression",
+            f"Supprimer tous les scénarios automatiques du segment :\n\n{segment} ?",
+        ):
+            return
+
+        self.moteurAlgo.supprimerTousScenariosAutomatiques(
+            self.layerManager,
+            segment=segment,
+        )
+        self._apres_modification_scenarios_automatiques()
+
+    def _apres_modification_scenarios_automatiques(self):
+        scenario_actif = self.moteurAlgo.getScenario().getDescriptionLisible()
+        self.creerLayerControle(self.frameLayers, scenario_a_selectionner=scenario_actif)
+        self._refresh_images()
+        self._rafraichir_menu_algorithme()
 
     def rechargerDataset(self):
         try:

@@ -900,11 +900,11 @@ class AlgorithmeManager:
 
     def supprimerTousScenariosAutomatiques(self, layerManager: LayerManager, segment: str = None) -> list[str]:
         """
-        Supprime tous les scénarios automatiques du segment actif.
-        Retourne la liste des noms supprimés pour permettre à l’IHM de supprimer les layers associés.
+        Supprime tous les scénarios automatiques du segment demandé et leurs layers.
+        Retourne la liste des noms supprimés.
         """
         segment = segment or self.segment_actif
-        scenarios = self._scenarios.get(self.segment_actif, {})
+        scenarios = self._scenarios.get(segment, {})
         a_supprimer = [nom for nom, sc in scenarios.items() if sc.type_scenario == TypeScenario.AUTOMATIQUE]
 
         for nom in a_supprimer:
@@ -914,12 +914,12 @@ class AlgorithmeManager:
             del scenarios[nom]
 
         # Si le scénario actif a été supprimé, on rebascule sur un autre
-        if self.scenario_actif in a_supprimer:
+        if segment == self.segment_actif and self.scenario_actif in a_supprimer:
             restants = list(scenarios.keys())
             if restants:
                 self.scenario_actif = restants[0]
             else:
-                self.creerScenarioDefault()
+                self.creerScenarioDefault(layerManager)
 
         return a_supprimer
 

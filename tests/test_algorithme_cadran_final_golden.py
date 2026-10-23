@@ -24,7 +24,7 @@ def test_chargement_golden_lac_tremelin_restitue_le_pipeline_cadran_final_reel()
 
     assert moteur.segment_actif == SEGMENT_RONCEVAUX
     assert moteur.scenario_actif == "Lac Trémelin"
-    assert set(modules) == {"segment", "stylet", "lumiere", "ombre", "candidat"}
+    assert set(modules) == {"segment", "stylet", "lumiere", "styletlumiere", "ombre", "candidat"}
 
     segment = modules["segment"]
     assert (segment.dateDataset, segment.lettreDom, segment.lieuObservation) == ("15/08/778", "C", "Roncevaux")
@@ -60,7 +60,13 @@ def test_chargement_golden_lac_tremelin_restitue_le_pipeline_cadran_final_reel()
     assert lumiere.hauteur == pytest.approx(35.58, abs=0.01)
     assert lumiere.deltaMidi == pytest.approx(-83.21, abs=0.01)
     assert lumiere.distance == pytest.approx(349.5, abs=0.1)
-    assert [objet.getPrintLabel() for objet in lumiere.construireRepresentationCarte()] == ["15:59"] * 3
+    assert [objet.getPrintLabel() for objet in lumiere.construireRepresentationCarte()] == ["15:59"] * 2
+
+    stylet_lumiere = modules["styletlumiere"]
+    objets_stylet_lumiere = stylet_lumiere.construireRepresentationCarte()
+    cercle_lumiere = next(objet for objet in objets_stylet_lumiere if objet.getNom() == "Cercle Lumiere")
+    assert cercle_lumiere.getRayonKm() == pytest.approx(lumiere.distance)
+    assert cercle_lumiere.getPrintLabel() == lumiere.heureLocale
 
     ombre = modules["ombre"]
     assert (
@@ -77,7 +83,7 @@ def test_chargement_golden_lac_tremelin_restitue_le_pipeline_cadran_final_reel()
     assert all("AM" not in objet.getPrintLabel() and "PM" not in objet.getPrintLabel() for objet in objets_ombre)
     width, height = carteConfig.image_size
     placements = compute_print_label_placements(
-        lumiere.construireRepresentationCarte() + objets_ombre,
+        objets_stylet_lumiere + lumiere.construireRepresentationCarte() + objets_ombre,
         PrintViewport.full_map((width, height)),
         600,
         400,

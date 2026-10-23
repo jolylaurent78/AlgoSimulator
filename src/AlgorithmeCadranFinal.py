@@ -33,9 +33,10 @@ class AlgorithmeCadranFinal(AlgorithmeManager):
         return [
             ("segment", "Segment", Segment()),
             ("stylet", "stylet", StyletFinal()),
-            ("lumiere", "lumiere", LumiereFinal()),
-            ("ombre", "ombre", LigneHoraireFinal()),
-            ("candidat", "candidat", CandidatFinal()),
+            ("styletlumiere", "Stylet", StyletLumiere()),
+            ("lumiere", "Lumière", LumiereFinal()),
+            ("ombre", "Ombre", LigneHoraireFinal()),
+            ("candidat", "Candidat", CandidatFinal()),
         ]
 
     def appliquerParametresDepuisStructure(self):
@@ -162,51 +163,85 @@ class StyletFinal(ModuleAlgo):
         (x2, y2) = villes_dict["Bourges"].getCoordonneesPixel()
         self.azimutMidi = Ligne(x1, y1, x2, y2).azimut()
 
+class StyletLumiere(ModuleAlgo):
+    """Consommateur graphique des résultats de stylet et lumière."""
+
+    COULEUR_POINT_STYLET = (0, 0, 128)
     COULEUR_TRAIT_MIDI = (255, 145, 34)
 
+    def getEntreesModules(self):
+        return [
+            "stylet.styletDataset",
+            "stylet.base",
+            "stylet.azimutMidi",
+            "stylet.hauteur",
+            "lumiere.distance",
+            "lumiere.heureLocale",
+            "lumiere.hauteur",
+        ]
+
+    def __init__(self):
+        self.styletDatasetStylet = ""
+        self.baseStylet = ""
+        self.azimutMidiStylet = None
+        self.hauteurStylet = None
+        self.distanceLumiere = None
+        self.heureLocaleLumiere = ""
+        self.hauteurLumiere = None
+        super().__init__()
+
     def construireRepresentationCarte(self) -> list[ObjetGraphique]:
-        listeObjets = []
-
-        # On rajoute le stylet Initial
         pointStylet = PointGraphique(
-            villes_dict[self.styletDataset],
-            nom=f"Stylet : {self.styletDataset}",
+            villes_dict[self.styletDatasetStylet],
+            nom=f"Stylet : {self.styletDatasetStylet}",
             epaisseur=4,
-            couleur=(0, 0, 128),
-            tooltips=[f"Stylet Initial {self.styletDataset}"],
-            tags={"level" : "design"}
+            couleur=self.COULEUR_POINT_STYLET,
+            tooltips=[f"Stylet Initial {self.styletDatasetStylet}"],
+            tags={"level": "design"},
         )
-
-        # On rajoute Bourges , la base du stylet et son axe Midi
         pointBourges = PointGraphique(
             villes_dict["Bourges"],
             nom="Ouverture",
             epaisseur=4,
-            couleur=StyletFinal.COULEUR_TRAIT_MIDI,
+            couleur=self.COULEUR_TRAIT_MIDI,
             tooltips=["Extremité du stylet"],
-            tags={"level" : "design"}
-            )
+            tags={"level": "design"},
+        )
         pointBase = PointGraphique(
-            villes_dict[self.base],
+            villes_dict[self.baseStylet],
             nom="Base stylet",
             epaisseur=4,
-            couleur=StyletFinal.COULEUR_TRAIT_MIDI,
+            couleur=self.COULEUR_TRAIT_MIDI,
             tooltips=["Extremité du stylet"],
-            tags={"level" : "design"}
-            )
+            tags={"level": "design"},
+        )
         ligneMidi = LigneEntreVilles(
-            pointBourges, pointBase,
+            pointBourges,
+            pointBase,
             nom="Axe Midi",
             epaisseur=1,
-            couleur=StyletFinal.COULEUR_TRAIT_MIDI,
-            tooltips=[f"Axe Midi Bourges - {self.base}", f"Azimut Midi: {self.azimutMidi:.02f}° / {self.azimutMidi-360:.02f}°"],
-            tags={"level" : "design"}
-            )
-        listeObjets.append(pointBourges)
-        listeObjets.append(pointBase)
-        listeObjets.append(ligneMidi)
-        listeObjets.append(pointStylet)
-        return listeObjets
+            couleur=self.COULEUR_TRAIT_MIDI,
+            tooltips=[
+                f"Axe Midi Bourges - {self.baseStylet}",
+                f"Azimut Midi: {self.azimutMidiStylet:.02f}° / {self.azimutMidiStylet - 360:.02f}°",
+            ],
+            tags={"level": "design"},
+        )
+        cercleLumiere = CercleGraphique(
+            villes_dict["Bourges"],
+            self.distanceLumiere,
+            nom="Cercle Lumiere",
+            couleur=LumiereFinal.COULEUR_TRAIT_CANDIDAT,
+            tooltips=[
+                f"Heure {self.heureLocaleLumiere}",
+                f"Hauteur Soleil ={self.hauteurLumiere:.2f}°",
+                f"Hauteur stylet ={self.hauteurStylet:.2f}km",
+                f"Distance : {self.distanceLumiere:2f}km",
+            ],
+            tags={"level": "construction"},
+        )
+        cercleLumiere.setPrintLabel(self.heureLocaleLumiere)
+        return [pointBourges, pointBase, ligneMidi, pointStylet, cercleLumiere]
 
 
 class LumiereFinal(ModuleAlgo):
@@ -312,23 +347,7 @@ class LumiereFinal(ModuleAlgo):
     def construireRepresentationCarte(self) -> list[ObjetGraphique]:
         listeObjets = []
 
-        # On crée le cercle autour de Bourges
         centre = villes_dict["Bourges"]
-        cercleLumiere = CercleGraphique(
-            centre,
-            self.distance,
-            nom="Cercle Lumiere",
-            couleur=LumiereFinal.COULEUR_TRAIT_CANDIDAT,
-            tooltips=[f"Heure {self.heureLocale}",
-                      f"Hauteur Soleil ={self.hauteur:.2f}°",
-                      f"Hauteur stylet ={self.hauteurStylet:.2f}km",
-                      f"Distance : {self.distance:2f}km"
-                      ],
-            tags={"level" : "construction"}
-        )
-        # cercleLumiere.setPrintLabel(self.heureLocale)
-        listeObjets.append(cercleLumiere)
-
         # On ajoute l'axe de lumière
         deltaAzimutSoleil = self.azimut - 180
         ligneLumiere1 = LigneAzimut(
