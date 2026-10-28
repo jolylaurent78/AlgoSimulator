@@ -449,7 +449,7 @@ class IHMAlgorithme(tk.Frame):
                 var_nom_ville = tk.StringVar(value=valeur_actuelle or "")
 
                 # Champ de texte (readonly)
-                entry_ville = ttk.Entry(container, textvariable=var_nom_ville, state="readonly", width=20)
+                entry_ville = ttk.Entry(container, textvariable=var_nom_ville, state="readonly", width=17)
                 entry_ville.pack(side="left")
 
                 # Bouton ...
