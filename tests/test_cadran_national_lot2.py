@@ -126,11 +126,12 @@ def test_lampouy_isole_reutilise_ses_heures_et_sa_geometrie_historiques(national
     assert national.rechercherLigneHoraire(*point).repere != "Lampouy"
 
 
-def test_consumateurs_lot3_et_segment_restent_historiques():
+def test_consommateurs_cadrans_migres_et_segment_historique():
     import src.AlgorithmeBaseCadran as base
     import src.AlgorithmeCadranFinal as final
     import src.AlgorithmeSegment as segment
-    assert base.Sentinelle is final.Sentinelle is segment.Sentinelle is Sentinelle
+    assert base.Sentinelle is final.Sentinelle is SentinelleNationale
+    assert segment.Sentinelle is Sentinelle
 
 
 @pytest.mark.parametrize("calendrier,lettre,notes", [

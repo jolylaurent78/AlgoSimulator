@@ -4,6 +4,8 @@ from types import SimpleNamespace
 import pytest
 
 import src.AlgorithmeCadranFinal as cadran
+from src.CadranNationalSentinelles import SentinelleNationale
+from src.ReferentielSentinelles import HeureMoyenneLocale
 from src.AlgorithmeCadranFinal import (
     AlgorithmeCadranFinal,
     CandidatFinal,
@@ -162,7 +164,7 @@ def test_lumiere_final_inverse_le_calendrier_du_stylet(calendrier_stylet, regle_
 
 @pytest.mark.parametrize(
     ("choix", "ampm", "heure_attendue"),
-    [("=", "AM", "09:42"), ("+2", "PM", "15:59"), ("-2", "AM", "11:42"), ("Clef", "AM", "10:25"), ("11:00", "AM", "10:56")],
+    [("=", "AM", "09:43:00"), ("+2", "PM", "15:59:05"), ("-2", "AM", "11:42:00"), ("Clef", "AM", "10:25:04"), ("11:00", "AM", "10:55:00")],
 )
 @pytest.mark.slow
 def test_lumiere_final_applique_substitution_ampm_utc_et_distance(monkeypatch, choix, ampm, heure_attendue):
@@ -171,7 +173,7 @@ def test_lumiere_final_applique_substitution_ampm_utc_et_distance(monkeypatch, c
     monkeypatch.setattr(cadran, "MyJulianDate", SimpleNamespace(fromString=lambda *args: DateFictive()))
     monkeypatch.setattr(cadran, "positionSoleil", lambda *args: (45.0, 263.21))
     module = LumiereFinal()
-    module.sentinelle = SentinelleFictive()
+    module.sentinelle = SentinelleNationale()
     module.lieuObservationSegment = "Roncevaux"
     module.lettreDomSegment = "C"
     module.lettreDeclDataset = "F"
@@ -186,7 +188,8 @@ def test_lumiere_final_applique_substitution_ampm_utc_et_distance(monkeypatch, c
     assert module.getValeursChoixHeure() == ["=", "+2", "-2", "Clef", "11:00"]
     assert module.lettreChoix == "C"
     assert module.heureLocale == heure_attendue
-    assert module.heureUTC == f"UTC {heure_attendue}"
+    heure = HeureMoyenneLocale.depuisTexte(heure_attendue)
+    assert module.heureUTC == HeureMoyenneLocale(heure.secondes + 1.3 * 240).toString()
     assert module.deltaMidi == pytest.approx(-83.21)
     assert module.distance == pytest.approx(100.0)
 
@@ -262,7 +265,7 @@ def test_ligne_horaire_final_regles_et_sens_azimut(monkeypatch, ampm, calendrier
     monkeypatch.setattr(cadran, "MyJulianDate", SimpleNamespace(fromString=lambda *args: DateFictive()))
     monkeypatch.setattr(cadran, "positionSoleil", lambda *args: (0.0, 177.91))
     module = LigneHoraireFinal()
-    module.sentinelleLumiere = SentinelleFictive()
+    module.sentinelleLumiere = SentinelleNationale()
     module.lieuObservationSegment = "Roncevaux"
     module.lettreDomSegment = "C"
     module.lettreDeclDataset = "F"
@@ -284,10 +287,11 @@ def test_ligne_horaire_final_regles_et_sens_azimut(monkeypatch, ampm, calendrier
     assert module._regleChoixCalendrier() == calendrier_attendu
     assert module.azimutMidiLocale == pytest.approx(177.91)
     assert len(module.listeLigneHoraire) == 16
-    assert module.listeCandidatsHeure[0][0] == "09:42"
-    assert module.listeCandidatsHeure[1][0] == "14:18"
+    assert module.listeCandidatsHeure[0][0] == "09:43:00"
+    assert module.listeCandidatsHeure[1][0] == "14:21:11"
     premier_delta = module.listeLigneHoraire[0][1]
-    assert premier_delta == pytest.approx(-49.41 if sens_attendu == "Endroit" else -53.59, abs=0.01)
+    azimut = module.sentinelleLumiere.directionPourNote("C", "AM").azimut
+    assert premier_delta == pytest.approx(azimut - 180 + (2.09 if sens_attendu == "Endroit" else -2.09))
 
 
 class PointCandidatFictif:

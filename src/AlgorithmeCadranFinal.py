@@ -1,13 +1,16 @@
 from math import tan, radians
+from dataclasses import dataclass
 
 # Moteur Algo générique
 from src.AlgorithmeManager import ModuleAlgo, AlgorithmeManager
 from src.ListeSegmentsDataSet import ListeSegmentsDataSet
-from src.Sentinelle import Sentinelle, LieuxObservation
+from src.Sentinelle import LieuxObservation
+from src.CadranNationalSentinelles import SentinelleNationale as Sentinelle
+from src.ReferentielSentinelles import HeureMoyenneLocale, ContexteObservation
 
 # Librairie calcul astronomique
 from src.calculAstronomique import positionSoleil
-from src.calculAstronomique import MyJulianDate, convertirHeureLocaleVersUTC, heureSymetrique, decalageGamme
+from src.calculAstronomique import MyJulianDate, convertirHeureLocaleVersUTC, decalageGamme
 
 # Affichage des objects graphiques
 from src.affichage_objets import ObjetGraphique, PointGraphique, Ligne, LigneEntreVilles, LigneAzimut, CercleGraphique
@@ -300,6 +303,12 @@ class LumiereFinal(ModuleAlgo):
         # Calculé
         self.heureLocale = ""
         self.heureUTC = ""
+        self.heureLocaleSecondes = None
+        self.dateObservationUT1 = None
+        self.noteHoraire = None
+        self.brancheReference = None
+        self.directionReference = None
+        self.horaireLampouy = False
         self.azimut = None
         self.hauteur = None
         self.deltaMidi = None
@@ -318,25 +327,36 @@ class LumiereFinal(ModuleAlgo):
         (lat, lon) = coordObs
 
         # On prend en compte les heures de substitution
-        heureLampouy = self.sentinelle["L"]["HeureLocale"]
         if self.choixHeure == "11:00":
-            self.heureLocale = self.sentinelle["J"]["HeureLocale"]
-        elif self.choixHeure == heureLampouy:
-            self.heureLocale = heureLampouy
-        else:
+            choixNote = "J"
+        elif self.choixHeure in ("=", "+2", "-2", "Clef"):
             tabDec = {"=": 0, "+2": 2, "-2": 1, "Clef": 3}
             listeNotes = decalageGamme(self.lettreChoix)  # On décale sans susbtition Fa/Sol
             choixNote = listeNotes[tabDec[self.choixHeure]]
-            self.heureLocale = self.sentinelle[choixNote]["HeureLocale"]
+        elif self.choixHeure == self.sentinelle["L"]["HeureLocale"]:
+            choixNote = "L"
+        else:
+            raise ValueError(f"Heure inconnue : {self.choixHeure}")
 
-        # On prend l'heure du matin ou de l'apres midi
-        self.heureLocale = heureSymetrique(self.heureLocale) if self.heureAMPM == "PM" else self.heureLocale
+        self.noteHoraire = choixNote
+        self.horaireLampouy = choixNote == "L"
+        heure = self.sentinelle.heurePourNote(choixNote, self.heureAMPM)
+        self.heureLocale = heure.toString()
+        self.heureLocaleSecondes = heure.secondes
+        if self.horaireLampouy:
+            self.directionReference = None
+            self.brancheReference = "historique_" + self.heureAMPM
+            self.heureUTC = convertirHeureLocaleVersUTC(self.heureLocale, lon)
+            self.dateObservationUT1 = MyJulianDate.fromString(self.dateSegmentDataset, self.heureUTC)
+        else:
+            self.directionReference = self.sentinelle.directionPourNote(choixNote, self.heureAMPM)
+            self.brancheReference = ("directe" if self.directionReference is self.sentinelle.par_note[choixNote].directe else "miroir")
+            contexte = ContexteObservation(self.lieuObservationSegment, lat, lon, self.dateSegmentDataset)
+            self.dateObservationUT1 = contexte.versUT1(heure)
+            self.heureUTC = HeureMoyenneLocale(((float(self.dateObservationUT1) + .5) % 1) * 86400).toString()
 
-        # On passe en UTC
-        self.heureUTC = convertirHeureLocaleVersUTC(self.heureLocale, lon)
-        heureObservationJD = MyJulianDate.fromString(self.dateSegmentDataset, self.heureUTC)
         # On calcule l'angle entre la droite de Midi Solaire et la droite Stylet - ST Cyr
-        self.hauteur, self.azimut = positionSoleil(coordObs, heureObservationJD)
+        self.hauteur, self.azimut = positionSoleil(coordObs, self.dateObservationUT1)
 
         # delta & distance
         self.deltaMidi = 180 - self.azimut
@@ -375,6 +395,19 @@ class LumiereFinal(ModuleAlgo):
         ligneLumiere2.setPrintLabel(self.heureLocale)
         listeObjets.append(ligneLumiere2)
         return listeObjets
+
+
+@dataclass(frozen=True)
+class LigneHoraireReference:
+    note: str
+    repere: str
+    branche: str
+    ampm: str
+    heure_locale: HeureMoyenneLocale
+    azimut_solaire: float
+    ecart_image: float
+    candidat: bool
+    ligne: ObjetGraphique
 
 
 class LigneHoraireFinal(ModuleAlgo):
@@ -443,6 +476,10 @@ class LigneHoraireFinal(ModuleAlgo):
 
         self.heureLocale = ""
         self.listeCandidatsHeure = []
+        self.lignesHorairesReference = []
+        self.noteHoraire = None
+        self.heureLocaleSecondes = None
+        self.dateMidiUT1 = None
         self.sensCarte = "Endroit"
 
     def setup(self):
@@ -453,28 +490,32 @@ class LigneHoraireFinal(ModuleAlgo):
         self.lettreChoix = self.lettreDomSegment if self.choixCalendrier == "Standard" else self.lettreDeclDataset
 
         # On prend en compte les heures de substitution
-        heureLampouy = self.sentinelleLumiere["L"]["HeureLocale"]
         if self.choixHeure == "11:00":
-            self.heureLocale = self.sentinelleLumiere["J"]["HeureLocale"]
-        elif self.choixHeure == heureLampouy:
-            self.heureLocale = heureLampouy
-        else:
+            self.noteHoraire = "J"
+        elif self.choixHeure in ("=", "+2", "-2", "Clef"):
             tabDec = {"=": 0, "+2": 2, "-2": 1, "Clef": 3}
             listeNotes = decalageGamme(self.lettreChoix)  # On décale sans susbtition Fa/Sol
-            choixNote = listeNotes[tabDec[self.choixHeure]]
-            self.heureLocale = self.sentinelleLumiere[choixNote]["HeureLocale"]
+            self.noteHoraire = listeNotes[tabDec[self.choixHeure]]
+        elif self.choixHeure == self.sentinelleLumiere["L"]["HeureLocale"]:
+            self.noteHoraire = "L"
+        else:
+            raise ValueError(f"Heure inconnue : {self.choixHeure}")
+        heure_am = self.sentinelleLumiere.heurePourNote(self.noteHoraire, "AM")
+        self.heureLocale = heure_am.toString()
+        self.heureLocaleSecondes = heure_am.secondes
 
         # On calcule l'écart d'azimut entre Midi solaire et Midi locale à Carnac
         coordObs = villes_dict["Carnac"].getCoordonneesGPS()
         (lat, lon) = coordObs
         # On calcule l'heure de Midi solaire et l'écart d'azimut
-        heureMidiUTC = convertirHeureLocaleVersUTC("12:00", lon)
-        jourObservationJD = MyJulianDate.fromString(self.dateSegmentDataset, heureMidiUTC)
-        _, self.azimutMidiLocale = positionSoleil(coordObs, jourObservationJD)
+        contexte = ContexteObservation("Carnac", lat, lon, self.dateSegmentDataset)
+        self.dateMidiUT1 = contexte.versUT1(HeureMoyenneLocale(12 * 3600))
+        _, self.azimutMidiLocale = positionSoleil(coordObs, self.dateMidiUT1)
 
         # On crée les lignes horaires
         self.listeLigneHoraire = []
         self.listeCandidatsHeure = []
+        self.lignesHorairesReference = []
         self.pointBase = PointGraphique(villes_dict[self.baseStylet])
         # On crée les lignes horaires et on rajoute Lampouy si nous sommes le 18/05/1152
         tableauNotes = ["C", "B", "A", "G", "F", "E", "D", "J"]
@@ -482,38 +523,30 @@ class LigneHoraireFinal(ModuleAlgo):
             tableauNotes.append("L")
 
         for note in tableauNotes:
-            heureLocaleAM = self.sentinelleLumiere[note]["HeureLocale"]
-            # Les lignes horaires sont positionnées sur l'axe de Midi local
+            # L'axe du stylet est déjà un angle image. Aucune conversion
+            # Lambert ni substitution de l'axe national n'a lieu ici.
             deltaAzimutMidiLocale = 180 - self.azimutMidiLocale
             deltaAzimutMidiLocale = deltaAzimutMidiLocale if self.sensCarte == "Endroit" else -deltaAzimutMidiLocale
-            delta_azimutSenstinelle = 180 - self.sentinelleLumiere[note]["AzimutCalibre"]
-            azimutAM = self.azimutMidiStylet - delta_azimutSenstinelle + deltaAzimutMidiLocale
-            azimutPM = self.azimutMidiStylet + delta_azimutSenstinelle + deltaAzimutMidiLocale
-            ligneHoraireAM = LigneAzimut(self.pointBase, azimutAM)
-            heureLocalePM = heureSymetrique(heureLocaleAM)
-            ligneHorairePM = LigneAzimut(self.pointBase, azimutPM)
-
-            if self.heureLocale == heureLocaleAM:
-                self.listeCandidatsHeure.append((heureLocaleAM, ligneHoraireAM))
-                self.listeCandidatsHeure.append((heureLocalePM, ligneHorairePM))
-                candidat = True
-            else:
-                candidat = False
-
-            self.listeLigneHoraire.append((
-                heureLocaleAM,
-                - delta_azimutSenstinelle + deltaAzimutMidiLocale,
-                "AM",
-                candidat,
-                ligneHoraireAM
-                ))
-            self.listeLigneHoraire.append((
-                heureLocalePM,
-                delta_azimutSenstinelle + deltaAzimutMidiLocale,
-                "PM",
-                candidat,
-                ligneHorairePM
-                ))
+            candidat = note == self.noteHoraire  # identité du repère, pas son heure arrondie
+            for ampm in ("AM", "PM"):
+                heure = self.sentinelleLumiere.heurePourNote(note, ampm)
+                if note == "L":
+                    azimut = self.sentinelleLumiere["L"]["AzimutCalibre"]
+                    azimut = azimut if ampm == "AM" else (360 - azimut) % 360
+                    repere, branche = "Lampouy", "historique_" + ampm
+                else:
+                    ref = self.sentinelleLumiere.par_note[note]
+                    direction = self.sentinelleLumiere.directionPourNote(note, ampm)
+                    azimut = direction.azimut
+                    repere = ref.identifiant
+                    branche = "directe" if direction is ref.directe else "miroir"
+                ecart = azimut - 180 + deltaAzimutMidiLocale
+                ligne = LigneAzimut(self.pointBase, self.azimutMidiStylet + ecart)
+                metadata = LigneHoraireReference(note, repere, branche, ampm, heure, azimut, ecart, candidat, ligne)
+                self.lignesHorairesReference.append(metadata)
+                self.listeLigneHoraire.append((heure.toString(), ecart, ampm, candidat, ligne))
+                if candidat:
+                    self.listeCandidatsHeure.append((heure.toString(), ligne))
 
     COULEUR_TRAIT_HEURE = (255, 193, 132)
     COULEUR_TRAIT_CANDIDAT = (164, 82, 0)
@@ -521,13 +554,18 @@ class LigneHoraireFinal(ModuleAlgo):
     def construireRepresentationCarte(self) -> list[ObjetGraphique]:
         listeObjets = []
 
-        for heureLocale, azimut, ampm, candidat, ligneGraphique in self.listeLigneHoraire:
-            ligneGraphique.setNom(f"Ligne Horaire {heureLocale}")
-            ligneGraphique.setPrintLabel(heureLocale)
-            couleur = LigneHoraireFinal.COULEUR_TRAIT_CANDIDAT if candidat else LigneHoraireFinal.COULEUR_TRAIT_HEURE
+        for metadata in self.lignesHorairesReference:
+            heureLocale = metadata.heure_locale.toString()
+            ligneGraphique = metadata.ligne
+            legende = f"{metadata.repere}/{metadata.note} {metadata.branche} {heureLocale}"
+            ligneGraphique.setNom(legende)
+            ligneGraphique.setPrintLabel(f"{metadata.note} {metadata.branche} {heureLocale}")
+            couleur = LigneHoraireFinal.COULEUR_TRAIT_CANDIDAT if metadata.candidat else LigneHoraireFinal.COULEUR_TRAIT_HEURE
             ligneGraphique.setCouleur(couleur)
 
-            ligneGraphique.setTooltips([f"Heure Locale {ampm}: {heureLocale}", f"Azimut % Midi : {azimut:.02f}"])
+            moment = "matin" if metadata.ampm == "AM" else "après-midi"
+            ligneGraphique.setTooltips([legende, f"Branche solaire : {moment}",
+                                       f"Azimut image : {self.azimutMidiStylet + metadata.ecart_image:.6f}°"])
             ligneGraphique.ajouterTag("level", "design")
             listeObjets.append(ligneGraphique)
         return listeObjets

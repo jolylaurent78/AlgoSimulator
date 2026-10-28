@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import pytest
 
 import src.AlgorithmeBaseCadran as base_cadran
+from src.CadranNationalSentinelles import SentinelleNationale
 from src.AlgorithmeBaseCadran import CandidatBase, CercleDistance, CercleHoraire, Partition, Segment
 
 
@@ -146,19 +147,20 @@ def test_segment_setup_et_calendrier_standard_ou_declinaison(monkeypatch):
 @pytest.mark.parametrize(
     ("substitution", "ampm", "heure_attendue", "angle_attendu"),
     [
-        ("=", "AM", "10:00", 40.0),
-        ("+2", "AM", "10:25", 40.0),
-        ("-2", "AM", "10:10", 40.0),
-        ("11:00", "AM", "11:00", 40.0),
-        ("=", "PM", "14:00", -40.0),
+        ("=", "AM", "10:25:04", 40.0),
+        ("+2", "AM", "11:42:00", 40.0),
+        ("-2", "AM", "08:14:46", 40.0),
+        ("11:00", "AM", "10:55:00", 40.0),
+        ("=", "PM", "13:39:02", -40.0),
     ],
 )
 def test_cercle_horaire_applique_substitution_ampm_et_signe(monkeypatch, substitution, ampm, heure_attendue, angle_attendu):
     installer_geometrie_base(monkeypatch)
-    monkeypatch.setattr(base_cadran, "Sentinelle", SentinelleFictive)
+    sentinelle = SentinelleNationale()
+    monkeypatch.setattr(base_cadran, "Sentinelle", lambda *_: sentinelle)
     monkeypatch.setattr(base_cadran, "convertirHeureLocaleVersUTC", lambda heure, longitude: f"UTC {heure}")
     monkeypatch.setattr(base_cadran, "MyJulianDate", SimpleNamespace(fromString=lambda *args: DateFictive()))
-    monkeypatch.setattr(base_cadran, "positionSoleil", lambda *args: (0.0, 140.0))
+    monkeypatch.setattr(base_cadran, "positionSoleil", lambda *args: (0.0, 140.0 if ampm == "AM" else 220.0))
     module = CercleHoraire()
     module.styletDataset = "Roncevaux"
     module.lettreChoixSegment = "F"
@@ -241,6 +243,7 @@ def test_cercle_distance_choisit_centre_heure_et_octave(monkeypatch, centre, oct
     module.pointBourges = PointFictif(villes_fictives()["Bourges"])
     module.styletCerclehoraire = "Roncevaux"
     module.heureSentinelleCerclehoraire = "10:25"
+    module.dateDataset = "15/08/778"
     module.lettreChoixSegment = "F"
     module.centreCercle = centre
     module.P2M2 = "+2"

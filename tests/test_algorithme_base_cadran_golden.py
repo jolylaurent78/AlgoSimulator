@@ -3,6 +3,9 @@ from pathlib import Path
 import pytest
 
 from src.ProjectPersistence import chargerProjetJsonV1
+from src.ReferentielSentinelles import ContexteObservation
+from src.calculAstronomique import positionSoleil
+from src.data_loader import villes_dict
 
 
 pytestmark = [
@@ -44,8 +47,15 @@ def test_chargement_golden_rocamadour_restitue_le_pipeline_base_cadran_reel():
         cercle_horaire.dateDataset,
         cercle_horaire.heureSentinelle,
         cercle_horaire.cercleAMPM,
-    ) == ("Roncevaux", "09:42", "AM", "AM", "=", "Carnac", "15/08/778", "10:25", "AM")
-    assert cercle_horaire.angleHoraire == pytest.approx(38.62, abs=0.01)
+    ) == ("Roncevaux", "09:43:00", "AM", "AM", "=", "Carnac", "15/08/778", "10:25:04", "AM")
+    # S4 AM est sa branche miroir ; l'azimut est recalculé au lieu/date de la base.
+    heure = cercle_horaire.sentinelle.heurePourNote("F", "miroir")
+    lat, lon = villes_dict["Carnac"].getCoordonneesGPS()
+    jd = ContexteObservation("Carnac", lat, lon, "15/08/778").versUT1(heure)
+    hauteur, azimut = positionSoleil((lat, lon), jd)
+    assert cercle_horaire.brancheReference == "miroir"
+    assert cercle_horaire.heureSentinelleSecondes == heure.secondes
+    assert cercle_horaire.angleHoraire == pytest.approx(180 - azimut)
 
     partition = modules["partition"]
     assert (
@@ -84,10 +94,16 @@ def test_chargement_golden_rocamadour_restitue_le_pipeline_base_cadran_reel():
         cercle_distance.lieuObservation,
         cercle_distance.dateDataset,
         cercle_distance.heureReference,
-    ) == ("Stylet", "F", "+2", "A", "/2", "Carnac", "15/08/778", "10:25")
+    ) == ("Stylet", "F", "+2", "A", "/2", "Carnac", "15/08/778", "10:25:04")
     assert cercle_distance.distanceClef == pytest.approx(891.2, abs=0.1)
     assert cercle_distance.hauteurStylet == pytest.approx(707.3, abs=0.1)
-    assert cercle_distance.hauteurSoleil == pytest.approx(50.04, abs=0.01)
-    assert cercle_distance.distanceRef == pytest.approx(296.4, abs=0.1)
+    assert cercle_distance.hauteurSoleil == pytest.approx(hauteur)
+    from math import tan, radians
+    assert cercle_distance.distanceRef == pytest.approx(cercle_distance.hauteurStylet / 2 / tan(radians(hauteur)))
+    assert cercle_distance.distanceRef == pytest.approx(296.3055, abs=0.001)
 
-    assert modules["candidatBase"].listeCandidats
+    assert len(modules["candidatBase"].listeCandidats) == 1
+    assert scenario.solutionScenario is True
+    # La modification du point vient uniquement du nouvel angle horaire.
+    assert cercle_horaire.coordPointChoix == pytest.approx((-130262.328, 6880713.201), abs=.001)
+    assert modules["candidatBase"].listeCandidats[0].coordonneesLambert() == pytest.approx((583844.131, 6399250.150), abs=.001)

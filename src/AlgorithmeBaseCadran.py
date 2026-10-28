@@ -3,11 +3,13 @@ from math import radians, tan
 # Moteur Algo générique
 from src.AlgorithmeManager import ModuleAlgo, AlgorithmeManager
 from src.ListeSegmentsDataSet import ListeSegmentsDataSet
-from src.Sentinelle import Sentinelle, LieuxObservation
+from src.Sentinelle import LieuxObservation
+from src.CadranNationalSentinelles import SentinelleNationale as Sentinelle
+from src.ReferentielSentinelles import HeureMoyenneLocale, ContexteObservation
 
 # Librairie calcul astronomique
 from src.calculAstronomique import positionSoleil, calculLeverSoleil
-from src.calculAstronomique import MyJulianDate, convertirHeureLocaleVersUTC, heureSymetrique, decalageGamme
+from src.calculAstronomique import MyJulianDate, convertirHeureLocaleVersUTC, decalageGamme
 
 # Affichage des objects graphiques
 from src.affichage_objets import ObjetGraphique, PointGraphique, LigneEntreVilles, LigneAzimut, LigneGraphique, CercleGraphique
@@ -120,6 +122,15 @@ class CercleHoraire(ModuleAlgo):
         self.cercleAMPM = "AM"
         self.cercleHoraire = None
         self.sentinelle = Sentinelle("data/sentinelle.csv")
+        self.selectionHoraire = None
+        self.heureStyletSecondes = None
+        self.heureSentinelleSecondes = None
+        self.horaireLampouy = False
+        self.noteHoraire = None
+        self.brancheReference = None
+        self.dateObservationUT1 = None
+        self.heureUTC = None
+        self.azimutSoleil = None
 # Output
         self.coordPointChoix = (0, 0)
 
@@ -131,37 +142,53 @@ class CercleHoraire(ModuleAlgo):
         self.pointStylet = PointGraphique(villes_dict[self.stylet])
         px, py = self.pointStylet.coordonneesPixelAbs()
 
-        _, self.heureStylet, self.styletAMPM, _, _ = self.sentinelle.surLigneHoraire(px, py)
+        self.selectionHoraire = self.sentinelle.rechercherLigneHoraire(px, py)
+        self.heureStylet = self.selectionHoraire.heure_locale.toString()
+        self.heureStyletSecondes = self.selectionHoraire.heure_locale.secondes
+        self.styletAMPM = self.selectionHoraire.ampm
 
         # On a deux cas: Si lampouy, on suppose que l'angle est l'angle des aligmenets de Lampouy
-        azimutLampouyStr = f"{self.sentinelle["L"]["AzimutCalibre"]}°"
-        if self.heureSubstitution == azimutLampouyStr:
+        self.horaireLampouy = self.heureSubstitution not in ("=", "+2", "-2", "11:00")
+        if self.horaireLampouy:
+            azimutLampouyStr = f"{self.sentinelle['L']['AzimutCalibre']}°"
+            if self.heureSubstitution != azimutLampouyStr:
+                raise ValueError(f"Substitution angulaire inconnue : {self.heureSubstitution}")
             azimutSoleil = self.sentinelle["L"]["AzimutCalibre"]
+            self.noteHoraire = "L"
+            self.brancheReference = "historique_" + self.heureAMPM
+            # Substitution d'angle uniquement : préserver l'heure antérieure,
+            # comme dans le mécanisme historique, sans lui substituer celle de L.
+            self.dateObservationUT1 = None  # l'angle est imposé, pas calculé à cette heure
+            self.heureUTC = None
         else:
             # On prend en compte les heures de substitution
             if self.heureSubstitution == "11:00":
-                self.heureSentinelle = self.sentinelle["J"]["HeureLocale"]
+                choixNote = "J"
             # elif self.choixCalendrierSegment == "Standard":
             #    self.heureSentinelle = self.heureStylet
             else:
                 tabDec = {"=": 0, "+2": 2, "-2": 1}
                 listeNotes = decalageGamme(self.lettreChoixSegment)  # On décale sans susbtition Fa/Sol
                 choixNote = listeNotes[tabDec[self.heureSubstitution]]
-                self.heureSentinelle = self.sentinelle[choixNote]["HeureLocale"]
-
-            # On prend l'heure du matin ou de l'apres midi
-            self.heureSentinelle = heureSymetrique(self.heureSentinelle) if self.heureAMPM == "PM" else self.heureSentinelle
+            self.noteHoraire = choixNote
+            direction = self.sentinelle.directionPourNote(choixNote, self.heureAMPM)
+            self.brancheReference = ("directe" if direction is self.sentinelle.par_note[choixNote].directe else "miroir")
+            heure = self.sentinelle.heurePourNote(choixNote, self.heureAMPM)
 
             # On se place au lieu d'observation
             coordObs = villes_dict[self.lieuObservation].getCoordonneesGPS()
             (lat, lon) = coordObs
-            self.heureUTC = convertirHeureLocaleVersUTC(self.heureSentinelle, lon)
-            heureObservationJD = MyJulianDate.fromString(self.dateDataset, self.heureUTC)
+            contexte = ContexteObservation(self.lieuObservation, lat, lon, self.dateDataset)
+            self.dateObservationUT1 = contexte.versUT1(heure)
+            self.heureUTC = HeureMoyenneLocale(((float(self.dateObservationUT1) + .5) % 1) * 86400).toString()
             # On calcule l'angle entre la droite de Midi Solaire et la droite Stylet - ST Cyr
-            _, azimutSoleil = positionSoleil((lat, lon), heureObservationJD)
-
+            _, azimutSoleil = positionSoleil((lat, lon), self.dateObservationUT1)
+            self.heureSentinelle = heure.toString()
+            self.heureSentinelleSecondes = heure.secondes
+        self.azimutSoleil = azimutSoleil
         self.angleHoraire = 180-azimutSoleil
-        self.angleHoraire = self.angleHoraire if self.heureAMPM == "AM" else -self.angleHoraire
+        if self.horaireLampouy and self.heureAMPM == "PM":
+            self.angleHoraire = -self.angleHoraire  # seule la substitution angulaire historique
 
         # On crée la ligne Bourges - Stylet
         self.pointBourges = PointGraphique(villes_dict["Bourges"])
@@ -396,6 +423,7 @@ class CercleDistance(ModuleAlgo):
                 "segment.lettreDom",
                 "segment.lettreChoix",
                 "cercleHoraire.heureSentinelle",
+                "cercleHoraire.heureSentinelleSecondes",
                 "cercleHoraire.stylet"
                 ]
 
@@ -430,6 +458,9 @@ class CercleDistance(ModuleAlgo):
         self.lettreDomSegment = ""
         self.lettreChoixSegment = ""
         self.heureSentinelleCerclehoraire = ""
+        self.heureSentinelleSecondesCerclehoraire = None
+        self.heureReferenceSecondes = None
+        self.dateObservationUT1 = None
         self.styletCerclehoraire = ""
 
         # variables calculées / affichage
@@ -469,9 +500,16 @@ class CercleDistance(ModuleAlgo):
 
         # On calcule la position du soleil
         (lat, lon) = villes_dict[self.lieuObservation].getCoordonneesGPS()
-        heureUTC = convertirHeureLocaleVersUTC(self.heureReference, lon)
-        heureReferenceJD = MyJulianDate.fromString(self.dateDataset, heureUTC)
-        self.hauteurSoleil, _ = positionSoleil((lat, lon), heureReferenceJD)
+        if self.centreCercle == "Ouverture":
+            heure = HeureMoyenneLocale(12 * 3600)  # midi moyen explicite, sans recours à S5
+        elif self.heureSentinelleSecondesCerclehoraire is not None:
+            heure = HeureMoyenneLocale(self.heureSentinelleSecondesCerclehoraire)
+        else:
+            texte = self.heureReference
+            heure = HeureMoyenneLocale.depuisTexte(texte if texte.count(":") == 2 else texte + ":00")
+        self.heureReferenceSecondes = heure.secondes
+        self.dateObservationUT1 = ContexteObservation(self.lieuObservation, lat, lon, self.dateDataset).versUT1(heure)
+        self.hauteurSoleil, _ = positionSoleil((lat, lon), self.dateObservationUT1)
 
         # On calcule la distance
         self.distanceRef = self.hauteurStylet * CercleDistance.tableauOctave[self.octave] / tan(radians(self.hauteurSoleil))

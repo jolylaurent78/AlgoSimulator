@@ -746,13 +746,29 @@ def test_ligne_horaire_final_conserve_point_lambert_azimut_et_objets_habilles(ca
         ("F", "11:20", 130.0), ("E", "11:40", 120.0), ("D", "12:00", 110.0), ("J", "12:20", 100.0),
         ("L", "08:30", 138.5),
     ]}
+    # Adaptateur minimal : ce test caractérise la géométrie image/Lambert,
+    # indépendamment des valeurs physiques du référentiel.
+    from src.ReferentielSentinelles import HeureMoyenneLocale
+    class ReferencesFictives(dict):
+        def __init__(self):
+            super().__init__(notes)
+            self.par_note = {}
+            for note, valeurs in notes.items():
+                heure = HeureMoyenneLocale.depuisTexte(valeurs["HeureLocale"] + ":00")
+                directe = SimpleNamespace(azimut=valeurs["AzimutCalibre"], heure_locale=heure)
+                miroir = SimpleNamespace(azimut=360 - directe.azimut, heure_locale=HeureMoyenneLocale(86400 - heure.secondes))
+                self.par_note[note] = SimpleNamespace(identifiant=note, directe=directe, miroir=miroir)
+        def directionPourNote(self, note, branche):
+            return self.par_note[note].directe if branche == "AM" else self.par_note[note].miroir
+        def heurePourNote(self, note, branche):
+            return self.directionPourNote(note, branche).heure_locale
     monkeypatch.setattr(cadran_final, "villes_dict", {"Base": base, "Carnac": observation})
     monkeypatch.setattr(cadran_final, "convertirHeureLocaleVersUTC", lambda _heure, _lon: "UTC")
     monkeypatch.setattr(cadran_final, "MyJulianDate", SimpleNamespace(fromString=lambda *_args: "date"))
     monkeypatch.setattr(cadran_final, "positionSoleil", lambda *_args: (0.0, 180.0))
 
     module = LigneHoraireFinal()
-    module.sentinelleLumiere = notes
+    module.sentinelleLumiere = ReferencesFictives()
     module.lieuObservationSegment = "Carnac"
     module.lettreDomSegment = "C"
     module.lettreDeclDataset = "F"
@@ -769,7 +785,7 @@ def test_ligne_horaire_final_conserve_point_lambert_azimut_et_objets_habilles(ca
 
     assert len(module.listeLigneHoraire) == 16
     heure, delta, ampm, candidat, ligne = module.listeLigneHoraire[0]
-    assert (heure, delta, ampm, candidat) == ("09:42", -10.0, "AM", True)
+    assert (heure, delta, ampm, candidat) == ("09:42:00", -10.0, "AM", True)
     assert isinstance(ligne, LigneAzimut)
     assert (ligne.x_l93, ligne.y_l93, ligne.azimut_deg) == pytest.approx((25, 35, 90))
     assert ligne.pointReference == pytest.approx((25, 35))
@@ -779,7 +795,7 @@ def test_ligne_horaire_final_conserve_point_lambert_azimut_et_objets_habilles(ca
 
     assert objets[0] is ligne
     assert objets == [item[4] for item in module.listeLigneHoraire]
-    assert ligne.nom == "Ligne Horaire 09:42"
+    assert ligne.nom == "C/C directe 09:42:00"
     assert ligne.getCouleur() == LigneHoraireFinal.COULEUR_TRAIT_CANDIDAT
     assert ligne.tags["level"] == "design"
     assert (ligne.x_l93, ligne.y_l93, ligne.azimut_deg) == pytest.approx((25, 35, 90))
