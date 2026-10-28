@@ -1,7 +1,8 @@
 # Moteur Algo générique
 from src.AlgorithmeManager import ModuleAlgo, AlgorithmeManager
 from src.ListeSegmentsDataSet import ListeSegmentsDataSet
-from src.Sentinelle import Sentinelle, LieuxObservation
+from src.Sentinelle import LieuxObservation
+from src.CadranNationalSentinelles import SentinelleNationale as Sentinelle
 
 # Librairie calcul astronomique
 from src.calculAstronomique import positionSoleil, positionAstre, calculLeverAstre, calculLeverSoleil, calculCoucherSoleil, ASTRES
@@ -576,6 +577,7 @@ class Candidats(ModuleAlgo):
         self.selection = None
         self.azimutHeure = None
         self.villeSolution = None
+        self.selectionHoraire = None
 
         self.sentinelle = Sentinelle("data/sentinelle.csv")
 
@@ -609,7 +611,13 @@ class Candidats(ModuleAlgo):
 
         # On calcule la distance avec la ligne horaire la pllus proche
         inclureLampouy = (self.dateDataset == "18/05/1152")
-        selection, self.heureSentinelle, self.ampm, self.distKM, self.azimutHeure = self.sentinelle.surLigneHoraire(x, y, inclureLampouy)
+        self.selectionHoraire = self.sentinelle.rechercherLigneHoraire(x, y, inclureLampouy)
+        resultat = self.selectionHoraire
+        selection = resultat.selection
+        self.heureSentinelle = resultat.heure_locale.toString()
+        self.ampm = resultat.ampm
+        self.distKM = resultat.distance_km
+        self.azimutHeure = resultat.azimut_image
 
         if not selection:
             self.selection = "Trop loin d'une ligne horaire"
@@ -683,9 +691,10 @@ class SentinelleAlgo(ModuleAlgo):
             tableauNotes.append("L")
 
         for note in tableauNotes:
-            heureLocale = self.sentinelle[note]["HeureLocale"]
-            selectionAM = (heureLocale == self.heure) and (self.sensCadran == "AM")
-            selectionPM = (heureLocale == self.heure) and (self.sensCadran == "PM")
+            heureAM = self.sentinelle.heurePourNote(note, "AM").toString()
+            heurePM = self.sentinelle.heurePourNote(note, "PM").toString()
+            selectionAM = (heureAM == self.heure) and (self.sensCadran == "AM")
+            selectionPM = (heurePM == self.heure) and (self.sensCadran == "PM")
             tagLevelAM = "construction" if selectionAM else "design"
             tagLevelPM = "construction" if selectionPM else "design"
 

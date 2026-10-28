@@ -62,13 +62,18 @@ def test_chargement_golden_roncevaux_restitue_le_pipeline_metier_reel():
 
     candidats = modules["candidats"]
     assert (candidats.heureSentinelle, candidats.ampm, candidats.distKM, candidats.selection) == (
-        "09:42",
+        "09:43:00",
         "AM",
-        12,
+        17,
         "Sélectionné",
     )
     assert candidats.villeSolution == "Roncevaux"
     assert candidats.pointIntersection is not None
 
     sentinelle = modules["sentinelle"]
-    assert (sentinelle.heure, sentinelle.sensCadran) == ("09:42", "AM")
+    assert (sentinelle.heure, sentinelle.sensCadran) == ("09:43:00", "AM")
+    # Seul le troisième axe change : beta = 125,371 + 180 - A(S1),
+    # puis conversion par la matrice active. Planète/étoile gardent leurs valeurs.
+    assert candidats.selectionHoraire.repere == "S1"
+    assert candidats.selectionHoraire.branche == "directe"
+    assert candidats.pointIntersection.coordonneesLambert() == pytest.approx((353782.24534129596, 6232108.579286667))

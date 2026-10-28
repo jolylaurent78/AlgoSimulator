@@ -4,6 +4,8 @@ import pytest
 
 import src.AlgorithmeStyletInitial as stylet
 from src.AlgorithmeStyletInitial import Candidats, Carte, Etoile, Planete, SentinelleAlgo, Soleil
+from src.CadranNationalSentinelles import SelectionHoraire
+from src.ReferentielSentinelles import HeureMoyenneLocale
 
 
 class DateFictive:
@@ -256,9 +258,12 @@ class SentinelleCandidatFictive:
         self.resultat = (True, "09:42", "AM", 12.0, 175.47)
         self.inclure_lampouy = None
 
-    def surLigneHoraire(self, x, y, inclure_lampouy):
+    def rechercherLigneHoraire(self, x, y, inclure_lampouy):
         self.inclure_lampouy = inclure_lampouy
-        return self.resultat
+        selection, heure, ampm, distance, azimut = self.resultat
+        return SelectionHoraire(selection, "S1", "C", "directe", "matin",
+                                HeureMoyenneLocale.depuisTexte(heure + ":00"),
+                                128.8, 176.5, azimut, distance)
 
     def getOrigineStylet(self):
         return PointGeometrieFictive(VilleFictive((5.0, 5.0)))
@@ -324,7 +329,7 @@ def test_candidats_valide_le_point_et_transmet_la_regle_lampouy(monkeypatch, dat
 
     assert module.selection == "Sélectionné"
     assert (module.heureSentinelle, module.ampm, module.distKM, module.azimutHeure) == (
-        "09:42",
+        "09:42:00",
         "AM",
         12.0,
         175.47,

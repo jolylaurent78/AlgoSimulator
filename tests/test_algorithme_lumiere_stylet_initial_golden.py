@@ -39,7 +39,7 @@ def test_chargement_golden_bourges_restitue_le_pipeline_lumiere_reel():
         heuredate.choixHeure,
         heuredate.heureAMPM,
         heuredate.heureLocale,
-    ) == ("Standard", "C", "=", "AM", "09:42")
+    ) == ("Standard", "C", "=", "AM", "09:43:00")
 
     soleil = modules["soleil"]
     assert (
@@ -50,16 +50,19 @@ def test_chargement_golden_bourges_restitue_le_pipeline_lumiere_reel():
         soleil.sourceHeure,
         soleil.heureObservation,
         soleil.heureUTC,
-    ) == ("Roncevaux", "Valide", "09:42", "Même heure", "Stylet", "09:42", "09:47:18")
+    ) == ("Roncevaux", "Valide", "09:43:00", "Même heure", "Stylet", "09:43:00", "09:48:18")
 
     stylet = modules["stylet"]
     assert stylet.distanceMetz == pytest.approx(891.2, abs=0.01)
     assert stylet.hauteurStylet == pytest.approx(594.8, abs=0.01)
     assert stylet.formuleDistance == "891 / 2**-5/12 * 2**-12/12"
-    assert stylet.hauteurSoleil == pytest.approx(47.57, abs=0.01)
-    assert stylet.distanceStylet == pytest.approx(543.74, abs=0.01)
-    assert stylet.azimutSoleil == pytest.approx(124.01, abs=0.01)
+    # Nouvelle heure S1 directe et décalage de longitude exact, sans modifier
+    # la formule de hauteur ou la rotation de carte constatées ci-dessus.
+    assert stylet.hauteurSoleil == pytest.approx(47.71811181208787, abs=0.01)
+    assert stylet.distanceStylet == pytest.approx(540.8839876654071, abs=0.01)
+    assert stylet.azimutSoleil == pytest.approx(124.2877338306546, abs=0.01)
     assert stylet.sensCarte == "Envers"
-    assert stylet.formuleAxeCarte == "360-124.01-21.26"
-    assert stylet.axeCarte == pytest.approx(214.74, abs=0.01)
+    assert stylet.formuleAxeCarte == "360-124.29-21.26"
+    assert stylet.axeCarte == pytest.approx(214.4550991545608, abs=0.01)
+    assert stylet.dateObservationUT1Soleil == soleil.dateObservationUT1
     assert stylet.octave == "x1"

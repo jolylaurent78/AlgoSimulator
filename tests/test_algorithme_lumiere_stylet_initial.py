@@ -5,6 +5,8 @@ import pytest
 
 import src.AlgorithmeLumiereStyletInitial as lumiere
 from src.AlgorithmeLumiereStyletInitial import HeureDateObservation, Observation, Soleil, Stylet
+from src.CadranNationalSentinelles import SelectionHoraire
+from src.ReferentielSentinelles import HeureMoyenneLocale
 
 
 class DateFictive:
@@ -40,6 +42,12 @@ class PointFictif:
 
 
 class SentinelleHeureFictive(dict):
+    heures_am = {"C": "09:43:00", "B": "11:30:42", "D": "08:14:46", "E": "08:05:20", "F": "10:25:04", "J": "10:55:00"}
+    heures_pm = {"C": "14:21:11", "B": "12:33:19", "D": "15:49:38", "E": "15:59:05", "F": "13:39:02", "J": "13:09:03"}
+
+    def heurePourNote(self, note, branche):
+        return HeureMoyenneLocale.depuisTexte((self.heures_am if branche == "AM" else self.heures_pm)[note])
+
     def __init__(self, chemin):
         super().__init__(
             {
@@ -84,11 +92,11 @@ def test_observation_initialise_lettre_lieu_et_rotation(monkeypatch):
 @pytest.mark.parametrize(
     ("calendrier", "choix", "ampm", "attendu"),
     [
-        ("Standard", "=", "AM", ("C", "09:42")),
-        ("Standard", "+2", "AM", ("C", "11:20")),
-        ("Déclinaison", "-2", "AM", ("F", "10:10")),
-        ("Standard", "Clef", "PM", ("C", "11:40")),
-        ("Déclinaison", "11:00", "PM", ("F", "13:00")),
+        ("Standard", "=", "AM", ("C", "09:43:00")),
+        ("Standard", "+2", "AM", ("C", "08:05:20")),
+        ("Déclinaison", "-2", "AM", ("F", "08:14:46")),
+        ("Standard", "Clef", "PM", ("C", "13:39:02")),
+        ("Déclinaison", "11:00", "PM", ("F", "13:09:03")),
     ],
 )
 def test_heure_date_applique_calendrier_choix_et_ampm(monkeypatch, calendrier, choix, ampm, attendu):
@@ -110,8 +118,15 @@ class SentinelleStyletFictive(SentinelleHeureFictive):
         super().__init__(chemin)
         self.resultat = (True, "09:42", "AM", 12.0, 175.47)
 
-    def surLigneHoraire(self, x, y):
-        return self.resultat
+    def rechercherLigneHoraire(self, x, y):
+        selection, heure, ampm, distance, azimut = self.resultat
+        ampm = ampm or "AM"
+        return SelectionHoraire(selection, "S1", "C", "directe" if ampm == "AM" else "miroir",
+                                "matin" if ampm == "AM" else "apres_midi", self.heurePourNote("C", ampm),
+                                128.8, 176.5, azimut, distance)
+
+    def autreHeure(self, resultat):
+        return self.heurePourNote("C", "PM" if resultat.ampm == "AM" else "AM")
 
 
 def installer_soleil_fictif(monkeypatch):
@@ -127,11 +142,12 @@ def installer_soleil_fictif(monkeypatch):
 
 @pytest.mark.parametrize(
     ("ampm", "choix", "attendue"),
-    [("AM", "Même heure", "09:42"), ("AM", "Symétrique", "14:18"), ("PM", "Même heure", "14:18")],
+    [("AM", "Même heure", "09:43:00"), ("AM", "Symétrique", "14:21:11"), ("PM", "Même heure", "14:21:11")],
 )
 def test_soleil_utilise_lheure_stylet_ou_sa_symetrique(monkeypatch, ampm, choix, attendue):
     installer_soleil_fictif(monkeypatch)
     module = Soleil()
+    module.dateDataset = "15/08/778"
     module.stylet = "Roncevaux"
     module.choixHeure = choix
     module.lieuObservationObservation = "Roncevaux"
@@ -143,12 +159,14 @@ def test_soleil_utilise_lheure_stylet_ou_sa_symetrique(monkeypatch, ampm, choix,
     assert module.validite == "Valide"
     assert module.heureSentinelle == attendue
     assert module.heureObservation == attendue
-    assert module.heureUTC == f"UTC {attendue}"
+    assert (float(module.dateObservationUT1) - float(lumiere.MyJulianDate.fromString(module.dateDataset, "00:00:00"))) * 86400 == pytest.approx(
+        HeureMoyenneLocale.depuisTexte(attendue).secondes + 312, abs=0.0001)
 
 
 def test_soleil_source_manuelle_et_point_invalide(monkeypatch):
     installer_soleil_fictif(monkeypatch)
     module = Soleil()
+    module.dateDataset = "15/08/778"
     module.stylet = "Roncevaux"
     module.lieuObservationObservation = "Roncevaux"
     module.heureLocaleHeuredate = "11:20"
@@ -161,7 +179,7 @@ def test_soleil_source_manuelle_et_point_invalide(monkeypatch):
     assert module.validite == "Unvalide"
     assert module.heureSentinelle is None
     assert module.heureObservation == "11:20"
-    assert module.heureUTC == "UTC 11:20"
+    assert module.heureUTC == "11:25:12"
 
 
 def preparer_stylet(monkeypatch):

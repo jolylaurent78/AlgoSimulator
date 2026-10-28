@@ -3,7 +3,9 @@ import math
 # Moteur Algo générique
 from src.AlgorithmeManager import ModuleAlgo, AlgorithmeManager
 from src.ListeSegmentsDataSet import ListeSegmentsDataSet
-from src.Sentinelle import Sentinelle, LieuxObservation
+from src.Sentinelle import LieuxObservation
+from src.CadranNationalSentinelles import SentinelleNationale as Sentinelle
+from src.ReferentielSentinelles import HeureMoyenneLocale, ContexteObservation
 
 
 # Librairie calcul astronomique
@@ -97,6 +99,7 @@ class HeureDateObservation(ModuleAlgo):
         self.choixHeure = "="
         self.heureAMPM = "AM"
         self.heureLocale = ""
+        self.heureLocaleSecondes = None
 
         self.sentinelle = Sentinelle("data/sentinelle.csv")
         super().__init__()
@@ -120,14 +123,14 @@ class HeureDateObservation(ModuleAlgo):
         self.lettreChoix = self.lettreDomObservation if self.choixCalendrier == "Standard" else self.lettreDeclDataset
 
         if self.choixHeure == "11:00":
-            heureAM = self.sentinelle["J"]["HeureLocale"]
+            choixNote = "J"
         else:
             tabDec = {"=": 0, "+2": 2, "-2": 1, "Clef": 3}
             listeNotes = decalageGamme(self.lettreChoix)
             choixNote = listeNotes[tabDec[self.choixHeure]]
-            heureAM = self.sentinelle[choixNote]["HeureLocale"]
-
-        self.heureLocale = heureAM if self.heureAMPM == "AM" else heureSymetrique(heureAM)
+        heure = self.sentinelle.heurePourNote(choixNote, self.heureAMPM)
+        self.heureLocaleSecondes = heure.secondes
+        self.heureLocale = heure.toString()
 
 
 #
@@ -138,6 +141,8 @@ class Soleil(ModuleAlgo):
         return ["dataset.date",
                 "dataset.stylet",
                 "heuredate.heureLocale",
+                "heuredate.heureLocaleSecondes",
+                "heuredate.heureAMPM",
                 "observation.lieuObservation",
                 "observation.rotationCarte"]
 
@@ -146,6 +151,8 @@ class Soleil(ModuleAlgo):
         self.dateDataset = ""
         self.styletDataset = ""
         self.heureLocaleHeuredate = ""
+        self.heureLocaleSecondesHeuredate = None
+        self.heureAMPMHeuredate = "AM"
         self.lieuObservationObservation = None
         self.rotationCarteObservation = None
         self.tableauAzimut = []
@@ -160,13 +167,17 @@ class Soleil(ModuleAlgo):
         self.sourceHeure = "Stylet"
         self.heureObservation = None
         self.heureUTC = None
+        self.heureSentinelleSecondes = None
+        self.heureObservationSecondes = None
+        self.dateObservationUT1 = None
+        self.selectionHoraire = None
+        self.ampmStylet = None
         self._sourceHeureInitiale = True
 
         self.sentinelle = Sentinelle("data/sentinelle.csv")
         super().__init__()
 
     def getValeursChoixHeure(self):
-        heureLampouy = self.sentinelle["L"]["HeureLocale"]
         if self.dateDataset == "18/05/1152":
             heureLampouy = self.sentinelle["L"]["HeureLocale"]
             return ["Même heure", "Symétrique", heureLampouy, heureSymetrique(heureLampouy)]
@@ -190,23 +201,36 @@ class Soleil(ModuleAlgo):
 
         self.pointStylet = PointGraphique(villes_dict[self.stylet])
         px, py = self.pointStylet.coordonneesPixelAbs()
-        selection, heure, ampm, distance, self.azimutHeure = self.sentinelle.surLigneHoraire(px, py)
+        self.selectionHoraire = self.sentinelle.rechercherLigneHoraire(px, py)
+        resultat = self.selectionHoraire
+        selection = resultat.selection
+        self.azimutHeure = resultat.azimut_image
+        heure_exacte = None
+        historique_lampouy = False
 
         if selection:
-            self.heureAMPM = ampm
+            self.ampmStylet = resultat.ampm
+            self.heureAMPM = resultat.ampm
             self.validite = "Valide"
-            heureLampouy = self.sentinelle["L"]["HeureLocale"]
-            if self.choixHeure == heureLampouy:
-                self.heureSentinelle = heureLampouy+":00"
-            elif self.choixHeure == heureSymetrique(heureLampouy):
-                self.heureSentinelle = heureSymetrique(heureLampouy)+":00"
+            options_lampouy = self.getValeursChoixHeure()[2:]
+            if self.choixHeure in options_lampouy:
+                heure_exacte = HeureMoyenneLocale.depuisTexte(self.choixHeure + ":00")
+                historique_lampouy = True
+                self.heureAMPM = "AM" if self.choixHeure == options_lampouy[0] else "PM"
             else:
-                symetrique = (ampm == "PM" and self.choixHeure == "Même heure") or (ampm == "AM" and self.choixHeure == "Symétrique")
-                self.heureSentinelle = heureSymetrique(heure) if symetrique else heure
+                heure_exacte = (self.sentinelle.autreHeure(resultat) if self.choixHeure == "Symétrique"
+                                else resultat.heure_locale)
+                historique_lampouy = resultat.historique_lampouy
+                if self.choixHeure == "Symétrique":
+                    self.heureAMPM = "PM" if resultat.ampm == "AM" else "AM"
+            self.heureSentinelleSecondes = heure_exacte.secondes
+            self.heureSentinelle = heure_exacte.toString()
 
         else:
             self.heureSentinelle = None
+            self.heureSentinelleSecondes = None
             self.heureAMPM = None
+            self.ampmStylet = None
             self.validite = "Unvalide"
 
         if self._sourceHeureInitiale:
@@ -216,16 +240,35 @@ class Soleil(ModuleAlgo):
 
         if self.sourceHeure == "Stylet" and self.validite == "Valide":
             self.heureObservation = self.heureSentinelle
+            self.heureObservationSecondes = self.heureSentinelleSecondes
         elif self.sourceHeure == "Manuel":
             self.heureObservation = self.heureLocaleHeuredate
+            self.heureObservationSecondes = self.heureLocaleSecondesHeuredate
+            if self.heureObservationSecondes is None:
+                texte = self.heureObservation
+                self.heureObservationSecondes = HeureMoyenneLocale.depuisTexte(texte if texte.count(":") == 2 else texte + ":00").secondes
+            historique_lampouy = False
+            self.heureAMPM = self.heureAMPMHeuredate
         else:
             self.heureObservation = None
+            self.heureObservationSecondes = None
 
         if self.heureObservation is not None:
-            (_, lon) = villes_dict[self.lieuObservationObservation].getCoordonneesGPS()
-            self.heureUTC = convertirHeureLocaleVersUTC(self.heureObservation, lon)
+            lat, lon = villes_dict[self.lieuObservationObservation].getCoordonneesGPS()
+            if historique_lampouy:
+                # Conserver aussi l'arrondi de longitude de ce chemin historique.
+                self.heureUTC = convertirHeureLocaleVersUTC(self.heureObservation, lon)
+                self.dateObservationUT1 = MyJulianDate.fromString(self.dateDataset, self.heureUTC)
+            else:
+                contexte = ContexteObservation(self.lieuObservationObservation, lat, lon, self.dateDataset)
+                self.dateObservationUT1 = contexte.versUT1(HeureMoyenneLocale(self.heureObservationSecondes))
+                # Présentation arrondie seulement ; le JD transmis au calcul
+                # reste celui des secondes fractionnaires, sans cette mise en forme.
+                secondes_ut1 = ((float(self.dateObservationUT1) + 0.5) % 1) * 86400
+                self.heureUTC = HeureMoyenneLocale(secondes_ut1).toString()
         else:
             self.heureUTC = None
+            self.dateObservationUT1 = None
 
 
 class Stylet(ModuleAlgo):
@@ -238,6 +281,7 @@ class Stylet(ModuleAlgo):
                 "soleil.stylet",
                 "soleil.heureSentinelle",
                 "soleil.heureUTC",
+                "soleil.dateObservationUT1",
                 "soleil.validite"
                 ]
 
@@ -253,6 +297,7 @@ class Stylet(ModuleAlgo):
         self.heureSentinelleSoleil = None
         self.heureAMPMSoleil = None
         self.heureUTCSoleil = None
+        self.dateObservationUT1Soleil = None
         # Affiché
         self.distanceMetz = None
         self.formuleDistance = None
@@ -320,7 +365,8 @@ class Stylet(ModuleAlgo):
             # On calcule la position du soleil
             coordObservation = villes_dict[self.lieuObservationObservation].getCoordonneesGPS()
             (lat, lon) = coordObservation
-            heureObservationJD = MyJulianDate.fromString(self.dateDataset, self.heureUTCSoleil)
+            heureObservationJD = (self.dateObservationUT1Soleil if self.dateObservationUT1Soleil is not None
+                                  else MyJulianDate.fromString(self.dateDataset, self.heureUTCSoleil))
             self.hauteurSoleil, self.azimutSoleil = positionSoleil((lat, lon), heureObservationJD)
             self.distanceStylet = tableauOctave[self.octave] * self.hauteurStylet / math.tan(math.radians(self.hauteurSoleil))
 
