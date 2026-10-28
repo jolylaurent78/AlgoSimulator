@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "description": "Références de travail du lot 1 ; les témoins arrondis ne sont pas des autorités supplémentaires.",
+  "convention_azimut_physique_initial": "AzimutGeant du CSV historique, conservé comme provenance, sans assimilation à l'azimut solaire.",
+  "directions": [
+    {
+      "identifiant": "S1", "note": "C", "nature": "sentinelle",
+      "azimut_physique_initial": 308.5,
+      "autorite": "heure", "valeur_reference": "09:43:00",
+      "origine": "Heure calibrée 09:43, construction de Roncevaux.",
+      "statut": "structurante",
+      "temoins": {"azimut_direct": 128.829, "heure_directe": "09:43:00", "azimut_miroir": 231.171, "heure_miroir": "14:21:06"}
+    },
+    {
+      "identifiant": "S2", "note": "D", "nature": "sentinelle",
+      "azimut_physique_initial": 286.5,
+      "autorite": "azimut", "valeur_reference": 107.0,
+      "origine": "Mesure de travail 107°, à calibrer indépendamment.",
+      "statut": "mesure_provisoire",
+      "temoins": {"azimut_direct": 107.0, "heure_directe": "08:14:44", "azimut_miroir": 253.0, "heure_miroir": "15:49:35"}
+    },
+    {
+      "identifiant": "S3", "note": "E", "nature": "sentinelle",
+      "azimut_physique_initial": 256.0,
+      "autorite": "azimut", "valeur_reference": 255.0,
+      "origine": "Mesure de travail 255°, à calibrer indépendamment ; direction directe d'après-midi.",
+      "statut": "mesure_provisoire",
+      "temoins": {"azimut_direct": 255.0, "heure_directe": "15:59:02", "azimut_miroir": 105.0, "heure_miroir": "08:05:18"}
+    },
+    {
+      "identifiant": "S4", "note": "F", "nature": "sentinelle",
+      "azimut_physique_initial": 218.0,
+      "autorite": "azimut", "valeur_reference": 218.0,
+      "origine": "Mesure de travail 218°, à calibrer indépendamment ; direction directe d'après-midi.",
+      "statut": "mesure_provisoire",
+      "temoins": {"azimut_direct": 218.0, "heure_directe": "13:38:59", "azimut_miroir": 142.0, "heure_miroir": "10:25:02"}
+    },
+    {
+      "identifiant": "S5", "note": "G", "nature": "sentinelle",
+      "azimut_physique_initial": 179.0,
+      "autorite": "heure", "valeur_reference": "12:00:00",
+      "origine": "Midi en heure moyenne locale, distinct du midi solaire vrai.",
+      "statut": "structurante",
+      "temoins": {"azimut_direct": 179.168, "heure_directe": "12:00:00", "azimut_miroir": 180.832, "heure_miroir": "12:03:56"}
+    },
+    {
+      "identifiant": "S6", "note": "A", "nature": "sentinelle",
+      "azimut_physique_initial": 171.5,
+      "autorite": "heure", "valeur_reference": "11:42:00",
+      "origine": "Heure calibrée 11:42, références de la construction de Vézelay.",
+      "statut": "structurante",
+      "temoins": {"azimut_direct": 171.580, "heure_directe": "11:42:00", "azimut_miroir": 188.420, "heure_miroir": "12:21:56"}
+    },
+    {
+      "identifiant": "S7", "note": "B", "nature": "sentinelle",
+      "azimut_physique_initial": 170.0,
+      "autorite": "heure", "valeur_reference": "11:30:42",
+      "origine": "Heure affinée par confrontation à la direction de Saint-Valentin.",
+      "statut": "affinee_geographiquement",
+      "temoins": {"azimut_direct": 166.885, "heure_directe": "11:30:42", "azimut_miroir": 193.115, "heure_miroir": "12:33:15"}
+    },
+    {
+      "identifiant": "Joker", "note": "J", "nature": "axe_rangee",
+      "azimut_physique_initial": 153.0,
+      "autorite": "heure", "valeur_reference": "10:55:00",
+      "origine": "Heure de travail 10:55, confrontation avec Alise-Sainte-Reine ; axe de la rangée, pas une huitième pierre.",
+      "statut": "hypothese_de_travail",
+      "temoins": {"azimut_direct": 152.747, "heure_directe": "10:55:00", "azimut_miroir": 207.253, "heure_miroir": "13:08:59"}
+    }
+  ]
+}

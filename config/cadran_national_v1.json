@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "observation": {
+    "lieu": "Carnac",
+    "latitude_dms": [47, 35, 36],
+    "longitude_dms": [-3, 4, 47],
+    "date": "15/08/1066",
+    "calendrier": "julien",
+    "heure_locale": "moyenne",
+    "temps_interne": "UT1",
+    "azimut": "nord_geographique_sens_horaire"
+  },
+  "cadran_national": {
+    "centre": "Coetquidan",
+    "designation_centre": "Saint-Cyr–Coëtquidan",
+    "orientation_midi": 125.371,
+    "unite": "degre",
+    "convention": "nord_grille_lambert93_sens_horaire",
+    "repere_nord": "EPSG:2154",
+    "statut": "calibration_provisoire",
+    "fonction": "axe_central_du_cadran_national"
+  }
+}
