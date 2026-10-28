@@ -64,4 +64,4 @@ Candidat,Construction,0,field,shorttext,left,Ligne horaire la plus proche,A,1,da
 Candidat,Construction,0,field,shorttext,left, ,A,1,data,std,candidats,ampm
 Candidat,Construction,1,field,distance,left,Distance,A,1,data,std,candidats,distKM
 Candidat,Construction,1,field,longtext,left,Statut,S,1,data,std,candidats,selection
-Candidat,Construction,2,PointVille,shortext,left,Solution,S,1,data,std,candidats,villeSolution
+Candidat,Construction,2,PointVille,shortext,left,Solution,S,1,input,std,candidats,villeSolution

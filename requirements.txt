@@ -6,3 +6,7 @@ pyproj
 skyfield
 convertdate
 beautifulsoup4
+tksheet
+pytest
+pytest-cov
+reportlab

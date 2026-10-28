@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import math
 from typing import Any
-from math import radians, cos, sin
 
 # Gestion des coordonnées / projection
 from src.carte_config import carteConfig
@@ -22,9 +21,22 @@ COULEURS = {
 }
 
 
+def _normaliseSignatureNumber(value: float, precision: int = 4) -> float:
+    """Normalise les coordonnées de signature sans utiliser une égalité flottante brute."""
+    return round(float(value), precision)
+
+
+def _normaliseSignaturePoint(point: tuple[float, float]) -> tuple[float, float]:
+    return _normaliseSignatureNumber(point[0]), _normaliseSignatureNumber(point[1])
+
 
 class ObjetGraphique:
-    def __init__(self, nom=None, couleur=None, epaisseur=None, style=None, afficherNom = None, layer=None, tags: dict[str, Any] = None, tooltips: list[str] = None):
+    def __init__(self,
+                 nom=None, couleur=None, epaisseur=None, style=None,
+                 afficherNom=None,
+                 layer=None,
+                 tags: dict[str, Any] = None,
+                 tooltips: list[str] = None):
         self.nom = nom                          # Nom symbolique
         self._couleur = couleur                  # Couleur d’affichage
         self._epaisseur = epaisseur              # Épaisseur du trait ou point
@@ -40,6 +52,7 @@ class ObjetGraphique:
         self.tags = tags or {}
         self.tooltips = tooltips or []
         self.tooltips_scenario = []
+        self.printLabel = None
 
     def copie(self):
         raise NotImplementedError(f"copie() non implémenté pour {self.__class__.__name__}")
@@ -91,8 +104,22 @@ class ObjetGraphique:
     def estSelectionne(self) -> bool:
         return self.etatSelection
 
-    def setTooptips(self, tooltips):
+    def setTooltips(self, tooltips):
         self.tooltips = tooltips
+
+    def setPrintLabel(self, texte: str | None):
+        self.printLabel = texte
+
+    def getPrintLabel(self) -> str | None:
+        return self.printLabel
+
+    def _copyPrintLabelTo(self, copie):
+        copie.setPrintLabel(self.printLabel)
+        return copie
+
+    def getGraphicalSignature(self):
+        """Return a hashable print-only signature, or None when unsupported."""
+        return None
 
     def ajouterTag(self, cle: str, valeur: Any):
         self.tags[cle] = valeur
@@ -102,6 +129,10 @@ class ObjetGraphique:
         Méthode à surcharger : dessine l'objet sur le canvas avec la fonction de transformation fournie.
         """
         raise NotImplementedError("La méthode afficher() doit être surchargée.")
+
+    def cadreAffichage(self):
+        x, y = self.pointReference
+        return (x, y), (x, y)
 
     def recalculerCoordonneesPixelAbs(self):
         """
@@ -132,7 +163,6 @@ class ObjetGraphique:
         """
         raise NotImplementedError("La méthode distance() doit être surchargée dans les sous-classes.")
 
-
     def afficherTexte(self, canvas, texte: str, x: int, y: int, fontScale=0.4, thickness=1):
         """
         Affiche du texte centré horizontalement sur x, avec y correspondant au haut du texte.
@@ -143,7 +173,7 @@ class ObjetGraphique:
         # Centrage horizontal : x - moitié largeur
         x_text = int(x - text_width / 2)
         # Alignement vertical : y + hauteur (car OpenCV place à partir du bas)
-        y_text = int(y + text_height+8 +self.getEpaisseur()/2)
+        y_text = int(y + text_height+8 + self.getEpaisseur()/2)
 
         couleur = self.getCouleur()
         cv2.putText(canvas, texte, (x_text, y_text), fontFace, fontScale, couleur, thickness, cv2.LINE_AA)
@@ -165,9 +195,10 @@ class ObjetGraphique:
 
 
 class PointGraphique(ObjetGraphique):
+    """Point défini par ses coordonnées Lambert ; pixels et GPS sont dérivés."""
     def __init__(
         self, source,
-        x_l93=None, y_l93=None, lat = None, lon = None,
+        x_l93=None, y_l93=None, lat=None, lon=None,
         nom=None,
         couleur=None, epaisseur=None, style="plein", afficherNom=False,  layer=None,
         tags: dict[str, Any] = None, tooltips: list[str] = None
@@ -178,7 +209,11 @@ class PointGraphique(ObjetGraphique):
         - source = (nom, x_l93, y_l93)
         - source = nom (str), avec x_l93 et y_l93 fournis séparément
         """
-        super().__init__(nom=nom, couleur=couleur, epaisseur=epaisseur, style=style, afficherNom = afficherNom, layer=layer, tags=tags, tooltips=tooltips)
+        super().__init__(nom=nom, couleur=couleur, epaisseur=epaisseur, style=style,
+                         afficherNom=afficherNom,
+                         layer=layer,
+                         tags=tags,
+                         tooltips=tooltips)
 
         if isinstance(source, PointGraphique):
             self.nom = source.nom
@@ -201,18 +236,17 @@ class PointGraphique(ObjetGraphique):
         else:
             raise ValueError("Format de PointGraphique non reconnu : coordonnées Lambert93 requises")
 
-        # Coordonnées image en pixels absolus
-        self.pointReference = carteConfig.lambert93_to_pixels(self.x_l93, self.y_l93)
+        # La position Lambert est normative ; le pixel est un cache de carte.
+        self.recalculerCoordonneesPixelAbs()
 
         # On génère les coordonnées GPS si elles ne sont pas définies
         if self.lat is None and self.lon is None:
             self.lon, self.lat = carteConfig.lambert93_to_gps(self.x_l93, self.y_l93)
-            self.lat, self.lon = carteConfig.lambert93_to_gps(self.x_l93, self.y_l93)
 
     @classmethod
     def depuisIntersectionLignes(
         cls, ligne1: "LigneGraphique", ligne2: "LigneGraphique",
-        lat = None, lon = None,
+        lat=None, lon=None,
         nom=None,
         couleur=None, epaisseur=None, afficherNom=False, style=None, layer=None,
         tags: dict[str, Any] = None, tooltips: list[str] = None
@@ -227,14 +261,18 @@ class PointGraphique(ObjetGraphique):
 
         x_l93, y_l93 = pt_l93
         return cls(nom or "Intersection", x_l93, y_l93, lat, lon,
-                couleur=couleur, epaisseur=epaisseur, afficherNom=afficherNom, style=style, layer=layer,
-                tags=tags, tooltips=tooltips
-        )
-
+                   couleur=couleur, epaisseur=epaisseur, afficherNom=afficherNom, style=style, layer=layer,
+                   tags=tags, tooltips=tooltips
+                   )
 
     @classmethod
     def depuisDeuxPoints(cls, p1: "PointGraphique", p2: "PointGraphique",
-        nom=None, couleur=None, epaisseur=None, style="plein", afficherNom=False, layer=None, tags=None, tooltips=None):
+                         nom=None,
+                         couleur=None, epaisseur=None, style="plein",
+                         afficherNom=False,
+                         layer=None,
+                         tags=None,
+                         tooltips=None):
 
         # On récupère les coordonnées Lambert des deux points
         x1_l93, y1_l93 = p1.coordonneesLambert()
@@ -259,10 +297,16 @@ class PointGraphique(ObjetGraphique):
         )
 
     def copie(self):
-        return PointGraphique(self.nom, self.x_l93, self.y_l93, lat=lat, lon=lon,
-            couleur=self._couleur, epaisseur=self._epaisseur, style=self.style, afficherNom=self.afficherNom, layer=self.layer,
-            tags=self.tags, tooltips=self.tooltips
-        )
+        copie = PointGraphique(self.nom,
+                               self.x_l93, self.y_l93,
+                               lat=self.lat, lon=self.lon,
+                               couleur=self._couleur, epaisseur=self._epaisseur, style=self.style,
+                               afficherNom=self.afficherNom,
+                               layer=self.layer,
+                               tags=self.tags,
+                               tooltips=self.tooltips
+                               )
+        return self._copyPrintLabelTo(copie)
 
     def coordonneesLambert(self) -> tuple[float, float]:
         """
@@ -274,9 +318,13 @@ class PointGraphique(ObjetGraphique):
         """
         Retourne les coordonnées GPS sous forme de tuple lat, lon
         """
- #       return (self.lon, self.lat)
         return (self.lat, self.lon)
 
+    def getCoordonneesPixel(self) -> tuple[float, float]:
+        """
+        Retourne les coordonnées GPS sous forme de tuple lat, lon
+        """
+        return self.pointReference
 
     def distance(self, autre: "PointGraphique") -> float:
         """
@@ -285,7 +333,6 @@ class PointGraphique(ObjetGraphique):
         dx = self.x_l93 - autre.x_l93
         dy = self.y_l93 - autre.y_l93
         return (dx**2 + dy**2)**0.5 / 1000
-
 
     def pixelsVersMetres(self) -> float:
         """
@@ -297,7 +344,6 @@ class PointGraphique(ObjetGraphique):
         x2_l93, y2_l93 = carteConfig.pixels_to_lambert93(px + 1, py)
         return math.hypot(x2_l93 - x1_l93, y2_l93 - y1_l93)
 
-
     def distanceDepuis(self, x_pix: float, y_pix: float) -> float:
         """
         Calcule la distance en pixels entre un point donné et le bord du disque représentant le point graphique.
@@ -307,7 +353,6 @@ class PointGraphique(ObjetGraphique):
         d = math.hypot(px - x_pix, py - y_pix)
         rayon_visuel = self.getEpaisseur()  # rayon en pixels affiché
         return 0 if d <= rayon_visuel else d - rayon_visuel
-
 
     def distanceLigne(self, ligneGraphique: "LigneGraphique") -> float:
         """
@@ -360,6 +405,7 @@ class PointGraphique(ObjetGraphique):
     def recalculerCoordonneesPixelAbs(self):
         self.pointReference = carteConfig.lambert93_to_pixels(self.x_l93, self.y_l93)
 
+
 class SymboleWiki(PointGraphique):
     _iconeCache = {}  # dictionnaire statique partagé
 
@@ -387,7 +433,8 @@ class SymboleWiki(PointGraphique):
         self.icone = SymboleWiki._iconeCache[icone_path]
 
     def copie(self):
-        return SymboleWiki(
+        copie = SymboleWiki(
+            source=self.url,
             x_l93=self.x_l93,
             y_l93=self.y_l93,
             icone_path=self.icone_path,
@@ -397,6 +444,7 @@ class SymboleWiki(PointGraphique):
             tags=self.tags.copy(),
             tooltips=list(self.tooltips)
         )
+        return self._copyPrintLabelTo(copie)
 
     def afficher(self, canvas, transformerAffichagePixel):
         if not self.estVisible():
@@ -441,29 +489,31 @@ class Cercle:
         dy = y_pix - self.centre[1]
         return math.hypot(dx, dy) <= self.rayon
 
+
 class CercleGraphique(ObjetGraphique):
+    """Cercle défini par son centre Lambert et son rayon métier en km."""
     def __init__(self, pointCentre: PointGraphique, rayon_km: float,
-        nom=None,
-        couleur=None, epaisseur=None, layer=None, style=None,
-        tags: dict[str, Any] = None, tooltips: list[str] = None
-    ):
+                 nom=None,
+                 couleur=None, epaisseur=None, layer=None, style=None,
+                 tags: dict[str, Any] = None, tooltips: list[str] = None
+                 ):
 
         super().__init__(nom=nom,
-            couleur=couleur, epaisseur=epaisseur, layer=layer, style=style,
-            tags=tags,tooltips=tooltips)
+                         couleur=couleur, epaisseur=epaisseur, layer=layer, style=style,
+                         tags=tags,
+                         tooltips=tooltips)
         self.pointCentre = pointCentre
         self.rayon_km = rayon_km
 
-        centre, rayon_px = self.getCentreEtRayonPixels()
-        self.cercle = Cercle(centre, rayon_px)
-        self.pointReference = self.cercle.centre
-
+        # Le centre et le rayon pixels sont des caches dérivés de ces données normatives.
+        self.recalculerCoordonneesPixelAbs()
 
     @staticmethod
     def depuisTroisPoints(v1: PointGraphique, v2: PointGraphique, v3: PointGraphique,
-        nom=None,
-        couleur=None, epaisseur=None, layer=None, style=None,
-        tags: dict[str, Any] = None, tooltips: list[str] = None) -> "CercleGraphique | None":
+                          nom=None,
+                          couleur=None, epaisseur=None, layer=None, style=None,
+                          tags: dict[str, Any] = None, tooltips: list[str] = None
+                          ) -> "CercleGraphique | None":
 
         def calculCentreEtRayon(p1, p2, p3):
             (x1, y1), (x2, y2), (x3, y3) = p1, p2, p3
@@ -502,12 +552,26 @@ class CercleGraphique(ObjetGraphique):
             tags=tags, tooltips=tooltips
         )
 
-
     def copie(self):
-        return CercleGraphique(pointCentre=self.pointCentre.copie(),rayon_km=self.rayon_km,
-            nom=self.nom,
-            couleur=self._couleur,epaisseur=self._epaisseur,layer=self.layer,style=self.style,
-            tooltips=self.tooltips,tags=self.tags
+        copie = CercleGraphique(pointCentre=self.pointCentre.copie(), rayon_km=self.rayon_km,
+                                nom=self.nom,
+                                couleur=self._couleur, epaisseur=self._epaisseur, layer=self.layer, style=self.style,
+                                tooltips=self.tooltips, tags=self.tags,
+                                )
+        return self._copyPrintLabelTo(copie)
+
+    def getGraphicalSignature(self):
+        if type(self) is not CercleGraphique:
+            return None
+        x, y = self.pointReference
+        return (
+            "circle",
+            _normaliseSignatureNumber(x),
+            _normaliseSignatureNumber(y),
+            _normaliseSignatureNumber(self.cercle.rayon),
+            tuple(self.getCouleur()),
+            self.getEpaisseur(),
+            self.getStyle(),
         )
 
     def getCentreEtRayonPixels(self):
@@ -524,8 +588,10 @@ class CercleGraphique(ObjetGraphique):
 
         return (int(px_centre), int(py_centre)), int(rayon_px)
 
-
-
+    def cadreAffichage(self):
+        x, y = self.pointReference
+        rayon_px = self.cercle.rayon
+        return (x-rayon_px, y-rayon_px), (x+rayon_px, y+rayon_px)
 
     def afficher(self, canvas, transformerAffichagePixel):
         if not self.estVisible():
@@ -554,7 +620,6 @@ class CercleGraphique(ObjetGraphique):
         self.cercle = Cercle(centre, rayon_px)
         self.pointReference = centre
 
-
     def getCentre(self) -> PointGraphique:
         x_l93, y_l93 = carteConfig.pixels_to_lambert93(*self.pointReference)
         return PointGraphique("Centre", x_l93, y_l93)
@@ -571,7 +636,6 @@ class CercleGraphique(ObjetGraphique):
         r = self.cercle.rayon
         return abs(math.hypot(x_pix - cx, y_pix - cy) - r)
 
-
     def intersectionLigne(self, ligneGraphique: "LigneGraphique") -> list[tuple[float, float]]:
         """
         Retourne les points d’intersection avec une LigneGraphique, en coordonnées Lambert93.
@@ -581,7 +645,6 @@ class CercleGraphique(ObjetGraphique):
 
         points_px = ligneGraphique.lignePixelImage.intersections_avec_cercle(self.cercle)
         return [carteConfig.pixels_to_lambert93(px, py) for px, py in points_px]
-
 
     def intersectionCercle(self, autreCercle: "CercleGraphique") -> list[PointGraphique]:
         """
@@ -643,7 +706,7 @@ class CercleGraphique(ObjetGraphique):
         """
 
         w_img, h_img = carteConfig.image_size
-        px, py = self.coordonnéesPixelAbs()
+        px, py = self.coordonneesPixelAbs()
         r = self.cercle.rayon
 
         # Rectangle englobant
@@ -657,9 +720,9 @@ class CercleGraphique(ObjetGraphique):
 
 class ArcOriente(CercleGraphique):
     def __init__(self, pointCentre: PointGraphique, rayon_km: float, azimut_depart_deg: float, rotation_deg: float,
-        nom=None,
-        couleur=None, epaisseur=None, style=None, layer=None,
-        tags: dict[str, Any] = None, tooltips: list[str] = None):
+                 nom=None,
+                 couleur=None, epaisseur=None, style=None, layer=None,
+                 tags: dict[str, Any] = None, tooltips: list[str] = None):
 
         # Appel du constructeur parent avec le centre (PointGraphique) et le rayon en km
         super().__init__(
@@ -677,8 +740,9 @@ class ArcOriente(CercleGraphique):
         self.style = style  # "Arrow" ou None
 
     def copie(self):
-        return ArcOriente(
+        copie = ArcOriente(
             pointCentre=self.pointCentre,
+            rayon_km=self.rayon_km,
             azimut_depart_deg=self.azimut_depart,
             rotation_deg=self.rotation,
             nom=self.nom,
@@ -686,8 +750,10 @@ class ArcOriente(CercleGraphique):
             epaisseur=self._epaisseur,
             style=self.style,
             layer=self.layer,
+            tags=self.tags,
             tooltips=self.tooltips
         )
+        return self._copyPrintLabelTo(copie)
 
     def afficher(self, canvas, transformerAffichagePixel):
         if not self.estVisible():
@@ -711,24 +777,22 @@ class ArcOriente(CercleGraphique):
             """
             return math.radians((90 - azimut_deg) % 360)
 
-
         if not self.estVisible():
             return
 
         # On convertit les angles... 0° = Nord pour moi 0° = Est pour OpenCV avec des angles de -180° à + 180°
-        #◘ On fait la rotation à 90°
+        # On fait la rotation à 90°
         angle_debutOpenCV = azimutVersOpenCV(self.azimut_depart)
         angle_finOpenCV = azimutVersOpenCV(self.azimut_depart + self.rotation)
 
         # OpenCV ne comprend pas angle_deb et angle_fin.. il va toujours du plus petit ves le plus grand
-        if (self.rotation>0) and (angle_finOpenCV<angle_debutOpenCV):
+        if (self.rotation > 0) and (angle_finOpenCV < angle_debutOpenCV):
             angle_finOpenCV += 360
         if (self.rotation < 0) and (angle_finOpenCV > angle_debutOpenCV):
             angle_finOpenCV -= 360
 
         px, py = self.coordonneesPixelAbs()
         rayon_px = self.cercle.rayon
-
 
         centre_aff = transformerAffichagePixel(px, py)
         edge_aff = transformerAffichagePixel(px + rayon_px, py)
@@ -777,8 +841,6 @@ class ArcOriente(CercleGraphique):
                     lineType=cv2.LINE_AA
                 )
 
-
-
         # Si demandé : ajouter flèche à la fin de l’arc
         if self.style == "Arrow":
             # Angle final de l’arc en degrés boussole
@@ -801,7 +863,6 @@ class ArcOriente(CercleGraphique):
 
                 cv2.line(canvas, (int(x_edge), int(y_edge)), (int(x_tip), int(y_tip)), couleur, epaisseur)
 
-
         # On affiche le texte
         if self.nom:
             # 1. Angle central de l’arc
@@ -814,15 +875,11 @@ class ArcOriente(CercleGraphique):
             pt1 = transformerAffichagePixel(x+150, y+150)
             decalage_affichage = math.hypot(pt1[0] - pt0[0], pt1[1] - pt0[1])
 
-
-
             x_text = x + (rayon_affiche + decalage_affichage) * math.cos(angle_central_rad)
             y_text = y + (rayon_affiche + decalage_affichage) * math.sin(angle_central_rad)
 
             # 3. Affichage
             self.afficherTexte(canvas, self.nom, x_text, y_text)
-
-
 
     def distanceDepuis(self, x_pix: float, y_pix: float) -> float:
         """
@@ -832,7 +889,6 @@ class ArcOriente(CercleGraphique):
         cx, cy = self.cercle.centre
         r = self.cercle.rayon
         return abs(math.hypot(x_pix - cx, y_pix - cy) - r)
-
 
 
 class Ligne:
@@ -847,7 +903,6 @@ class Ligne:
         self.A = dy
         self.B = -dx
         self.C = dx * y1 - dy * x1
-
 
     @classmethod
     def depuisPointEtVecteur(cls, point: tuple[float, float], vecteur: tuple[float, float]) -> "Ligne":
@@ -895,8 +950,6 @@ class Ligne:
         y = (A[1] + B[1] + C[1]) / 3
         return (x, y)
 
-
-
     def azimut(self) -> float:
         """
         Retourne l’azimut (en degrés boussole) de la droite, basé sur ses coefficients A et B.
@@ -911,7 +964,6 @@ class Ligne:
         az = (math.degrees(math.atan2(dx, -dy)) + 360) % 360
         return az
 
-
     def distanceAuPoint(self, x: float, y: float) -> float:
         """
         Calcule la distance (en pixels) entre cette ligne et un point (x, y).
@@ -921,7 +973,6 @@ class Ligne:
         if denominateur == 0:
             raise ValueError("Ligne dégénérée, A = B = 0")
         return numerateur / denominateur
-
 
     def projection(self, px: float, py: float) -> tuple[float, float]:
         """
@@ -974,7 +1025,6 @@ class Ligne:
         p2y = py + ortho_dy
 
         return Ligne((px, py), (p2x, p2y))
-
 
     def intersection(self, autre: "Ligne"):
         """
@@ -1032,7 +1082,6 @@ class Ligne:
             p2 = (x0 - dx, y0 - dy)
             return [p1, p2]
 
-
     def __repr__(self):
         return f"Ligne(({self.pt1[0]}, {self.pt1[1]}) → ({self.pt2[0]}, {self.pt2[1]}))"
 
@@ -1080,19 +1129,28 @@ class Ligne:
 
 
 class LigneGraphique(ObjetGraphique):
-    def __init__(self, point_px: tuple[float, float], vecteur_px: tuple[float, float],
-        nom=None,
-        couleur=None, epaisseur=None,  style=None, layer=None,
-        tags: dict[str, Any] = None, tooltips: list[str] = None):
+    """Support de géométrie pixel pour le rendu et les calculs dans l'image.
+
+    Une instance directe décrit un point et une direction en pixels ; elle ne
+    constitue pas à elle seule une définition Lambert persistable.
+    """
+    def __init__(self, point_px: tuple[float, float], vecteur_px: tuple[float, float], distance=None,
+                 nom=None,
+                 couleur=None, epaisseur=None,  style=None, layer=None,
+                 tags: dict[str, Any] = None, tooltips: list[str] = None):
 
         super().__init__(nom=nom,
-            couleur=couleur, epaisseur=epaisseur, style=style, layer=layer,
-            tags=tags, tooltips=tooltips
-        )
+                         couleur=couleur, epaisseur=epaisseur, style=style, layer=layer,
+                         tags=tags, tooltips=tooltips
+                         )
 
         self.pointReference = point_px
         self.vecteur = vecteur_px
-        self.cropToImage()
+        self.distance = distance
+
+        # si c'est une ligne, on crop aux
+        if not distance:
+            self.cropToImage()
 
     def cropToImage(self):
         if carteConfig.image_size is None:
@@ -1122,29 +1180,58 @@ class LigneGraphique(ObjetGraphique):
         ]
 
         intersections = []
+        tol = 1e-3
         for bord in bords:
             pt = ligne_longue.intersection(bord)
             if pt:
                 x, y = pt
-                tol = 1e-3
                 if -tol <= x <= w_img + tol and -tol <= y <= h_img + tol:
                     intersections.append((x, y))
 
-        if len(intersections) >= 2:
-            pt1, pt2 = intersections[:2]
+        intersections_distinctes = []
+        for point in intersections:
+            if not any(math.hypot(point[0] - autre[0], point[1] - autre[1]) <= tol
+                       for autre in intersections_distinctes):
+                intersections_distinctes.append(point)
+
+        if len(intersections_distinctes) >= 2:
+            pt1, pt2 = intersections_distinctes[:2]
             self.lignePixelImage = Ligne(pt1[0], pt1[1], pt2[0], pt2[1])
         else:
             self.lignePixelImage = None
 
     def copie(self):
-        return LigneGraphique(
+        copie = LigneGraphique(
             point_px=self.pointReference,
             vecteur_px=self.vecteur,
             nom=self.nom,
             couleur=self._couleur,
             epaisseur=self._epaisseur,
+            style=self.style,
             layer=self.layer,
+            tags=self.tags,
+            distance=self.distance,
             tooltips=self.tooltips
+        )
+        return self._copyPrintLabelTo(copie)
+
+    def getGraphicalSignature(self):
+        if self.distance is None and self.lignePixelImage is not None:
+            point1 = self.lignePixelImage.pt1
+            point2 = self.lignePixelImage.pt2
+        else:
+            point1 = self.pointReference
+            vx, vy = self.vecteur
+            distance = self.distance if self.distance is not None else 1.0
+            point2 = (point1[0] + vx * distance, point1[1] + vy * distance)
+        endpoints = tuple(sorted((_normaliseSignaturePoint(point1), _normaliseSignaturePoint(point2))))
+        return (
+            "line",
+            type(self).__name__,
+            endpoints,
+            tuple(self.getCouleur()),
+            self.getEpaisseur(),
+            self.getStyle(),
         )
 
     def pointEtvecteur(self):
@@ -1153,15 +1240,36 @@ class LigneGraphique(ObjetGraphique):
         azimut = self.getAzimutCarte()
         return x_l93, y_l93, azimut
 
+    def cadreAffichage(self):
+        if self.distance is None:
+            x1, y1 = self.pointReference
+            x2, y2 = self.pointReference
+        else:
+            x1, y1 = self.pointReference
+            vx, vy = self.vecteur
+            x2 = int(x1 + vx * self.distance)
+            y2 = int(y1 + vy * self.distance)
+        return (x1, y1), (x2, y2)
+
     def afficher(self, canvas, transformerAffichage):
         if not self.estVisible():
             return
 
-        if self.lignePixelImage is None:
-            return
+        if self.distance is not None:
+            # On affiche un segment
+            # Calcul de la direction unitaire
+            pt1 = transformerAffichage(*self.pointReference)
+            x, y = self.pointReference
+            vx, vy = self.vecteur
+            ptAbsolu = (int(x + vx * self.distance), int(y + vy * self.distance))
+            pt2 = transformerAffichage(*ptAbsolu)
 
-        pt1 = transformerAffichage(*self.lignePixelImage.pt1)
-        pt2 = transformerAffichage(*self.lignePixelImage.pt2)
+        else:
+            # On affiche une ligne
+            if self.lignePixelImage is None:
+                return
+            pt1 = transformerAffichage(*self.lignePixelImage.pt1)
+            pt2 = transformerAffichage(*self.lignePixelImage.pt2)
 
         if pt1 is None or pt2 is None or None in pt1 or None in pt2:
             return
@@ -1178,7 +1286,6 @@ class LigneGraphique(ObjetGraphique):
         else:
             cv2.line(canvas, (x1, y1), (x2, y2), couleur, epaisseur, cv2.LINE_AA)
 
-
     def estVisibledansImage(self) -> bool:
         """
         Retourne True si la ligne graphique possède un segment défini à l'intérieur
@@ -1191,7 +1298,6 @@ class LigneGraphique(ObjetGraphique):
 
         # Sinon, on a bien un segment visible
         return True
-
 
     def distanceDepuis(self, x_pix: float, y_pix: float) -> float:
         """
@@ -1212,7 +1318,6 @@ class LigneGraphique(ObjetGraphique):
         # Formule de la distance point-droite : |Ax + By + C| / sqrt(A^2 + B^2)
         return abs(A * x_pix + B * y_pix + C) / denom
 
-
     def getAzimutCarte(self) -> float:
         """
         Retourne l’azimut (en degrés) de la ligne graphique sur la carte,
@@ -1223,7 +1328,6 @@ class LigneGraphique(ObjetGraphique):
             raise ValueError("Vecteur nul, azimut indéfini")
         azimut = (math.degrees(math.atan2(dx, -dy)) + 360) % 360
         return azimut
-
 
     def intersectionLigne(self, autre: "LigneGraphique"):
         if self.lignePixelImage is None or autre.lignePixelImage is None:
@@ -1263,12 +1367,11 @@ class LigneGraphique(ObjetGraphique):
 
         return PointGraphique(nom, x_l93, y_l93, layer=self.layer)
 
-    def orthogonale(self, point: "PointGraphique") -> "LigneEntreVilles":
+    def orthogonale(self, point: "PointGraphique") -> "LigneAzimut":
         """
-        Retourne une vraie droite orthogonale à self, passant par le PointGraphique donné.
+        Calcule l'orthogonale dans le repère pixel et la retourne sous forme
+        native : point Lambert et azimut de carte/image.
         """
-        px, py = point.coordonneesPixelAbs()
-
         dx, dy = self.vecteur
         norme = math.hypot(dx, dy)
         if norme == 0:
@@ -1278,15 +1381,13 @@ class LigneGraphique(ObjetGraphique):
         ortho_dx = dy / norme
         ortho_dy = -dx / norme   # <-- C'est ici qu'on tient compte de l'inversion de l'axe Y
 
-
-        # On construit une LigneGraphique
-        return LigneGraphique(
-            point_px=(px, py),
-            vecteur_px=(ortho_dx, ortho_dy),
+        azimut_deg = (math.degrees(math.atan2(ortho_dx, -ortho_dy)) + 360) % 360
+        return LigneAzimut(
+            ville=point,
+            azimut_deg=azimut_deg,
             nom=f"Ortho vraie de {point.nom}",
             layer=self.layer
         )
-
 
     def parallele(self, point: "PointGraphique") -> "LigneAzimut":
         """
@@ -1304,7 +1405,6 @@ class LigneGraphique(ObjetGraphique):
             azimut_deg=azimut_deg,
             nom=f"Parallèle_{point.nom}_à_{self.nom}",
             layer=self.layer)
-
 
     def pointsEquidistants(self, point: "PointGraphique", distance_km: float) -> tuple["PointGraphique", "PointGraphique"]:
         """
@@ -1356,8 +1456,6 @@ class LigneGraphique(ObjetGraphique):
         else:
             return pt2, pt1
 
-
-
     def pointsLateraux(self, point: "PointGraphique", distance_km: float) -> tuple["PointGraphique", "PointGraphique"]:
         """
         Calcule deux points situés orthogonalement à la ligne, à la distance donnée (en mètres),
@@ -1402,14 +1500,11 @@ class LigneGraphique(ObjetGraphique):
 
         return p1, p2
 
-
     def parallelesDecalees(self, distance: float) -> tuple["LigneAzimut", "LigneAzimut"]:
         """
         Crée deux lignes azimutales parallèles à cette ligne, décalées orthogonalement
         de la distance donnée (en pixels image), en utilisant self.pointReference.
         """
-        from affichage_objets import LigneAzimut
-
         # On récupère le point de référence en tant que PointGraphique
         px, py = self.pointReference
         x_l93, y_l93 = carteConfig.pixels_to_lambert93(px, py)
@@ -1429,9 +1524,23 @@ class LigneGraphique(ObjetGraphique):
 
 
 class LigneEntreVilles(LigneGraphique):
-    def __init__(self, ville1, ville2, nom=None, couleur=None, epaisseur=None, layer=None, tags: dict[str, Any] = None, tooltips: list[str] = None):
+    """Droite définie par deux extrémités Lambert ; caches dérivés en pixels."""
+    def __init__(self, ville1, ville2, nom=None,
+                 couleur=None, epaisseur=None, layer=None,
+                 tags: dict[str, Any] = None,
+                 tooltips: list[str] = None):
+
+        # Données normatives : les deux extrémités Lambert-93.
         self.x1_l93, self.y1_l93 = ville1.coordonneesLambert()
         self.x2_l93, self.y2_l93 = ville2.coordonneesLambert()
+        point_px, vecteur_px = self._calculerCachesPixels()
+        super().__init__(point_px=point_px,
+                         vecteur_px=vecteur_px,
+                         nom=nom, couleur=couleur, epaisseur=epaisseur, layer=layer,
+                         tags=tags,
+                         tooltips=tooltips)
+
+    def _calculerCachesPixels(self):
         px1, py1 = carteConfig.lambert93_to_pixels(self.x1_l93, self.y1_l93)
         px2, py2 = carteConfig.lambert93_to_pixels(self.x2_l93, self.y2_l93)
         pref_x, pref_y = (px1+px2)/2, (py1+py2)/2
@@ -1443,70 +1552,196 @@ class LigneEntreVilles(LigneGraphique):
 
         vx /= norme
         vy /= norme
-
-        super().__init__(point_px=(pref_x, pref_y), vecteur_px=(vx, vy), nom=nom, couleur=couleur, epaisseur=epaisseur, layer=layer, tags=tags, tooltips=tooltips)
+        return (pref_x, pref_y), (vx, vy)
 
     def recalculerCoordonneesPixelAbs(self):
-        px1, py1 = carteConfig.lambert93_to_pixels(self.x1_l93, self.y1_l93)
-        px2, py2 = carteConfig.lambert93_to_pixels(self.x2_l93, self.y2_l93)
-        pref_x, pref_y = (px1+px2)/2, (py1+py2)/2
-        vx = px2 - px1
-        vy = py2 - py1
-        norme = (vx ** 2 + vy ** 2) ** 0.5
-        if norme == 0:
-            raise ValueError("Villes identiques : vecteur nul")
-
-        vx /= norme
-        vy /= norme
-        self.pointReference = pref_x, pref_y
-        self.vecteur = vx, vy
+        self.pointReference, self.vecteur = self._calculerCachesPixels()
         self.cropToImage()
+
+    def copie(self):
+        ville1 = PointGraphique("Extrémité 1", self.x1_l93, self.y1_l93)
+        ville2 = PointGraphique("Extrémité 2", self.x2_l93, self.y2_l93)
+        copie = LigneEntreVilles(
+            ville1, ville2,
+            nom=self.nom,
+            couleur=self._couleur,
+            epaisseur=self._epaisseur,
+            layer=self.layer,
+            tags=self.tags,
+            tooltips=self.tooltips,
+        )
+        copie.setStyle(self.style)
+        return self._copyPrintLabelTo(copie)
 
 
 class LigneAzimut(LigneGraphique):
-    def __init__(self, ville, azimut_deg, nom=None, couleur=None, epaisseur=None, layer=None, tags: dict[str, Any] = None,tooltips: list[str] = None):
+    """Droite définie par un point Lambert et un azimut de carte/image."""
+    def __init__(self, ville, azimut_deg, nom=None,
+                 couleur=None, epaisseur=None, layer=None,
+                 tags: dict[str, Any] = None,
+                 tooltips: list[str] = None):
+        # Données normatives ; l'azimut garde sa sémantique de carte/image actuelle.
         self.x_l93, self.y_l93 = ville.coordonneesLambert()
         self.azimut_deg = azimut_deg
-        px, py = carteConfig.lambert93_to_pixels(self.x_l93, self.y_l93)
+        point_px, vecteur_px = self._calculerCachesPixels()
+        super().__init__(point_px=point_px, vecteur_px=vecteur_px,
+                         distance=None,
+                         nom=nom,
+                         couleur=couleur, epaisseur=epaisseur, layer=layer,
+                         tags=tags,
+                         tooltips=tooltips)
 
-        angle_rad = math.radians(azimut_deg)
-        vx = math.sin(angle_rad)
-        vy = -math.cos(angle_rad)
-
-        super().__init__(point_px=(px, py), vecteur_px=(vx, vy), nom=nom, couleur=couleur, epaisseur=epaisseur, layer=layer, tags=tags, tooltips=tooltips)
-
-    def recalculerCoordonneesPixelAbs(self):
+    def _calculerCachesPixels(self):
         px, py = carteConfig.lambert93_to_pixels(self.x_l93, self.y_l93)
 
         angle_rad = math.radians(self.azimut_deg)
         vx = math.sin(angle_rad)
         vy = -math.cos(angle_rad)
+        return (px, py), (vx, vy)
 
-        self.pointReference = px, py
-        self.vecteur = vx, vy
+    def recalculerCoordonneesPixelAbs(self):
+        self.pointReference, self.vecteur = self._calculerCachesPixels()
         self.cropToImage()
+
+    def copie(self):
+        ville = PointGraphique("Ancrage", self.x_l93, self.y_l93)
+        copie = LigneAzimut(
+            ville, self.azimut_deg,
+            nom=self.nom,
+            couleur=self._couleur,
+            epaisseur=self._epaisseur,
+            layer=self.layer,
+            tags=self.tags,
+            tooltips=self.tooltips,
+        )
+        copie.setStyle(self.style)
+        return self._copyPrintLabelTo(copie)
+
 
 class LigneVerticale(LigneGraphique):
+    """Droite verticale dans l'image, ancrée par un point Lambert."""
     def __init__(self, ville, nom=None, couleur=None, epaisseur=None, layer=None, tags: dict[str, Any] = None, tooltips: list[str] = None):
+        # L'ancrage est natif ; l'orientation reste une convention de rendu image.
         self.x_l93, self.y_l93 = ville.coordonneesLambert()
+        point_px, vecteur_px = self._calculerCachesPixels()
+        super().__init__(point_px=point_px, vecteur_px=vecteur_px,
+                         distance=None,
+                         nom=nom,
+                         couleur=couleur, epaisseur=epaisseur, layer=layer,
+                         tags=tags,
+                         tooltips=tooltips)
+
+    def _calculerCachesPixels(self):
         px, _ = carteConfig.lambert93_to_pixels(self.x_l93, self.y_l93)
-        super().__init__(point_px=(px, 0), vecteur_px=(0, 1), nom=nom, couleur=couleur, epaisseur=epaisseur, layer=layer, tags=tags, tooltips=tooltips)
+        return (px, 0), (0, 1)
 
     def recalculerCoordonneesPixelAbs(self):
-        px, _ = carteConfig.lambert93_to_pixels(self.x_l93, self.y_l93)
-        self.pointReference = px, 0
-        self.vecteur = 0, 1
+        self.pointReference, self.vecteur = self._calculerCachesPixels()
         self.cropToImage()
+
+    def copie(self):
+        ville = PointGraphique("Ancrage", self.x_l93, self.y_l93)
+        copie = LigneVerticale(
+            ville,
+            nom=self.nom,
+            couleur=self._couleur,
+            epaisseur=self._epaisseur,
+            layer=self.layer,
+            tags=self.tags,
+            tooltips=self.tooltips,
+        )
+        copie.setStyle(self.style)
+        return self._copyPrintLabelTo(copie)
+
 
 class LigneHorizontale(LigneGraphique):
+    """Droite horizontale dans l'image, ancrée par un point Lambert."""
     def __init__(self, ville, nom=None, couleur=None, epaisseur=None, layer=None, tags: dict[str, Any] = None, tooltips: list[str] = None):
+        # L'ancrage est natif ; l'orientation reste une convention de rendu image.
         self.x_l93, self.y_l93 = ville.coordonneesLambert()
-        _, py = carteConfig.lambert93_to_pixels(self.x_l93, self.y_l93)
+        point_px, vecteur_px = self._calculerCachesPixels()
+        super().__init__(point_px=point_px, vecteur_px=vecteur_px,
+                         distance=None,
+                         nom=nom,
+                         couleur=couleur, epaisseur=epaisseur, layer=layer,
+                         tags=tags,
+                         tooltips=tooltips)
 
-        super().__init__(point_px=(0, py), vecteur_px=(1, 0), nom=nom, couleur=couleur, epaisseur=epaisseur, layer=layer, tags=tags, tooltips=tooltips)
+    def _calculerCachesPixels(self):
+        _, py = carteConfig.lambert93_to_pixels(self.x_l93, self.y_l93)
+        return (0, py), (1, 0)
 
     def recalculerCoordonneesPixelAbs(self):
-        _, py = carteConfig.lambert93_to_pixels(self.x_l93, self.y_l93)
-        self.pointReference = 0, py
-        self.vecteur = 1, 0
+        self.pointReference, self.vecteur = self._calculerCachesPixels()
         self.cropToImage()
+
+    def copie(self):
+        ville = PointGraphique("Ancrage", self.x_l93, self.y_l93)
+        copie = LigneHorizontale(
+            ville,
+            nom=self.nom,
+            couleur=self._couleur,
+            epaisseur=self._epaisseur,
+            layer=self.layer,
+            tags=self.tags,
+            tooltips=self.tooltips,
+        )
+        copie.setStyle(self.style)
+        return self._copyPrintLabelTo(copie)
+
+
+class SegmentEntreVilles(LigneGraphique):
+    """Segment Lambert dont la longueur de rendu reste un cache pixel."""
+    def __init__(self, ville1, ville2, nom=None,
+                 couleur=None, epaisseur=None, layer=None,
+                 tags: dict[str, Any] = None,
+                 tooltips: list[str] = None):
+        # Données normatives : villes et extrémités Lambert-93.
+        self.ville1 = ville1
+        self.ville2 = ville2
+
+        self.x1_l93, self.y1_l93 = ville1.coordonneesLambert()
+        self.x2_l93, self.y2_l93 = ville2.coordonneesLambert()
+        point_px, vecteur_px, distance = self._calculerCachesPixels()
+        super().__init__(point_px=point_px, vecteur_px=vecteur_px, distance=distance,
+                         nom=nom,
+                         couleur=couleur, epaisseur=epaisseur, layer=layer,
+                         tags=tags,
+                         tooltips=tooltips)
+
+    def _calculerCachesPixels(self):
+        px1, py1 = carteConfig.lambert93_to_pixels(self.x1_l93, self.y1_l93)
+        px2, py2 = carteConfig.lambert93_to_pixels(self.x2_l93, self.y2_l93)
+
+        vx = px2 - px1
+        vy = py2 - py1
+        norme = (vx ** 2 + vy ** 2) ** 0.5
+        if norme == 0:
+            raise ValueError("Villes identiques : vecteur nul")
+
+        vx /= norme
+        vy /= norme
+
+        # Cache de longueur pixel pour le rendu, distinct de distanceSegment() en Lambert/km.
+        distance = ((px2-px1)**2 + (py2-py1)**2) ** 0.5
+        return (px1, py1), (vx, vy), distance
+
+    def recalculerCoordonneesPixelAbs(self):
+        self.pointReference, self.vecteur, self.distance = self._calculerCachesPixels()
+
+    def copie(self):
+        copie = SegmentEntreVilles(
+            self.ville1, self.ville2,
+            nom=self.nom,
+            couleur=self._couleur,
+            epaisseur=self._epaisseur,
+            layer=self.layer,
+            tags=self.tags,
+            tooltips=self.tooltips,
+        )
+        copie.setStyle(self.style)
+        return self._copyPrintLabelTo(copie)
+
+    def distanceSegment(self):
+        dist = ((self.x1_l93 - self.x2_l93)**2 + (self.y1_l93-self.y2_l93)**2)**0.5
+        return dist/1000    # en km

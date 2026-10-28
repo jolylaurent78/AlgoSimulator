@@ -6,7 +6,8 @@ from PIL import ImageTk, Image
 import json
 import os
 
-from src.configGlobale import ConfigGlobale  
+from src.configGlobale import ConfigGlobale
+
 
 class CarteConfig:
     def __init__(self, json_path):
@@ -48,6 +49,9 @@ class CarteConfig:
 
         print(f"[✅] Carte chargée : {self.description} ({w_img}x{h_img})")
 
+    def getImageCarte(self):
+        return self.img
+
     def lambert93_to_pixels(self, x, y):
         v = np.array([x, y])
         result = self.A @ v + self.offset
@@ -65,7 +69,6 @@ class CarteConfig:
     def gps_to_lambert93(self, lon, lat):
         x, y = self.proj_l93.transform(lon, lat)
         return x, y
-
 
     def calibrer(self, liste_points_lambert, liste_points_pixel):
         """
@@ -122,7 +125,7 @@ class CarteConfig:
         self.offset = np.array([offset_x, offset_y])
         self.A_inv = np.linalg.inv(self.A)
 
-        print(f"[✅] Calibration effectuée :")
+        print("[✅] Calibration effectuée :")
         print(f"A =\n{self.A}")
         print(f"offset = {self.offset}")
 
@@ -130,10 +133,9 @@ class CarteConfig:
         """
         Affiche les coefficients de calibration (matrice A et offset).
         """
-        print(f"[DEBUG] Calibration courante de la carte :")
+        print("[DEBUG] Calibration courante de la carte :")
         print(f"A =\n{self.A}")
         print(f"offset = {self.offset}")
-
 
     def sauvegarderCalibrationDansJson(self, json_path, image_file, calibration_villes):
         """
@@ -174,6 +176,7 @@ def charger_icone(chemin, taille=(16, 16)):
     img = img.resize(taille, Image.Resampling.LANCZOS)
     return ImageTk.PhotoImage(img)
 
+
 def hexVersBGR(hex_color: str) -> tuple[int, int, int]:
     """
     Convertit une couleur hexadécimale "#rrggbb" en tuple BGR (OpenCV).
@@ -184,6 +187,7 @@ def hexVersBGR(hex_color: str) -> tuple[int, int, int]:
         b = int(hex_color[5:7], 16)
         return (b, g, r)
     return (0, 0, 0)
+
 
 def bgrVersHex(bgr: tuple[int, int, int]) -> str:
     b, g, r = bgr

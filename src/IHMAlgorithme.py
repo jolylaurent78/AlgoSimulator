@@ -1,8 +1,7 @@
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk, filedialog
 import csv
 import os
-from functools import partial  # à placer en haut du fichier
 import logging
 import json
 
@@ -26,6 +25,7 @@ logging.basicConfig(
         logging.StreamHandler()  # vers console
     ]
 )
+
 
 class ToolTip:
     def __init__(self, widget, text=''):
@@ -57,24 +57,6 @@ class ToolTip:
     def update_text(self, text):
         self.text = text
 
-class FenetreProgression(tk.Toplevel):
-    def __init__(self, parent, titre="Progression", maximum=100):
-        super().__init__(parent)
-        self.title(titre)
-        self.geometry("300x100")
-        self.label = ttk.Label(self, text="Création des scénarios...")
-        self.label.pack(pady=10)
-        self.barre = ttk.Progressbar(self, orient="horizontal", length=250, mode="determinate", maximum=maximum)
-        self.barre.pack(pady=5)
-        self.update_idletasks()
-
-    def miseAJour(self, valeur):
-        self.barre["value"] = valeur
-        self.update_idletasks()
-
-    def terminer(self):
-        self.destroy()
-
 
 class IHMAlgorithme(tk.Frame):
     """
@@ -89,7 +71,11 @@ class IHMAlgorithme(tk.Frame):
     COMBO_WIDTH = 145
     CHECKBOX_WIDTH = 115
 
-    def __init__(self, parent, csv_filename, moteurAlgo, layerManager: LayerManager, callbackRefreshLayers=None, callbackRedessinerCarte=None, callbackMiseAJourMenu=None):
+    def __init__(self, parent,
+                 csv_filename,
+                 moteurAlgo,
+                 layerManager: LayerManager,
+                 callbackRefreshLayers=None, callbackRedessinerCarte=None, callbackMiseAJourMenu=None):
         """
         Initialise l'IHM à partir d’un fichier CSV et d’un moteur algorithmique.
 
@@ -115,16 +101,8 @@ class IHMAlgorithme(tk.Frame):
         chemin_complet = os.path.join(base_path, csv_filename)
         self.parametres_csv = self.parser_csv(chemin_complet)
 
-
         self.construire_interface_depuis_parametres(self.parametres_csv, affichage=True)
         self.update_idletasks()  # force le layout à jour
-
-        # On affiche la taille de la fenetre finale
-        w = self.winfo_width()
-        h = self.winfo_height()
-        print(f"[DEBUG] Taille réelle de la fenêtre : {w} x {h} px")
-
-
 
     def parser_csv(self, chemin):
         """
@@ -169,7 +147,8 @@ class IHMAlgorithme(tk.Frame):
                     erreurs.append("Champ 'Widget' manquant.")
 
                 # Vérification module/attribut seulement si nécessaire
-                widgets_requérant_module = {"field", "combo", "checkbox"}
+                widgets_requérant_module = {"field", "combo", "checkbox", "list", "none"}
+                widgets_requérant_methode = {"bouton"}
                 if widget_type in widgets_requérant_module:
                     module = donnees.get('Module', '').strip()
                     attribut = donnees.get('Attribut', '').strip()
@@ -181,20 +160,89 @@ class IHMAlgorithme(tk.Frame):
                     elif not self.moteurAlgo.estAttributDisponible(module, attribut):
                         erreurs.append(f"Attribut '{attribut}' non défini dans le module '{module}'.")
                     else:
-                        self.attributsModulesAffichés.append((module, attribut, None, None)) # On garde en mémore la liste des modules/attributs
+                        # On garde en mémore la liste des modules/attributs
+                        self.attributsModulesAffichés.append((module, attribut, None, None))
+
+                elif widget_type in widgets_requérant_methode:
+                    module = donnees.get('Module', '').strip()
+                    methode = donnees.get('Attribut', '').strip()
+
+                    if not module or not methode:
+                        erreurs.append("Champs 'Module' ou 'Méthode' manquants ou vides.")
+                    elif not self.moteurAlgo.estModuleDisponible(module):
+                        erreurs.append(f"Module '{module}' non reconnu.")
+                    else:
+                        # Vérifie que la méthode existe dans l'objet module
+                        if not self.moteurAlgo.estMethodeDisponible(module, methode):
+                            erreurs.append(f"Méthode '{methode}' non trouvée dans le module '{module}'.")
 
                 if erreurs:
+                    if donnees.get("FieldType", "").strip().lower() == "tableselection":
+                        raise ValueError(f"CSV invalide ligne {num_ligne} : {' | '.join(erreurs)}")
                     logging.warning(f"Ligne {num_ligne} ignorée : {' | '.join(erreurs)} → {ligne}")
                     continue
 
                 lignes_valides.append(donnees)
 
+        for donnees in lignes_valides:
+            if donnees.get("FieldType", "").strip().lower() != "tableselection":
+                continue
+
+            module = donnees.get("Module", "").strip()
+            attribut = donnees.get("Attribut", "").strip()
+            if not attribut.endswith("Selection"):
+                raise ValueError(
+                    f"CSV invalide : '{module}.{attribut}' FieldType=tableselection doit finir par 'Selection'."
+                )
+
+            attribut_table = attribut.removesuffix("Selection")
+            table_associee = next(
+                (
+                    ligne for ligne in lignes_valides
+                    if ligne.get("Module", "").strip() == module
+                    and ligne.get("Attribut", "").strip() == attribut_table
+                ),
+                None,
+            )
+            if table_associee is None:
+                raise ValueError(
+                    f"CSV invalide : table associée '{module}.{attribut_table}' introuvable pour '{attribut}'."
+                )
+            if (
+                table_associee.get("Widget", "").strip().lower() != "list"
+                or table_associee.get("FieldType", "").strip().lower() != "table"
+            ):
+                raise ValueError(
+                    f"CSV invalide : '{module}.{attribut_table}' doit être Widget=list et FieldType=table."
+                )
+
         logging.info(f"{len(lignes_valides)} lignes valides chargées depuis le CSV.")
         return lignes_valides
 
+    def getAttributSelectionTable(self, module: str, attribut_table: str):
+        """Retourne l'attribut tableselection associé à une table CSV, s'il existe."""
+        for champ in self.parametres_csv:
+            if (
+                champ.get("Module", "").strip() == module
+                and champ.get("FieldType", "").strip().lower() == "tableselection"
+                and champ.get("Attribut", "").strip().removesuffix("Selection") == attribut_table
+            ):
+                return champ.get("Attribut", "").strip()
+        return None
 
-
-
+    def restaurerSelectionTable(self, tableau, module: str, attribut_selection: str):
+        index = self.moteurAlgo.getParametre(module, attribut_selection)
+        enfants = tableau.get_children()
+        if isinstance(index, int) and 0 <= index < len(enfants):
+            tableau._restauration_selection = True
+            try:
+                tableau.selection_set(enfants[index])
+                tableau.focus(enfants[index])
+                tableau.see(enfants[index])
+            finally:
+                tableau._restauration_selection = False
+        else:
+            tableau.selection_remove(tableau.selection())
 
     def rafraichir_valeurs_modules(self):
         """
@@ -206,11 +254,21 @@ class IHMAlgorithme(tk.Frame):
             if var is not None:
                 valeur = self.moteurAlgo.getParametre(module, attribut)
                 if valeur is not None:
-                    if field_type == "angle":
+                    if field_type == "table":
+                        var.delete(*var.get_children())
+                        for ligne in valeur:
+                            var.insert("", "end", values=ligne)
+                        attribut_selection = self.getAttributSelectionTable(module, attribut)
+                        if attribut_selection:
+                            self.restaurerSelectionTable(var, module, attribut_selection)
+                    elif field_type == "angle":
                         valeur = f"{float(valeur):.2f}"
+                        var.set(valeur)
                     elif field_type == "distance":
                         valeur = f"{float(valeur):.1f}"
-                    var.set(valeur)  #
+                        var.set(valeur)
+                    else:
+                        var.set(valeur)
 
         # 🔁 Mise à jour explicite des checkboxes
         for id_objet, var_dict in self.parametres_widgets.items():
@@ -244,7 +302,29 @@ class IHMAlgorithme(tk.Frame):
         self.moteurAlgo.setParametre(module, attribut, valeur, self.layerManager)
         self.rafraichir_valeurs_modules()
 
+    def executerMethodeIteratif(self, module: str, methode: str):
+        """
+        Méthode appelée à chaque changement de paramètre dans l’IHM.
 
+            - Execute la fonction
+            - Relance le calcul
+            - Met à jour dynamiquement l’IHM si besoin
+        """
+        self.enCoursDeCalcul = True
+
+        def iterer(init=False):
+            if not self.enCoursDeCalcul:
+                return  # stop demandé
+
+            resultat = self.moteurAlgo.executerMethode(module, methode, init)
+            if resultat is True:
+                self.enCoursDeCalcul = False
+            else:
+                # Relance après un délai court (IHM non bloquée)
+                self.rafraichir_valeurs_modules()
+                self.after(50, iterer)
+
+        iterer(init=True)
 
     def ajouter_ligne_widgets(self, frame_ligne, champs, lectureSeuleGlobal=False):
         """
@@ -261,6 +341,9 @@ class IHMAlgorithme(tk.Frame):
                 spacer = tk.Label(frame_ligne, text="", height=1)
                 spacer.grid(row=0, column=col_idx, sticky="ew")
                 col_idx += 1
+                continue
+
+            if widget_type == 'none':
                 continue
 
             label = champ.get('Label', '')
@@ -292,9 +375,9 @@ class IHMAlgorithme(tk.Frame):
             elif widget_type == 'field':
                 container = ttk.Frame(frame_ligne)
                 container.grid(row=0, column=col_idx, sticky="e" if align == "right" else "w", padx=5)
-                lbl = tk.Label(container, text=label + ":", font=font)
+                labelAffichee = label if len(label) == 0 else label + ":"
+                lbl = tk.Label(container, text=labelAffichee, font=font)
                 lbl.pack(side="left")
-                readonly = champ_type == 'data'
                 var = tk.StringVar()
                 width = self.get_field_width(field_type)
                 entry = tk.Entry(container, textvariable=var, width=width, state='normal', readonlybackground='white')
@@ -332,7 +415,8 @@ class IHMAlgorithme(tk.Frame):
             elif widget_type == 'combo':
                 container = ttk.Frame(frame_ligne)
                 container.grid(row=0, column=col_idx, sticky="e" if align == "right" else "w", padx=5)
-                tk.Label(container, text=label + ":", font=font).pack(side="left")
+                labelAffichee = label if len(label) == 0 else label + ":"
+                tk.Label(container, text=labelAffichee, font=font).pack(side="left")
                 var = tk.StringVar()
 
                 # On affiche la valeur par défaut
@@ -342,11 +426,9 @@ class IHMAlgorithme(tk.Frame):
 
                 # 2. Obtenir les valeurs possibles depuis getValeursXxx()
                 liste = self.moteurAlgo.getValeursParametre(module, attribut)
-                etat_combo = 'disabled' if lecture_seule else 'readonly'
                 combo = ttk.Combobox(container, values=liste, textvariable=var, state='readonly')
                 combo.config(width=self.get_field_char_width(field_type))
                 combo.pack(side="left")
-
 
                 # 4. Réaction au changement
                 var.trace_add("write", lambda *_, m=module, a=attribut, v=var: self.updateModuleEtInterface(m, a, v.get()))
@@ -354,13 +436,13 @@ class IHMAlgorithme(tk.Frame):
                 self.parametres_widgets[id_objet] = var
                 col_idx += 1
 
-
             elif widget_type == "pointville":
                 container = ttk.Frame(frame_ligne)
                 container.grid(row=0, column=col_idx, sticky="w", padx=5)
 
                 # Label
-                tk.Label(container, text=label + ":", font=font).pack(side="left", padx=(0, 5))
+                labelAffichee = label if len(label) == 0 else label + ":"
+                tk.Label(container, text=labelAffichee, font=font).pack(side="left", padx=(0, 5))
 
                 # Valeur actuelle
                 valeur_actuelle = self.moteurAlgo.getParametre(module, attribut)
@@ -371,14 +453,18 @@ class IHMAlgorithme(tk.Frame):
                 entry_ville.pack(side="left")
 
                 # Bouton ...
-                def ouvrir_selection_ville(module_courant=module, attribut_courant=attribut):
+                def ouvrir_selection_ville(module_courant=module, attribut_courant=attribut,
+                                            var_ville=var_nom_ville, container_courant=container):
+                    # Valeur actuelle
+                    valeur_actuelle = self.moteurAlgo.getParametre(module_courant, attribut_courant)
+
                     popup = tk.Toplevel()
                     popup.title("Choisir une ville")
-                    popup.transient(container)
+                    popup.transient(container_courant)
                     popup.grab_set()
 
                     ttk.Label(popup, text="Ville :").pack(padx=10, pady=(10, 2))
-                    var_filtre = tk.StringVar(value=var_nom_ville.get())
+                    var_filtre = tk.StringVar(value=var_ville.get())
                     entry = ttk.Entry(popup, textvariable=var_filtre)
                     entry.pack(padx=10, fill="x")
 
@@ -386,9 +472,9 @@ class IHMAlgorithme(tk.Frame):
                     listbox.pack(padx=10, fill="both", expand=True)
                     listbox.configure(exportselection=False)
 
-                    #On recharge la liste des villes
+                    # On recharge la liste des villes
                     villes_dict.recharger()
-                    
+
                     def filtrer():
                         texte = var_filtre.get().lower()
                         listbox.delete(0, tk.END)
@@ -398,12 +484,19 @@ class IHMAlgorithme(tk.Frame):
 
                     def valider(event=None):
                         selection = listbox.get(tk.ACTIVE)
-                        var_nom_ville.set(selection)
+                        var_ville.set(selection)
                         self.updateModuleEtInterface(module_courant, attribut_courant, selection)
                         popup.destroy()
 
                     entry.bind("<KeyRelease>", lambda e: filtrer())
                     listbox.bind("<Double-1>", valider)
+                    entry.bind("<Return>", valider)
+                    popup.bind("<Escape>", lambda event: popup.destroy())
+
+                    boutons = ttk.Frame(popup)
+                    boutons.pack(padx=10, pady=10)
+                    ttk.Button(boutons, text="Sélectionner", command=valider).pack(side="left", padx=(0, 5))
+                    ttk.Button(boutons, text="Annuler", command=popup.destroy).pack(side="left")
 
                     filtrer()
                     if valeur_actuelle:
@@ -419,7 +512,83 @@ class IHMAlgorithme(tk.Frame):
                 self.parametres_widgets[id_objet] = var_nom_ville
                 col_idx += 1
 
+            elif widget_type == "list":
+                # Le get paramètre renvoie une liste de tuple (size, label) pour chaque colonne
+                colonnes_def = self.moteurAlgo.getValeursParametre(module, attribut)
+                colonnes_labels = [label for (_, label) in colonnes_def]
 
+                # Frame sur 2 lignes
+                ttk.Label(frame_ligne, text=label, anchor="w").grid(row=0, column=col_idx, sticky="w", padx=5)
+
+                frame_tableau = ttk.Frame(frame_ligne)
+                frame_tableau.grid(row=1, column=col_idx, sticky="nsew", columnspan=999)
+                frame_ligne.grid_columnconfigure(col_idx, weight=1)
+                frame_ligne.grid_rowconfigure(1, weight=1)
+
+                tableau = ttk.Treeview(frame_tableau, columns=colonnes_labels, show="headings", height=hauteur)
+                # Création de la scrollbar verticale
+                scrollbar_y = ttk.Scrollbar(frame_tableau, orient="vertical", command=tableau.yview)
+                tableau.configure(yscrollcommand=scrollbar_y.set)
+
+                # Placement du tableau et de la scrollbar
+                tableau.grid(row=0, column=0, sticky="nsew")
+                scrollbar_y.grid(row=0, column=1, sticky="ns")
+
+                # Configurer la frame_tableau pour s'étirer proprement
+                frame_tableau.grid_rowconfigure(0, weight=1)
+                frame_tableau.grid_columnconfigure(0, weight=1)
+
+                # On size les colonnes
+                for (colSize, colLabel) in colonnes_def:
+                    tableau.heading(colLabel, text=colLabel)
+                    tableau.column(colLabel, width=colSize, anchor="center")
+
+                # Remplissage du tableau
+                tableau.delete(*tableau.get_children())
+                tab = self.moteurAlgo.getParametre(module, attribut)
+                for ligne in tab:
+                    tableau.insert("", "end", values=ligne)
+
+                attribut_selection = self.getAttributSelectionTable(module, attribut)
+                if attribut_selection:
+                    def enregistrer_selection(_event, table=tableau, module_courant=module,
+                                               attribut_courant=attribut_selection):
+                        if getattr(table, "_restauration_selection", False):
+                            return
+                        selection = table.selection()
+                        if not selection:
+                            return
+                        index = table.get_children().index(selection[0])
+                        self.moteurAlgo.setParametreSansRecalcul(
+                            module_courant,
+                            attribut_courant,
+                            index,
+                        )
+
+                    tableau.bind("<<TreeviewSelect>>", enregistrer_selection)
+                    self.restaurerSelectionTable(tableau, module, attribut_selection)
+
+                # on complète la liaison dans attributsModulesAffichés
+                for i, (mod, attr, _, _) in enumerate(self.attributsModulesAffichés):
+                    if mod == module and attr == attribut:
+                        self.attributsModulesAffichés[i] = (module, attribut, tableau, field_type)
+                        break
+
+                self.parametres_widgets[id_objet] = tableau
+                col_idx += 1
+
+            elif widget_type == 'bouton':
+                def executer_bouton(module_courant=module, attribut_courant=attribut):
+                    self.executerMethodeIteratif(module_courant, attribut_courant)
+
+                container = ttk.Frame(frame_ligne)
+                container.grid(row=0, column=col_idx, sticky="e" if align == "right" else "w", padx=5)
+
+                texte_bouton = label or "Exécuter"
+                bouton = ttk.Button(container, text=texte_bouton, command=executer_bouton)
+                bouton.pack()
+
+                col_idx += 1
 
             elif widget_type in ('checkbox', 'checkboxv', 'checkboxh'):
 
@@ -430,7 +599,6 @@ class IHMAlgorithme(tk.Frame):
 
                 def make_checkbox_cb(valeur_choisie, module, attribut, var_dict):
                     return lambda: update_single(valeur_choisie, module, attribut, var_dict)
-
 
                 container = ttk.Frame(frame_ligne)
                 container.grid(row=0, column=col_idx, sticky="w", padx=5)
@@ -443,7 +611,8 @@ class IHMAlgorithme(tk.Frame):
                 var_dict = {}
                 if est_horizontal:
                     # ✅ Label + cases sur la même ligne
-                    tk.Label(container, text=label + ":", font=font).pack(side="left", padx=(0, 5))
+                    labelAffichee = label if len(label) == 0 else label + ":"
+                    tk.Label(container, text=labelAffichee, font=font).pack(side="left", padx=(0, 5))
                     for val in valeurs:
                         var = tk.BooleanVar()
                         var.set(val in valeur_actuelle)
@@ -459,6 +628,7 @@ class IHMAlgorithme(tk.Frame):
                         )
                         cb.config(state="disabled" if lecture_seule else "normal")
                         cb.pack(side="left", padx=2)
+
                 else:
                     # ✅ Label sur sa propre ligne + cases en colonne
                     tk.Label(container, text=label + ":", font=font).grid(row=0, column=0, sticky="w")
@@ -481,7 +651,6 @@ class IHMAlgorithme(tk.Frame):
                 self.parametres_widgets[id_objet] = var_dict
                 col_idx += 1
 
-
     def construire_interface_depuis_parametres(self, parametres_csv, affichage=False):
         """
         Construit les sections de l'IHM à partir des données CSV triées par section et par ligne.
@@ -490,23 +659,8 @@ class IHMAlgorithme(tk.Frame):
         :param parametres_csv: liste des champs lus depuis le CSV
         :param affichage: booléen pour ajouter les contrôles de visibilité / couleur
         """
-        def sauvegarder_algo():
-
-            chemin = filedialog.asksaveasfilename(
-                title="Sauvegarder la simulation",
-                defaultextension=".pkl",
-                filetypes=[("Fichiers pickle", "*.pkl")]
-            )
-            if chemin:
-                self.moteurAlgo.sauvegarder(chemin)
-
-
-
-
-
-
         # On gère les scnéarios
-    ### On affiche maintenant chaque ligne de l'IHM'
+        # On affiche maintenant chaque ligne de l'IHM'
         donnees_par_section = {}
         for ligne in parametres_csv:
             section = ligne['Section']
@@ -514,7 +668,6 @@ class IHMAlgorithme(tk.Frame):
 
         # Si le scénario est automatique... l'édition est locké'
         lecture_seule = self.moteurAlgo.getScenario().getTypeScenario() == TypeScenario.AUTOMATIQUE
-
 
         for section, lignes in donnees_par_section.items():
             frame_section = ttk.LabelFrame(self, text=section)
@@ -541,9 +694,7 @@ class IHMAlgorithme(tk.Frame):
                 frame_ligne.grid(row=no_ligne + 1, column=0, sticky="w", pady=1)
                 self.ajouter_ligne_widgets(frame_ligne, lignes_contenu, lectureSeuleGlobal=lecture_seule)
 
-
-
-    def reconstruire_interface(self, nomLisibleScenario = None):
+    def reconstruire_interface(self, nomLisibleScenario=None):
         """
         Reconstruit l'IHM à partir de la configuration CSV,
         sans réinitialiser les modules (utilisé après application d'un scénario).
@@ -564,8 +715,6 @@ class IHMAlgorithme(tk.Frame):
             self.callbackRedessinerCarte()
         """
 
-
-
     def get_field_width(self, field_type):
         """
             Donne la largeur (en caractères) d’un champ selon son type.
@@ -581,15 +730,24 @@ class IHMAlgorithme(tk.Frame):
 
     def get_field_char_width(self, field_type):
         field_type = field_type.lower()
-        if field_type == 'shorttext': return 15
-        elif field_type == 'longtext': return 40
-        elif field_type == 'date': return 10
-        elif field_type == 'heure': return 8
-        elif field_type == 'angle': return 8
-        elif field_type == 'distance': return 8
-        elif field_type == 'lettre': return 2
-        elif field_type == 'int': return 5
-        else: return 20
+        if field_type == 'shorttext':
+            return 15
+        elif field_type == 'longtext':
+            return 40
+        elif field_type == 'date':
+            return 10
+        elif field_type == 'heure':
+            return 8
+        elif field_type == 'angle':
+            return 8
+        elif field_type == 'distance':
+            return 8
+        elif field_type == 'lettre':
+            return 2
+        elif field_type == 'int':
+            return 5
+        else:
+            return 20
 
     def get_field_unit(self, field_type):
         """
@@ -623,13 +781,16 @@ class IHMAlgorithme(tk.Frame):
             Retour :
                 str : valeur compatible avec Tkinter
             """
-        if align == 'left': return "left"
-        elif align == 'right': return "right"
-        else: return "top"
+        if align == 'left':
+            return "left"
+        elif align == 'right':
+            return "right"
+        else:
+            return "top"
 
-#
-#
-### Menu Algorithme
+    #
+    #
+    # Menu Algorithme
 
     def ouvrir_fenetre_regles(self):
         popup = tk.Toplevel(self)
@@ -656,7 +817,6 @@ class IHMAlgorithme(tk.Frame):
         self.regle_vars = {}  # ex : {"planete.sensZeta": tk.BooleanVar()}
 
         ligne = 0
-        scenario = None
         params_scenario = set()
 
         if self.moteurAlgo.aDesScenarioAutomatiques():
@@ -676,8 +836,7 @@ class IHMAlgorithme(tk.Frame):
             self.regle_vars[cle] = (var, nom)
             ligne += 1
 
-
-        # 🔘 Boutons à droite
+        # Boutons à droite
         def tout_selectionner():
             for var, _ in self.regle_vars.values():
                 var.set(True)
@@ -702,247 +861,6 @@ class IHMAlgorithme(tk.Frame):
         ttk.Button(colonne_boutons, text="Sauvegarder", command=sauvegarder).pack(fill="x", pady=(20, 2))
         ttk.Button(colonne_boutons, text="Annuler", command=annuler).pack(fill="x", pady=2)
 
-
-    def ouvrir_fenetre_scenarios(self):
-        popup = tk.Toplevel(self)
-        popup.title("Gestion des scénarios")
-        popup.transient(self)
-        popup.grab_set()
-
-        main_frame = ttk.Frame(popup)
-        main_frame.pack(padx=10, pady=10, fill="both", expand=True)
-
-        conteneur_groupes = ttk.Frame(main_frame)
-        conteneur_groupes.grid(row=0, column=0, sticky="nsew")
-
-        colonne_boutons = ttk.Frame(main_frame)
-        colonne_boutons.grid(row=0, column=1, sticky="ns", padx=(20, 0))
-
-        main_frame.columnconfigure(0, weight=1)
-        main_frame.rowconfigure(1, weight=0)
-        self.scenario_vars = {}
-        cadres = []
-        groupes = {}
-
-        # On récupère le scénario en cours
-        segment = self.moteurAlgo.segment_actif
-
-        scenarioAutoExistant = self.moteurAlgo.aDesScenarioAutomatiques(segment)
-        if scenarioAutoExistant:
-            parametresScenario = self.moteurAlgo.getListeParametresScenarioAutomatique(segment)
-
-        for ligne in self.parametres_csv:
-            if ligne.get("Type", "").strip() == "input_multiple":
-                section = ligne.get("Section", "Autre").strip()
-                groupes.setdefault(section, []).append(ligne)
-
-        for col_index, (section, lignes) in enumerate(groupes.items()):
-            cadre = ttk.LabelFrame(conteneur_groupes, text=section)
-            cadre.grid(row=0, column=col_index, padx=5, pady=5, sticky="n")
-            cadre.columnconfigure(0, weight=1)
-            cadres.append(cadre)
-
-            for ligne in lignes:
-                module = ligne.get("Module", "").strip()
-                attribut = ligne.get("Attribut", "").strip()
-                cle = f"{module}.{attribut}"
-                if cle in self.moteurAlgo.regles_actives:
-                    continue  # Ignoré car géré par une règle
-                nom_affiche = f"{module}.{attribut}"
-                label = ligne.get("Label", attribut).strip()
-
-                var = tk.BooleanVar(value=False)
-                if scenarioAutoExistant and (module, attribut) in parametresScenario:
-                    var.set(True)
-
-                # 🔁 Attacher le trigger dynamique
-                var.trace_add("write", lambda *args: mettre_a_jour_compteur())
-
-                cb = tk.Checkbutton(cadre, text=label, variable=var)
-                cb.pack(anchor="w")
-                self.scenario_vars[nom_affiche] = var
-
-        # Espacements verticaux harmonisés
-        popup.update_idletasks()
-        hauteur_max = max(cadre.winfo_height() for cadre in cadres)
-        largeur_max = max(cadre.winfo_width() for cadre in cadres)
-        for cadre in cadres:
-            cadre.configure(width=largeur_max)
-            manque = max(hauteur_max - cadre.winfo_height(), 0)
-            spacer = tk.Frame(cadre, height=manque)
-            spacer.pack(fill="x")
-
-        # Label de scénario en bas
-        ligne_footer = ttk.Frame(main_frame)
-        ligne_footer.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(10, 0))
-        ligne_footer.columnconfigure(0, weight=1)
-
-        self.label_nb_scenarios = tk.Label(ligne_footer, text="Nombre de scénarios générés : 0", anchor="w")
-        self.label_nb_scenarios.grid(row=0, column=0, sticky="w", padx=5)
-
-        # Fonctions liées aux boutons
-        def tout_selectionner():
-            for var in self.scenario_vars.values():
-                var.set(True)
-
-        def tout_deselectionner():
-            for var in self.scenario_vars.values():
-                var.set(False)
-
-        def sauvegarder():
-            liste_parametres = []
-
-            for nom, var in self.scenario_vars.items():
-                if var.get():  # case cochée
-                    module, attribut = nom.split(".")
-
-                    # Récupération du shortlabel
-                    shortlabel = attribut  # fallback
-                    for ligne in self.parametres_csv:
-                        if (
-                            ligne.get("Module", "").strip() == module and
-                            ligne.get("Attribut", "").strip() == attribut
-                        ):
-                            shortlabel = ligne.get("ShortLabel", attribut).strip()
-                            break
-
-                    # Récupération de toutes les valeurs possibles
-                    valeurs = self.moteurAlgo.getValeursParametre(module, attribut)
-
-                    liste_parametres.append((module, attribut, shortlabel, valeurs))
-
-            # Créer les scénarios pour le segment actif
-            segment = self.moteurAlgo.segment_actif
-
-            # On crée la progress bar
-            nb_total = 1
-            for _, _, _, valeurs in liste_parametres:
-                nb_total *= len(valeurs)
-            progress = FenetreProgression(self, maximum=nb_total)
-            genererScenariosProgressivement(liste_parametres, segment, progress, popup)
-
-
-        def genererScenariosProgressivement(liste_parametres, segment, fenetre_progression, popup):
-
-            import colorsys
-            def genererCouleursDistinctes(n: int) -> list[tuple[int, int, int]]:
-                """
-                Génère n couleurs bien réparties, lisibles sur fond cartographique,
-                en format BGR (OpenCV).
-                """
-                if n <= 0:
-                    return []
-
-                couleurs = []
-                plages_hue = [(0.0, 0.10), (0.40, 1.0)]  # exclut les verts/jaunes
-
-                # Étend l’échelle réduite à n points
-                for i in range(n):
-                    # Réparti dans la double plage (en concaténant linéairement)
-                    frac = i / n
-                    if frac < 0.2:  # 20% dans [0.0 – 0.10]
-                        h = 0.0 + (0.10 - 0.0) * (frac / 0.2)
-                    else:  # 80% dans [0.40 – 1.0]
-                        h = 0.40 + (1.0 - 0.40) * ((frac - 0.2) / 0.8)
-
-                    s = 0.65
-                    l = 0.5
-                    r, g, b = colorsys.hls_to_rgb(h, l, s)
-                    couleurs.append((round(b * 255), round(g * 255), round(r * 255)))  # BGR
-
-                return couleurs
-
-            from itertools import product
-
-            self.moteurAlgo.supprimerTousScenariosAutomatiques(self.layerManager)
-
-            champs = [(m, a) for (m, a, _, _) in liste_parametres]
-            valeurs = [v for (_, _, _, v) in liste_parametres]
-            combinaisons = list(product(*valeurs))
-            couleurs = genererCouleursDistinctes(len(combinaisons))
-
-            quadruplets = [
-                (m, a, s, None)  # on injectera la valeur dans la boucle
-                for (m, a, s, _) in liste_parametres
-            ]
-
-
-
-            def creer_un_scenario(i):
-                if i >= len(combinaisons):
-                    fenetre_progression.terminer()
-                    # On met à jour l'interface des layers'
-                    self.callbackRefreshLayers()
-                    popup.destroy()
-                    return
-
-                combinaison = combinaisons[i]
-                nom = f"S{i+1}"
-                couleur = couleurs[i]
-
-                q = [(m, a, s, v) for (m, a, s, _), v in zip(liste_parametres, combinaison)]
-
-                base_scenario = self.moteurAlgo.getScenario()
-                self.moteurAlgo.creerScenarioUnitaireAutomatique(nom, q, base_scenario, self.layerManager, couleur)
-
-                fenetre_progression.miseAJour(i + 1)
-                self.after(10, lambda: creer_un_scenario(i + 1))
-
-            creer_un_scenario(0)
-
-        def supprimer_scenarios(popup):
-
-            if not messagebox.askyesno("Confirmation", "Supprimer tous les scénarios automatiques pour ce segment ?"):
-                    return
-
-
-            # Suppression côté moteur
-            self.moteurAlgo.supprimerTousScenariosAutomatiques(self.layerManager)
-
-
-            # On met à jour l'interface des layers'
-            self.callbackRefreshLayers()
-
-            # Fermer la popup
-            popup.destroy()
-
-        def annuler():
-            popup.destroy()
-
-        def mettre_a_jour_compteur():
-            total = 1
-            for nom, var in self.scenario_vars.items():
-                if var.get():
-                    module, attribut = nom.split(".")
-                    try:
-                        valeurs = self.moteurAlgo.getValeursParametre(module, attribut)
-                        total *= len(valeurs)
-                    except Exception:
-                        total *= 1  # fallback
-            self.label_nb_scenarios.config(text=f"Nombre de scénarios générés : {total}")
-
-
-        # Ajout des boutons
-        ttk.Button(colonne_boutons, text="Tout sélectionner", command=tout_selectionner).pack(fill="x", pady=2)
-        ttk.Button(colonne_boutons, text="Tout désélectionner", command=tout_deselectionner).pack(fill="x", pady=2)
-        ttk.Button(colonne_boutons, text="Sauvegarder", command=sauvegarder).pack(fill="x", pady=(20, 2))
-
-        segment = self.moteurAlgo.segment_actif
-        liste_scenarios = self.moteurAlgo.getListeScenarios(segment)
-
-        if self.moteurAlgo.aDesScenarioAutomatiques(segment):
-            ttk.Button(colonne_boutons, text="Supprimer", command=lambda: supprimer_scenarios(popup)).pack(fill="x", pady=(2, 10))
-
-        # Ajustement dynamique largeur fenêtre
-        popup.update_idletasks()
-        popup_width = popup.winfo_width()
-        popup_height = popup.winfo_height()
-        largeur_boutons = 120
-        marge_interne = 40
-        popup.geometry(f"{popup_width + largeur_boutons + marge_interne}x{popup_height}")
-
-
-
     def ouvrirBoiteGenerationRapport(self, dossierExport : str):
 
         def getParametresEtendus() -> list[dict]:
@@ -966,7 +884,6 @@ class IHMAlgorithme(tk.Frame):
 
             return parametres_filtres
 
-
         # -- On esaye de charger une précédente sauvegarde
         nom_algo = self.moteurAlgo.__class__.__name__
         nom_fichier = os.path.join(dossierExport, f".rapport_colonnes_{nom_algo}.json")
@@ -982,8 +899,6 @@ class IHMAlgorithme(tk.Frame):
             except Exception as e:
                 print(f"[WARN] Impossible de charger les colonnes sauvegardées : {e}")
 
-
-
         fenetre = tk.Toplevel()
         fenetre.title("Génération de rapport")
         fenetre.geometry(f"{taille_fenetre[0]}x{taille_fenetre[1]}")
@@ -996,7 +911,6 @@ class IHMAlgorithme(tk.Frame):
 
         # === Regrouper les attributs par module ===
         modules = {}
-        cle_vues = set()
 
         # On construit les paramètres du rapport
         self.parametres_rapport_etendus = getParametresEtendus()
@@ -1007,7 +921,6 @@ class IHMAlgorithme(tk.Frame):
             format_ = param.get("FieldType", "texte")
 
             modules.setdefault(module, []).append((attribut, nom, format_))
-
 
         # === Scrollable Frame ===
         canvas = tk.Canvas(fenetre)
@@ -1064,7 +977,6 @@ class IHMAlgorithme(tk.Frame):
             with open(nom_fichier, "w", encoding="utf-8") as f:
                 json.dump(config, f, indent=2)
 
-
         def genererRapport():
             sauvegarderConfig()
             scope = self.var_scope.get()  # "tous" ou "solutions"
@@ -1103,19 +1015,13 @@ class IHMAlgorithme(tk.Frame):
                             texte = "—"
                         else:
                             unite = self.get_field_unit(format_)
-                            try:
-                                if isinstance(valeur, float):
-                                    texte = f"{valeur:.2f}{unite}"
-                                else:
-                                    texte = f"{valeur}{unite}"
-                            except:
-                                texte = str(valeur)
+                            if isinstance(valeur, float):
+                                texte = f"{valeur:.2f}{unite}"
+                            else:
+                                texte = f"{valeur}{unite}"
 
                         ligne.append(texte)
                     self.apercu_tableau.insert("", "end", values=ligne)
-
-
-
 
         def copierApercuDansPressePapier():
             lignes = []
@@ -1133,7 +1039,6 @@ class IHMAlgorithme(tk.Frame):
             self.clipboard_append(texte)
             self.update()
 
-
         ttk.Button(cadre_boutons_selection, text="Tout sélectionner", command=tout_selectionner).pack(pady=5, fill="x")
         ttk.Button(cadre_boutons_selection, text="Tout désélectionner", command=tout_deselectionner).pack(pady=5, fill="x")
 
@@ -1143,15 +1048,27 @@ class IHMAlgorithme(tk.Frame):
 
         self.var_scope = tk.StringVar(value="tous")  # Valeur par défaut
 
-        ttk.Radiobutton(frame_scope, text="Tous les scénarios", value="tous", variable=self.var_scope).pack(anchor="w", padx=5, pady=2)
-        ttk.Radiobutton(frame_scope, text="Seulement les solutions", value="solutions", variable=self.var_scope).pack(anchor="w", padx=5, pady=2)
+        ttk.Radiobutton(frame_scope,
+                        text="Tous les scénarios",
+                        value="tous", variable=self.var_scope
+                        ).pack(anchor="w", padx=5, pady=2)
+        ttk.Radiobutton(frame_scope,
+                        text="Seulement les solutions",
+                        value="solutions",
+                        variable=self.var_scope
+                        ).pack(anchor="w", padx=5, pady=2)
 
-        ttk.Button(cadre_boutons_selection, text="Générer", command=genererRapport).pack(pady=5, fill="x")
-        ttk.Button(cadre_boutons_selection, text="Copier Presse-Papier", command=copierApercuDansPressePapier).pack(pady=5, fill="x")
+        ttk.Button(cadre_boutons_selection,
+                   text="Générer",
+                   command=genererRapport
+                   ).pack(pady=5, fill="x")
+        ttk.Button(cadre_boutons_selection,
+                   text="Copier Presse-Papier",
+                   command=copierApercuDansPressePapier
+                   ).pack(pady=5, fill="x")
 
         self.colonnes_actives = []
         self.colonnes_rapport_definies = modules
-
 
         def renderTableauApercu():
             colonnes = [col["key"] for col in self.colonnes_actives]
@@ -1177,13 +1094,10 @@ class IHMAlgorithme(tk.Frame):
                         texte = "—"
                     else:
                         unite = self.get_field_unit(col["format"])
-                        try:
-                            if isinstance(valeur, float):
-                                texte = f"{valeur:.2f}{unite}"
-                            else:
-                                texte = f"{valeur}{unite}"
-                        except:
-                            texte = str(valeur)
+                        if isinstance(valeur, float):
+                            texte = f"{valeur:.2f}{unite}"
+                        else:
+                            texte = f"{valeur}{unite}"
 
                     ligne.append(texte)
 
@@ -1210,9 +1124,6 @@ class IHMAlgorithme(tk.Frame):
                     })
             renderTableauApercu()
 
-
-
-
         cadres = []
         for col_index, (module, attributs) in enumerate(modules.items()):
             titre_module = module.capitalize()
@@ -1238,8 +1149,6 @@ class IHMAlgorithme(tk.Frame):
             # Forcer initialisation des colonnes cochées selon état actuel des variables
             self.colonnes_actives = []
 
-
-
         # Espacement harmonisé
         fenetre.update_idletasks()
         hauteur_max = max(c.winfo_height() for c in cadres)
@@ -1249,8 +1158,6 @@ class IHMAlgorithme(tk.Frame):
             manque = max(hauteur_max - c.winfo_height(), 0)
             spacer = tk.Frame(c, height=manque)
             spacer.pack(fill="x")
-
-
 
         # === Aperçu du tableau ===
         frame_apercu = ttk.LabelFrame(frame, text="Aperçu du tableau")
@@ -1287,27 +1194,11 @@ class IHMAlgorithme(tk.Frame):
         renderTableauApercu()
 
 
-
-
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("Test IHM Algorithme Dynamique")
     layerManager = LayerManager()
-    # 1. Demander un fichier de sauvegarde
-    chemin = filedialog.askopenfilename(
-        title="Charger une sauvegarde existante ?",
-        filetypes=[("Sauvegardes pickle", "*.pkl")],
-    )
-
-    # 2. Si un fichier est sélectionné → on le charge
-    if chemin and os.path.exists(chemin):
-        moteurAlgo = AlgorithmeManager.charger(chemin)
-        if moteurAlgo is None:
-            messagebox.showerror("Erreur", "Impossible de charger la sauvegarde.")
-            exit(1)
-    else:
-        # 3. Sinon → charger depuis un CSV comme avant
-        moteurAlgo = AlgorithmeStyletInitial(layerManager)
+    moteurAlgo = AlgorithmeStyletInitial(layerManager)
 
     app = IHMAlgorithme(root, "exemple_test_ihm.csv", moteurAlgo)
     app.grid(sticky="nsew")

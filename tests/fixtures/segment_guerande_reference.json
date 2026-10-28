@@ -1,0 +1,169 @@
+{
+  "format": "chouette-or-project",
+  "schema_version": 1,
+  "algorithm": "AlgorithmeSegment",
+  "dataset": {
+    "events": [
+      {
+        "event": "12 Avril 1365 : Traité de Guérande",
+        "LettreSegment": "G",
+        "Extremite1": "Dieppe",
+        "MilieuSegment": "Forbach",
+        "Extremite2": "Bourges",
+        "DateSegment": "08/08/1365",
+        "Date": "12/04/1365",
+        "Stylet": "Alise-Sainte-Reine",
+        "LettreDecl": "D",
+        "Base1": "Bouvines",
+        "Base2": "Reims"
+      }
+    ]
+  },
+  "rules": {},
+  "active_segment": "12 Avril 1365 : Traité de Guérande",
+  "active_scenario": "08/08 1365",
+  "segments": [
+    {
+      "segment": "12 Avril 1365 : Traité de Guérande",
+      "scenarios": [
+        {
+          "name": "08/08 1365",
+          "type": "default",
+          "segment": "12 Avril 1365 : Traité de Guérande",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "choixAngleStr": "133.52°"
+            },
+            "cadran": {
+              "lieuObservation": "Dieppe"
+            },
+            "planete": {
+              "extremite1": "Dieppe",
+              "milieuSegment": "Forbach",
+              "extremite2": "Bourges"
+            },
+            "axeterre": {
+              "extremite1": null,
+              "milieuSegment": "Forbach",
+              "extremite2": "Bourges",
+              "sensCarte": "Bon sens"
+            },
+            "annee": {
+              "extremite1": "Dieppe",
+              "milieuSegment": "Forbach",
+              "extremite2": "Bourges",
+              "choixAngle": "complémentaire",
+              "borneMin": "1300",
+              "periode": 100,
+              "listeAnneesSelection": 6
+            }
+          },
+          "cached_results": {
+            "annee": {
+              "listeAnnees": [
+                [
+                  1300.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 2196195.125
+                  },
+                  "Identique",
+                  "233.24°",
+                  "10.16°",
+                  "3.39°"
+                ],
+                [
+                  1319.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 2203134.875
+                  },
+                  "Identique",
+                  "233.24°",
+                  "96.71°",
+                  "3.01°"
+                ],
+                [
+                  1320.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 2203500.125
+                  },
+                  "Identique",
+                  "233.24°",
+                  "101.17°",
+                  "1.46°"
+                ],
+                [
+                  1342.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 2211350.375
+                  },
+                  "Opposé",
+                  "53.24°",
+                  "184.26°",
+                  "2.51°"
+                ],
+                [
+                  1343.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 2211715.625
+                  },
+                  "Opposé",
+                  "53.24°",
+                  "187.91°",
+                  "1.14°"
+                ],
+                [
+                  1364.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 2219385.875
+                  },
+                  "Opposé",
+                  "53.24°",
+                  "278.40°",
+                  "1.32°"
+                ],
+                [
+                  1365.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 2219751.125
+                  },
+                  "Opposé",
+                  "53.24°",
+                  "283.22°",
+                  "3.51°"
+                ],
+                [
+                  1383.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 2226510.375
+                  },
+                  "Identique",
+                  "233.24°",
+                  "6.69°",
+                  "0.07°"
+                ]
+              ]
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        }
+      ]
+    }
+  ]
+}

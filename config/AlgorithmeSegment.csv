@@ -1,0 +1,70 @@
+# Format CSV de définition d'une IHM algorithmique dynamique
+# Chaque ligne décrit un composant graphique de l’interface utilisateur
+#
+# Colonnes du fichier :
+# 1. Section     : Nom du groupe logique (ex : 'Observation', 'Axe des planètes')
+# 2. Categorie   : Type de bloc. Valeurs possibles :
+#                 - Global : Données générales d'observation (ex: lieu, date, orientation)
+#                 - Construction : Composants liés à des constructions graphiques
+#                 - Resultat : Résultats affichés à l’utilisateur après calcul
+# 3. Ligne       : Position verticale (entier)
+# 4. Widget      : Type d’élément graphique (field, combo, checkbox, text, spacer)
+# 5. FieldType   : Format de donnée :
+#                 - shorttext : texte court (10 caractères)
+#                 - longtext  : texte long (40 caractères)
+#                 - date      : jj/mm/aaaa
+#                 - heure     : hh:mm:ss
+#                 - angle     : xxx.xx°
+#                 - distance  : xxxx km (entier arrondi)
+#                 - lettre    : 1 caractère majuscule
+#                 - int       : entier (5 chiffres)
+# 6. Alignement  : Position du bloc dans la ligne : left, right
+# 7. Label       : Libellé affiché dans l'IHM
+# 8. Hauteur     : Nombre de lignes visibles (utile pour checkbox)
+# 9. Type        : Rôle fonctionnel :
+#                 - data           : donnée non modifiable
+#                 - input_single   : choix unique (radio)
+#                 - input_multiple : choix multiples (checkbox)
+#                 - dataSet        : source d’une liste
+#                 - static         : texte informatif uniquement
+#10. Style       : Apparence du texte : std, bold, italic
+#11. Module          : Identifiant métier (clé liée à l'objet)
+#12. Attribut      : Méthode de lecture
+
+Section,Categorie,Ligne,Widget,FieldType,Alignement,Label,ShortLabel,Hauteur,Type,Style,Module,Attribut
+Segment,Global,1,PointVille,shortext,left,,PO,1,data,std,dataset,extremite1
+Segment,Global,1,PointVille,shortext,left,,PO,1,data,std,dataset,milieuSegment
+Segment,Global,1,PointVille,shortext,left,,PO,1,data,std,dataset,extremite2
+Segment,Global,2,checkboxH,angle,right,Choix Angle:,CA,1,input_multiple,std,segment,choixAngleStr
+Observation,Global,1,field,lettre,left,Note Seg,H,1,data,std,dataset,lettreSegment
+Observation,Global,1,checkboxH,shorttext,left,Observation,O,2,input_multiple,std,cadran,lieuObservation
+Observation,Global,3,field,angle,left,Latitude Observation,H,1,data,std,cadran,latitude
+Observation,Global,3,field,angle,left,Déclinaison,H,1,data,std,cadran,declinaison
+Observation,Global,4,field,date,left,Date Printemps,,1,data,std,cadran,datePrintemps
+Observation,Global,4,field,date,left,Date Ete,,1,data,std,cadran,dateEte
+Observation,Global,5,field,date,left,Comparaison avec le Segment actuel,,1,data,std,dataset,dateSegment
+Sélection de la Planete,Global,2,PointVille,shortext,left,,PO,1,input,std,planete,extremite1
+Sélection de la Planete,Global,2,PointVille,shortext,left,,PO,1,input,std,planete,milieuSegment
+Sélection de la Planete,Global,2,PointVille,shortext,left,,PO,1,input,std,planete,extremite2
+Sélection de la Planete,Global,3,field,angle,left,Azimut segment,H,1,data,std,planete,azimutLigne1
+Sélection de la Planete,Global,3,field,angle,left,Utilisé,H,1,data,std,planete,azimutCible
+Sélection de la Planete,Global,3,field,shorttext,left,Planète,H,1,data,std,planete,planete
+Axe de la Terre,Global,1,PointVille,shortext,left,,PO,1,input,std,axeterre,extremite1
+Axe de la Terre,Global,1,PointVille,shortext,left,,PO,1,input,std,axeterre,milieuSegment
+Axe de la Terre,Global,1,PointVille,shortext,left,,PO,1,input,std,axeterre,extremite2
+Axe de la Terre,Global,2,field,longtext,left,Axe Terre,H,1,data,std,axeterre,axeTerreStr
+Axe de la Terre,Global,2,field,angle,left,Azimut,,1,data,std,axeterre,axeTerre
+Axe de la Terre,Global,3,checkboxH,shorttext,left,Sens Carte,SC,2,input_multiple,std,axeterre,sensCarte
+Axe de la Terre,Global,3,field,angle,left,Azimut Terre Analysé,,1,data,std,axeterre,azimut
+Recherche de l'année,Global,1,PointVille,shortext,left,,PO,1,input,std,annee,extremite1
+Recherche de l'année,Global,1,PointVille,shortext,left,,PO,1,input,std,annee,milieuSegment
+Recherche de l'année,Global,1,PointVille,shortext,left,,PO,1,input,std,annee,extremite2
+Recherche de l'année,Global,6,checkboxH,shorttext,left,Choix Angle,O,2,input_multiple,std,annee,choixAngle
+Recherche de l'année,Global,7,field,angle,left,Angle Segment,H,1,data,std,annee,angle
+Recherche de l'année,Global,7,field,angle,left,Analysé,H,1,data,std,annee,angleAnalyse
+Recherche de l'année,Global,8,combo,shorttext,left,Année,O,2,input_multiple,std,annee,borneMin
+Recherche de l'année,Global,8,combo,shorttext,right,Période,O,2,input_multiple,std,annee,periode
+Recherche de l'année,Global,9,bouton,shorttext,right,Rechercher les années,,1,method,std,annee,calculerAnnees
+Recherche de l'année,Global,9,field,shorttext,left,En cours,H,1,data,std,annee,annee
+Recherche de l'année,Global,10,list,table,right,Liste des années candidates,,6,cache,std,annee,listeAnnees
+Recherche de l'année,Global,11,None,tableselection,left,,,1,input,std,annee,listeAnneesSelection

@@ -10,7 +10,8 @@ from src.layerManager import LayerManager, Layer
 
 #
 #
-### Gestion des modules
+# Gestion des modules
+
 
 class ModuleAlgo:
     """
@@ -29,10 +30,8 @@ class ModuleAlgo:
     def __init__(self):
         pass
 
-
     def dupliquer(self):
         return copy.deepcopy(self)
-
 
     def setup(self):
         """
@@ -81,7 +80,6 @@ class ModuleAlgo:
         nom_methode = f"getValeurs{nom[0].upper()}{nom[1:]}"
         return getattr(self, nom_methode, lambda: [])()
 
-
     def calculer(self):
         """
         Méthode à redéfinir dans chaque module métier.
@@ -106,7 +104,6 @@ class ModuleAlgo:
         instance.calculer()
         return instance
 
-
     def getRegles(self):
         """
         Retourne la liste des règles automatiques applicables à ce module.
@@ -118,22 +115,22 @@ class ModuleAlgo:
 
 #
 #
-### Gestion des scénarios
+# Gestion des scénarios
+
 
 class TypeScenario(Enum):
     AUTOMATIQUE = "automatique"
     UTILISATEUR = "utilisateur"
     DEFAULT = "default"
 
+
 class Scenario:
-    def __init__(self, nom: str,
-        quadruplets: list[tuple[str, str, str, Any]],
-        modules: dict,
-        ordreModules : list[str],
-        segment: str,
-        layerManager: LayerManager,
-        couleur: tuple = None,
-        type_scenario: TypeScenario = TypeScenario.AUTOMATIQUE):
+    def __init__(self, nom: str, quadruplets: list[tuple[str, str, str, Any]],
+                 modules: dict, ordreModules : list[str],
+                 segment: str,
+                 layerManager: LayerManager,
+                 couleur: tuple = None,
+                 type_scenario: TypeScenario = TypeScenario.AUTOMATIQUE):
         """
         Initialise un scénario.
 
@@ -166,7 +163,7 @@ class Scenario:
         return self.solutionScenario
 
     def setSolution(self, solution):
-        self.solutionScenario =  solution
+        self.solutionScenario = solution
 
     def getTypeScenario(self):
         return self.type_scenario
@@ -176,7 +173,6 @@ class Scenario:
         Retourne la liste des (module, attribut) définis dans le scénario.
         """
         return [(m, a) for (m, a, _, _) in self.parametres]
-
 
     def getDescriptionLisible(self) -> str:
         if self.type_scenario == TypeScenario.DEFAULT:
@@ -189,7 +185,6 @@ class Scenario:
             return ", ".join(f"{short} = {val}" for _, _, short, val in self.parametres)
         else:
             return self.nom  # fallback
-
 
     def getParametre(self, module: str, attribut: str):
         return self.parametres_dict.get(f"{module}.{attribut}")
@@ -207,11 +202,7 @@ class Scenario:
             # Si le paramètre n’existait pas encore, on ajoute un nouveau quadruplet
             self.parametres.append((module, attribut, attribut, valeur))  # fallback: shortlabel = attribut
 
-    def construireRepresentationCarte(self, layer:Layer):
-
-
-        if not layer:
-            raise RuntimeError(f"Layer '{nomLayer}' introuvable pour le segment '{self.segment}'")
+    def construireRepresentationCarte(self, layer: Layer):
 
         # 1. Supprimer les anciens objets et générer les tooltips
         layer.supprimerTousObjets()
@@ -229,7 +220,6 @@ class Scenario:
                         obj.tooltips_scenario = tooltip_scenario
                 layer.inclureObjetDansLayer(objets)
 
-
     def getSolutionAlgorithme(self, module_id: str, nom_methode: str):
         """
         Appelle une méthode spécifique d’un module pour obtenir un PointGraphique.
@@ -243,7 +233,6 @@ class Scenario:
             return None
 
         return methode()
-
 
     def genererTooltipScenario(self) -> list[str]:
         """
@@ -273,7 +262,7 @@ class AlgorithmeManager:
     """
 
     def __init__(self, layerManager: LayerManager):
-        self._templates_modules  = {}
+        self._templates_modules = {}
         self._scenarios = {}
         self.scenario_actif = "default"
 
@@ -281,7 +270,6 @@ class AlgorithmeManager:
         self.dataset.setup()
         self.dataset.calculer()
         self.segment_actif = self.dataset.segment
-
 
         # Enregistrement des modèles de modules
         self.enregistrerTemplatesModules(self.getListeModulesInitiale())
@@ -297,15 +285,10 @@ class AlgorithmeManager:
             cle = f"{module_id}.{attribut}"
             self.regles_actives[cle] = nom
 
-
         # Créer un scénario "default" avec les modules globaux
         self.creerScenarioDefault(layerManager)
 
-
-
-#
-#
-## Methodes virtuelles à redéfinir dans le module métier
+    # Methodes virtuelles à redéfinir dans le module métier
     def getListeSegments(self) -> list[str]:
         """
         Retourne la liste complète des segments connus dans le dataset.
@@ -315,21 +298,19 @@ class AlgorithmeManager:
     def getLargeurHauteurIHM(self):
         return 600, 600
 
-
-#
-#
-## Gesion des templates
+    #
+    #
+    # Gesion des templates
 
     def enregistrerTemplatesModules(self, liste_modules):
         for module_id, _, module_algo in liste_modules:
             version = "default"
             if module_id not in self._templates_modules :
-                self._templates_modules [module_id] = {}
-            if version not in self._templates_modules [module_id]:
-                self._templates_modules [module_id][version] = {}
+                self._templates_modules[module_id] = {}
+            if version not in self._templates_modules[module_id]:
+                self._templates_modules[module_id][version] = {}
 
-            self._templates_modules [module_id][version]["template"] = module_algo
-
+            self._templates_modules[module_id][version]["template"] = module_algo
 
     def genererModulesDepuisTemplates(self) -> dict[str, ModuleAlgo]:
         modules = {}
@@ -338,10 +319,7 @@ class AlgorithmeManager:
                 modules[module_id] = copy.deepcopy(d["default"]["template"])
         return modules
 
-
-
-
-    def setSegment(self, segment: str, layerManager:LayerManager):
+    def setSegment(self, segment: str, layerManager: LayerManager):
         """
         Définit le segment actif et bascule sur les scénarios associés.
         Si aucun scénario n’existe encore pour ce segment, crée un scénario 'default'.
@@ -361,12 +339,50 @@ class AlgorithmeManager:
             if self.scenario_actif not in self._scenarios[segment]:
                 self.scenario_actif = list(self._scenarios[segment].keys())[0]
 
+    def rechargerDatasetEtRecalculerTout(self, layerManager: LayerManager) -> None:
+        segmentAvant = self.segment_actif
+        scenarioAvant = self.scenario_actif
 
+        from src.ListeSegmentsDataSet import ListeSegmentsDataSet
+        self.dataset = ListeSegmentsDataSet("data/dataset.csv")
+        self.dataset.setup()
+
+        assert segmentAvant in self.dataset.getValeursSegment(), (
+            "Le segment actif n'existe plus dans dataset.csv après rechargement."
+        )
+
+        self.dataset.segment = segmentAvant
+        self.dataset.calculer()
+
+        listeSegments = self.dataset.getValeursSegment()
+        for seg in listeSegments:
+            scenarios_segment = self._scenarios.get(seg, {})
+            if not scenarios_segment:
+                continue
+
+            self.dataset.segment = seg
+            self.dataset.calculer()
+
+            for sc in list(scenarios_segment.keys()):
+                self.calculerModules(nom_scenario=sc, segment=seg, setup=True)
+
+                scenario = scenarios_segment[sc]
+                nom_layer = scenario.getDescriptionLisible()
+                layer = layerManager.getLayer(nom_layer, segment=seg)
+                if layer is None:
+                    layer = layerManager.creerLayer(nom_layer, segment=seg)
+                scenario.construireRepresentationCarte(layer)
+
+        self.segment_actif = segmentAvant
+        self.scenario_actif = scenarioAvant
+        self.dataset.segment = segmentAvant
+        self.dataset.calculer()
+        layerManager.segmentActif = segmentAvant
+        layerManager.recalculerCoordonneesPixelAbsTous()
 
     #
     # Methode de calcul des dépendances entre modules: construction de graph, vérification de l'intégrité...'
     #
-
     def getModulesTemplate(self) -> dict[str, object]:
         """
         Retourne un dictionnaire des modules template déclarés.
@@ -385,7 +401,6 @@ class AlgorithmeManager:
             return True
         return module_id in self.getModulesTemplate()
 
-
     def estAttributDisponible(self, module_id: str, attribut: str) -> bool:
         if module_id == "dataset":
             return hasattr(self.dataset, attribut)
@@ -393,6 +408,12 @@ class AlgorithmeManager:
         module = self.getModulesTemplate().get(module_id)
         return hasattr(module, attribut) if module else False
 
+    def estMethodeDisponible(self, module_id: str, nom_methode: str) -> bool:
+        """
+        Vérifie si le module possède bien une méthode callable du nom spécifié.
+        """
+        module = self.getModulesTemplate().get(module_id)
+        return hasattr(module, nom_methode) and callable(getattr(module, nom_methode))
 
     def construireGrapheDependances(self) -> dict[str, list[str]]:
         """
@@ -410,7 +431,6 @@ class AlgorithmeManager:
 
         return graphe
 
-
     def afficherGrapheDependances(self):
         """
         Effectue un tri topologique des modules selon leurs dépendances.
@@ -418,7 +438,6 @@ class AlgorithmeManager:
         """
         for source, dependants in self.graphDependanceModules.items():
             print(f"{source} → {', '.join(dependants) if dependants else '∅'}")
-
 
     def getOrdreCalculModules(self) -> list[str]:
         """
@@ -457,8 +476,6 @@ class AlgorithmeManager:
                 resultats.append((module_id, attribut, nom, fonction))
         return resultats
 
-
-
     def validerStructureGlobale(self):
         """
         Vérifie que tous les modules template sont cohérents :
@@ -494,9 +511,7 @@ class AlgorithmeManager:
         else:
             print("✅ Structure globale des templates validée.")
 
-
-
-    def validerStructureScenario(sself, nom_scenario: str = None, segment: str = None):
+    def validerStructureScenario(self, nom_scenario: str = None, segment: str = None):
         """
         Valide les dépendances des modules d’un scénario spécifique (ou du scénario actif par défaut).
         Lève une exception si :
@@ -534,15 +549,9 @@ class AlgorithmeManager:
         else:
             print(f"✅ Scénario '{nom_scenario or self.scenario_actif}' validé avec succès.")
 
-
-
-
-
     #
     # L' injection et le calcul se font toujours dans le module Actif'
     #
-
-
     def injecterEntreesDansModuleObjet(self, module_id: str, nom_scenario: str = None, segment: str = None):
         """
         Injecte dynamiquement les entrées dans un module donné, que ce soit depuis le dataset
@@ -566,19 +575,17 @@ class AlgorithmeManager:
 
             module.setParametre(f"{nom_attribut}{nom_source.capitalize()}", valeur)
 
-
-
     def appliquerReglesSurModule(self, module_id: str, nom_scenario: str, segment: str):
         module = self.getModulesScenario(module_id, nom_scenario, segment)
         if not hasattr(module, "getRegles"):
             return
 
         for description, nom_attribut, regle_callable in module.getRegles():
+            cle = f"{module_id}.{nom_attribut}"
+            if self.regles_actives.get(cle) != description:
+                continue  # règle désactivée
             valeur = regle_callable()
             module.setParametre(nom_attribut, valeur)
-
-
-
 
     def calculerModules(self, nom_scenario: str = None, segment: str = None, setup: bool = False):
         """
@@ -594,7 +601,6 @@ class AlgorithmeManager:
             self.appliquerReglesSurModule(module_id, nom_scenario, segment)
             scenario.modules[module_id].calculer()
 
-
     #
     # Access aux données des modules en direct ou via le scénario courant
     #
@@ -606,7 +612,6 @@ class AlgorithmeManager:
         nom = nom_scenario or self.scenario_actif
         seg = segment or self.segment_actif
         return self._scenarios[seg][nom]
-
 
     def getScenarioNomLisible(self, label_scenario: str, segment: str = None) -> Scenario:
         """
@@ -620,7 +625,6 @@ class AlgorithmeManager:
                 return sc
 
         raise ValueError(f"Aucun scénario trouvé avec le label : {label_scenario}")
-
 
     def renommerScenario(self, ancien_nom: str, nouveau_nom: str, segment: str = None):
         """
@@ -641,7 +645,6 @@ class AlgorithmeManager:
         if self.scenario_actif == ancien_nom:
             self.scenario_actif = nouveau_nom
 
-
     def getModulesScenario(self, module_id: str, nomScenario: str = None, segment: str = None):
         """
         Retourne le module identifié par 'module_id' dans le scénario et segment spécifiés.
@@ -650,15 +653,12 @@ class AlgorithmeManager:
         scenario = self.getScenario(nomScenario, segment)
         return scenario.modules.get(module_id)
 
-
-
     def findScenarios(self, module_id: str, segment: str) -> list[Scenario]:
         """
         Retourne la liste des scénarios (pour un segment) contenant le module donné.
         """
         scenarios = self._scenarios.get(segment, {})
         return [sc for sc in scenarios.values() if module_id in sc.modules]
-
 
     def getParametre(self, module_id: str, attribut: str, nomScenario: str = None, segment: str = None):
         """
@@ -668,20 +668,22 @@ class AlgorithmeManager:
         """
         seg = segment or self.segment_actif
 
-        # 🔐 Si le nom de scénario est omis
+        # Si le nom de scénario est omis
         if nomScenario is None:
             if seg == self.segment_actif:
                 nomScenario = self.scenario_actif
             else:
-                raise ValueError(f"[getParametre] Le nom du scénario est obligatoire si le segment '{seg}' est différent du segment actif '{self.segment_actif}'.")
+                raise ValueError(
+                    f"[getParametre] Le nom du scénario est obligatoire si le segment '{seg}' "
+                    f"est différent du segment actif '{self.segment_actif}'."
+                )
 
-
-        # ⚙️ Dataset multi-segment
+        # Dataset multi-segment
         if module_id == "dataset":
             if hasattr(self.dataset, "getValeurPourSegment"):
                 return self.dataset.getValeurPourSegment(seg, attribut)
             else:
-                raise ValueError(f"[Dataset] Le module dataset ne gère pas les segments explicitement.")
+                raise ValueError("[Dataset] Le module dataset ne gère pas les segments explicitement.")
 
         scenario = self.getScenario(nomScenario, seg)
         module = scenario.modules.get(module_id)
@@ -692,9 +694,14 @@ class AlgorithmeManager:
 
         return module.getParametre(attribut)
 
-
-
-    def setParametre(self, module_id: str, attribut: str, valeur: Any, layerManager:LayerManager, nomScenario: str = None, segment: str = None):
+    def setParametre(self,
+                     module_id: str,
+                     attribut: str,
+                     valeur: Any,
+                     layerManager: LayerManager,
+                     nomScenario: str = None,
+                     segment: str = None,
+                     ):
         """
         Définit la valeur d’un attribut pour un module donné dans un scénario et segment spécifiés.
         Si nomScenario ou segment sont None, on utilise les valeurs actives.
@@ -722,7 +729,40 @@ class AlgorithmeManager:
         layer = layerManager.getLayer(nomLayer, segment=segment)
         scenario.construireRepresentationCarte(layer)
 
+    def setParametreSansRecalcul(
+                                self,
+                                module_id: str,
+                                attribut: str,
+                                valeur: Any,
+                                nomScenario: str = None,
+                                segment: str = None,
+                                ):
+        """Met à jour un attribut de scénario sans calcul ni reconstruction."""
+        segment = segment or self.segment_actif
+        scenario = self.getScenario(nomScenario, segment)
+        module = scenario.modules.get(module_id)
+        if module is None:
+            raise ValueError(
+                f"Module '{module_id}' introuvable dans le scénario '{nomScenario or self.scenario_actif}' "
+                f"du segment '{segment}'."
+            )
+        module.setParametre(attribut, valeur)
 
+    def executerMethode(self, module_id: str, nom_methode, init: bool, nomScenario: str = None, segment: str = None):
+        """
+        Exécute dynamiquement une méthode du module si elle est disponible.
+        Retourne la valeur de retour de la méthode, ou None en cas d'erreur.
+        """
+        segment = segment or self.segment_actif
+        scenario = self.getScenario(nomScenario, segment)
+        module = scenario.modules.get(module_id)
+        if module is None:
+            raise ValueError(
+                f"Module '{module_id}' introuvable dans le scénario '{nomScenario or self.scenario_actif}' "
+                f"du segment '{segment or self.segment_actif}'"
+            )
+        methode = getattr(module, nom_methode)
+        return methode(init)
 
     def getValeursParametre(self, module_id: str, attribut: str, nomScenario: str = None, segment: str = None):
         """
@@ -730,19 +770,18 @@ class AlgorithmeManager:
         """
         module = self.getModulesScenario(module_id, nomScenario, segment)
         if module is None:
-            raise ValueError(f"Module '{module_id}' introuvable dans le scénario '{nomScenario or self.scenario_actif}' du segment '{segment or self.segment_actif}'")
+            raise ValueError(
+                f"Module '{module_id}' introuvable dans le scénario "
+                f"'{nomScenario or self.scenario_actif}' du segment "
+                f"'{segment or self.segment_actif}'"
+            )
         return module.getValeursParametre(attribut)
-
-
-
-
-
 
     #
     # Gestion des scénarios
     #
 
-    def creerScenarioDefault(self, layerManager:LayerManager) -> Scenario:
+    def creerScenarioDefault(self, layerManager: LayerManager) -> Scenario:
         """
         Crée un scénario de type DEFAULT pour le segment actif.
         - Génère les modules depuis les templates
@@ -772,7 +811,7 @@ class AlgorithmeManager:
         self.scenario_actif = nom_scenario
 
         # 4. Calcul des modules (injection + règles + calcul)
-        self.calculerModules(nom_scenario=nom_scenario, segment=segment, setup = True)
+        self.calculerModules(nom_scenario=nom_scenario, segment=segment, setup=True)
 
         # 5. Construction graphique
         nomLayer = scenario.getDescriptionLisible()
@@ -781,9 +820,12 @@ class AlgorithmeManager:
 
         return scenario
 
-
-
-    def creerScenarioUnitaireAutomatique(self, nom: str, quadruplets: list[tuple[str, str, str, Any]], base_scenario: Scenario, layerManager:LayerManager, couleur: tuple = None) -> Scenario:
+    def creerScenarioUnitaireAutomatique(self,
+                                         nom: str,
+                                         quadruplets: list[tuple[str, str, str, Any]],
+                                         base_scenario: Scenario,
+                                         layerManager: LayerManager,
+                                         couleur: tuple = None) -> Scenario:
         """
         Crée un scénario automatique (lecture seule) à partir d’un scénario de référence (default ou utilisateur).
         Copie les modules initialisés, applique les paramètres spécifiques, puis lance le calcul.
@@ -819,8 +861,7 @@ class AlgorithmeManager:
 
         return scenario
 
-
-    def creerScenarioUtilisateur(self, nom: str, base: Scenario, layerManager:LayerManager, couleur: Any = None) -> Scenario:
+    def creerScenarioUtilisateur(self, nom: str, base: Scenario, layerManager: LayerManager, couleur: Any = None) -> Scenario:
         """
         Crée un nouveau scénario de type UTILISATEUR à partir d’un scénario existant (souvent 'default').
 
@@ -857,14 +898,13 @@ class AlgorithmeManager:
 
         return scenario
 
-
-    def supprimerTousScenariosAutomatiques(self, layerManager:LayerManager, segment: str = None) -> list[str]:
+    def supprimerTousScenariosAutomatiques(self, layerManager: LayerManager, segment: str = None) -> list[str]:
         """
-        Supprime tous les scénarios automatiques du segment actif.
-        Retourne la liste des noms supprimés pour permettre à l’IHM de supprimer les layers associés.
+        Supprime tous les scénarios automatiques du segment demandé et leurs layers.
+        Retourne la liste des noms supprimés.
         """
         segment = segment or self.segment_actif
-        scenarios = self._scenarios.get(self.segment_actif, {})
+        scenarios = self._scenarios.get(segment, {})
         a_supprimer = [nom for nom, sc in scenarios.items() if sc.type_scenario == TypeScenario.AUTOMATIQUE]
 
         for nom in a_supprimer:
@@ -874,17 +914,16 @@ class AlgorithmeManager:
             del scenarios[nom]
 
         # Si le scénario actif a été supprimé, on rebascule sur un autre
-        if self.scenario_actif in a_supprimer:
+        if segment == self.segment_actif and self.scenario_actif in a_supprimer:
             restants = list(scenarios.keys())
             if restants:
                 self.scenario_actif = restants[0]
             else:
-                self.creerScenarioDefault()
+                self.creerScenarioDefault(layerManager)
 
         return a_supprimer
 
-
-    def supprimerScenarioNomLisible(self, nom_lisible: str, layerManager:LayerManager, segment: str = None):
+    def supprimerScenarioNomLisible(self, nom_lisible: str, layerManager: LayerManager, segment: str = None):
         """
         Supprime un scénario en utilisant son nom lisible (interface utilisateur).
         Met à jour la sélection si le scénario supprimé était actif.
@@ -896,7 +935,6 @@ class AlgorithmeManager:
             if sc.getDescriptionLisible() == nom_lisible:
                 layerManager.supprimerLayer(nom_lisible, segment=segment)
                 del scenarios[nom]
-                print(f"🗑️ Scénario supprimé : {nom_lisible}")
 
                 # Si on supprime le scénario actif, on rebascule vers un autre
                 if self.scenario_actif == nom:
@@ -910,13 +948,9 @@ class AlgorithmeManager:
 
         raise ValueError(f"Scénario '{nom_lisible}' introuvable dans le segment '{segment}'")
 
-
-
     #
     # Gestion des paramètres du scénario
     #
-
-
     def aDesScenarioAutomatiques(self, segment: str = None) -> bool:
         """
         Retourne True s’il existe au moins un scénario AUTOMATIQUE dans le segment donné.
@@ -927,14 +961,12 @@ class AlgorithmeManager:
             for sc in self._scenarios.get(segment, {}).values()
         )
 
-
     def getListeParametresScenarioAutomatique(self, segment: str = None) -> list[tuple[str, str]]:
         segment = segment or self.segment_actif
         for scenario in self._scenarios.get(segment, {}).values():
             if scenario.type_scenario == TypeScenario.AUTOMATIQUE:
                 return scenario.getListeParametres()
         return []
-
 
     def getListeScenarios(self, segment: str = None, type_scenario: TypeScenario = None) -> list:
         """
@@ -959,8 +991,6 @@ class AlgorithmeManager:
             if sc.getTypeScenario() == type_scenario
         ])
 
-
-
     def getScenariosDict(self, segment: str = None, type_scenario: TypeScenario = None) -> dict:
         """
         Retourne un dictionnaire {nom: Scenario} pour un segment donné.
@@ -982,14 +1012,13 @@ class AlgorithmeManager:
         if type_scenario == TypeScenario.UTILISATEUR:
             return {
                 nom: sc for nom, sc in scenarios.items()
-                if sc.getTypeScenario() in [TypeScenario.UTILISATEUR, TypeScenario.DEFAULT ]
+                if sc.getTypeScenario() in [TypeScenario.UTILISATEUR, TypeScenario.DEFAULT]
             }
 
         return {
             nom: sc for nom, sc in scenarios.items()
-            if sc.getTypeScenario()==type_scenario
+            if sc.getTypeScenario() == type_scenario
         }
-
 
     def getModulesAvecAffichage(self) -> list[str]:
         """
@@ -999,11 +1028,8 @@ class AlgorithmeManager:
         modules = []
         for module_id, label, module in self.getListeModulesInitiale():
             if type(module).construireRepresentationCarte is not ModuleAlgo.construireRepresentationCarte:
-                modules.append((module_id,label))
+                modules.append((module_id, label))
         return modules
-
-
-
 
     def appliquerScenario(self, label_scenario: str, segment: str = None):
         """
@@ -1018,7 +1044,3 @@ class AlgorithmeManager:
                 return
 
         print(f"[ERREUR] Aucun scénario avec le label : {label_scenario}")
-
-
-
-

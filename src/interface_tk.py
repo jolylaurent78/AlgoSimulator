@@ -4,49 +4,62 @@ from tkinter import ttk, PanedWindow, colorchooser, filedialog, messagebox
 from PIL import Image, ImageTk
 import cv2
 import os
-import pickle
 import json
-import sqlite3
-from collections import defaultdict
-import csv
+import re
 import pandas as pd
 import webbrowser
+import numpy as np
 
 # Base de données des villes
 from src.data_loader import villes_dict
 
 # Affichage de la carte interractive
-from src.affichage_fenetre import display, transformer_pixel_affichage_vers_image, selectionVille, selectionObjet, sauvegarder_carte_complete
-from src.affichage_fenetre import ListePOIs
-from src.affichage_fenetre import pan_x, pan_y, zoom_factor, frame_width, frame_height, set_globals, canvasDisplay
+from src.affichage_fenetre import display, transformer_pixel_affichage_vers_image, selectionVille, selectionObjet
+from src.affichage_fenetre import ListePOIs, sauvegarder_carte_complete
+from src.affichage_fenetre import zoom_factor, set_globals
 
 # Gestion des coordonnées / projection
 from src.carte_config import carteConfig, charger_icone, hexVersBGR, bgrVersHex
 from src.configGlobale import ConfigGlobale
 
 # Affichage des objects graphiques
-from src.affichage_objets import *
+from src.affichage_objets import PointGraphique, SymboleWiki
 
 # Affichge de l'IHM pour l'algorithme'
 from src.IHMAlgorithme import IHMAlgorithme
+from src.scenario_auto_dialog import open_automatic_scenario_dialog
 
 # Gestion de l'algo
+from src.AlgorithmeSegment import AlgorithmeSegment
 from src.AlgorithmeStyletInitial import AlgorithmeStyletInitial
 from src.AlgorithmeLumiereStyletInitial import AlgorithmeLumiereStyletInitial
 from src.AlgorithmeBaseCadran import AlgorithmeBaseCadran
+from src.AlgorithmeCadranFinal import AlgorithmeCadranFinal
 from src.AlgorithmeManager import TypeScenario
+from src.ProjectPersistence import (
+    chargerProjetJsonV1,
+    lireMetaDonneesProjetJsonV1,
+    sauvegarderProjetJsonV1,
+)
+from src.trace_export import (
+    TraceExportError,
+    construire_document_traces,
+    ecrire_document_traces,
+    nom_fichier_traces_par_defaut,
+)
+from src.map_print_dialog import open_map_print_dialog
 
 # Gestion des layers graphiques
 from src.layerManager import LayerManager
 
 
-
 class InterfaceCarte(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Simulateur d'algorithmes de la Chouette d'Or")
+        self.titreBase = "Simulateur d'algorithmes de la Chouette d'Or"
+        self.cheminProjetCourant = None
+        self.title(self.titreBase)
         self.geometry("1600x1000")
-        self.chemin_bd = "../shared-db/WikiCarto.db"
         # On initialise les répertoires de travail
         self.dossiers = {
             "projets": os.path.join(os.getcwd(), "projets"),
@@ -60,12 +73,12 @@ class InterfaceCarte(tk.Tk):
         for dossier in self.dossiers.values():
             os.makedirs(dossier, exist_ok=True)
 
-        # On crée le layer Manager
-        self.layerManager = LayerManager()
-
-        self.moteurAlgo = AlgorithmeBaseCadran(self.layerManager)
+        est_nouveau = self.initialiserEtatProjetDemarrage()
+        if est_nouveau:
+            self.mettreAJourTitreFenetre(algo=self.moteurAlgo, estNouveau=True)
+        else:
+            self.mettreAJourTitreFenetre(algo=self.moteurAlgo, cheminProjet=self.cheminProjetCourant)
         largeur, hauteur = self.moteurAlgo.getLargeurHauteurIHM()
-
 
         # Initialisation des attributs pour l'affichage des segment'
         self.varSegmentAffiche = None
@@ -75,21 +88,17 @@ class InterfaceCarte(tk.Tk):
 
         # Variable d'affichage pour la gestion des POIs
         self.varPOIVisible = tk.BooleanVar(value=False)
-        self.varPOIPertinence = tk.StringVar(value="Elevée")
-        self.varPOICategorie = tk.StringVar(value="Standard")
-        self.varPOISujet = tk.StringVar()
 
         # États d'affichage pour le panneau gauche
         self.varAfficherAlgo = tk.BooleanVar(value=True)
         self.varAfficherLayers = tk.BooleanVar(value=True)
 
-        self._setup_main_split(largeur, hauteur )
+        self._setup_main_split(largeur, hauteur)
         self._setup_menu()
 
-        # Création de la liste dynamique des POIs Wikipédia et paramètres d'affichage des POIs
-        self.listePOIs = ListePOIs(self.canvas_image, self.chemin_bd, self)
+        # Création de la liste des POIs villes
+        self.listePOIs = ListePOIs(self.canvas_image, self)
         self.listePOIs.layer.setVisible(False)
-
 
         # Le nom du fichier de description de l'IHM porte le même nom de la classe Métier'
         nom_fichier_csv = "config/"+type(self.moteurAlgo).__name__ + ".csv"
@@ -100,10 +109,9 @@ class InterfaceCarte(tk.Tk):
             self.layerManager,
             callbackRefreshLayers=lambda nomScenario=None: self.creerLayerControle(self.frameLayers, nomScenario),
             callbackRedessinerCarte=self._refresh_images,
-            callbackMiseAJourMenu=None
+            callbackMiseAJourMenu=None,
             )
         self.ihm_algo.pack(fill="both", expand=True)
-
 
         self._refresh_images()
 
@@ -111,46 +119,56 @@ class InterfaceCarte(tk.Tk):
             self.frameFiltrageLayers.pack_forget()
             self.frameSegment.pack_forget()
 
-        if not self.varAfficherLayers.get():
-            self.frameFiltrageLayers.pack_forget()
-            self.frameSegment.pack_forget()
+    def initialiserEtatProjetDemarrage(self) -> bool:
+        """Choisit le moteur de démarrage avant la construction de l'IHM."""
+        dernier_projet = self.cfg.get("Application", "last_project_path", "")
+        if dernier_projet and os.path.isfile(dernier_projet):
+            try:
+                self.moteurAlgo, self.layerManager = chargerProjetJsonV1(dernier_projet)
+                self.cheminProjetCourant = dernier_projet
+                return False
+            except (OSError, ValueError) as e:
+                messagebox.showerror("Erreur chargement", f"Erreur lors du chargement :\n{e}")
+        elif dernier_projet:
+            print(f"[⚠️] Dernier projet introuvable : {dernier_projet}")
 
-    def sauvegarderEtatComplet(self, chemin: str):
-        with open(chemin, "wb") as f:
+        self.layerManager = LayerManager()
+        self.moteurAlgo = AlgorithmeSegment(self.layerManager)
+        return True
 
-            # 1. Écrire les métadonnées au début (encodées en JSON + taille fixe)
-            metadata = {
-                "algo_type": type(self.moteurAlgo).__name__,
-                "version": "1.0",
-            }
-            metadata_bytes = json.dumps(metadata).encode("utf-8")
-            taille = len(metadata_bytes)
-            f.write(taille.to_bytes(4, byteorder="big"))
-            f.write(metadata_bytes)
+    def memoriserDernierProjet(self, chemin: str) -> None:
+        self.cfg.set("Application", "last_project_path", chemin)
+        self.cfg.save()
 
-            # 2. Écrire ensuite le contenu pickle
-            pickle.dump({
-                "layers": self.layerManager,
-                "moteur": self.moteurAlgo
-            }, f)
+    def formaterNomAlgorithme(self, algo) -> str:
+        if isinstance(algo, str):
+            nom = algo
+        elif isinstance(algo, type):
+            nom = algo.__name__
+        else:
+            nom = type(algo).__name__
 
+        if nom.startswith("Algorithme"):
+            nom = nom[len("Algorithme"):]
 
-    def lireMetaDonneesProjet(self,chemin: str) -> dict:
-        with open(chemin, "rb") as f:
-            taille = int.from_bytes(f.read(4), byteorder="big")
-            metadata_bytes = f.read(taille)
-            metadata = json.loads(metadata_bytes.decode("utf-8"))
-            return metadata
+        return re.sub(r"(?<!^)(?=[A-Z])", " ", nom).strip()
 
-    def chargerEtatComplet(self, chemin: str):
+    def mettreAJourTitreFenetre(self, *, algo=None, cheminProjet=None, estNouveau=False) -> None:
+        if algo is None:
+            self.title(self.titreBase)
+            return
 
-        with open(chemin, "rb") as f:
-            taille = int.from_bytes(f.read(4), byteorder="big")
-            f.read(taille)  # on ignore les métadonnées
-            data = pickle.load(f)
+        nomLisible = self.formaterNomAlgorithme(algo)
 
-        self.appliquerEtat(data["layers"], data["moteur"])
+        if estNouveau:
+            titre = f"{self.titreBase} - Nouvel algorithme {nomLisible}"
+        elif cheminProjet:
+            nomFichier = os.path.basename(cheminProjet)
+            titre = f"{self.titreBase} - Algorithme {nomLisible} - {nomFichier}"
+        else:
+            titre = f"{self.titreBase} - Algorithme {nomLisible}"
 
+        self.title(titre)
 
     def appliquerEtat(self, layerManager: LayerManager, moteurAlgo):
         """Applique le nouvel état (layers et moteur) à l'interface."""
@@ -190,8 +208,9 @@ class InterfaceCarte(tk.Tk):
         # Rafraîchir les layers et la carte
         self.creerLayerControle(self.frameLayers)
         self._refresh_images()
+        self._rafraichir_menu_algorithme()
 
-### Mise en place des panels, menu, mini-carte
+    # Mise en place des panels, menu, mini-carte
 
     def _setup_menu(self):
         menubar = tk.Menu(self)
@@ -201,6 +220,10 @@ class InterfaceCarte(tk.Tk):
         menu_fichier = tk.Menu(menubar, tearoff=0)
 
         menu_nouveau = tk.Menu(menu_fichier, tearoff=0)
+        menu_nouveau.add_command(
+            label="Algorithme Segment",
+            command=lambda: self.actionNouveauProjet(AlgorithmeSegment),
+        )
         menu_nouveau.add_command(
             label="Algorithme Stylet Initial",
             command=lambda: self.actionNouveauProjet(AlgorithmeStyletInitial),
@@ -213,52 +236,45 @@ class InterfaceCarte(tk.Tk):
             label="Algorithme Base Cadran",
             command=lambda: self.actionNouveauProjet(AlgorithmeBaseCadran),
         )
+        menu_nouveau.add_command(
+            label="Algorithme Cadran Final",
+            command=lambda: self.actionNouveauProjet(AlgorithmeCadranFinal),
+        )
         menu_fichier.add_cascade(label="🆕 Nouveau", menu=menu_nouveau)
-        menu_fichier.add_command(label="💾 Sauvegarder un projet...", command=self.actionSauvegarderProjet)
         menu_fichier.add_command(label="📂 Charger un projet", command=self.actionChargerProjet)
+        menu_fichier.add_command(label="💾 Sauvegarder", command=self.actionSauvegarder)
+        menu_fichier.add_command(label="💾 Sauvegarder un projet...", command=self.actionSauvegarderProjet)
         menu_fichier.add_separator()
 
         # Chargement dynamique des projets enregistrés avec métadonnées
         projets_dir = self.dossiers["projets"]
         if os.path.exists(projets_dir):
             for file in sorted(os.listdir(projets_dir)):
-                if file.endswith(".pkl"):
+                if file.endswith(".json"):
                     chemin_fichier = os.path.join(projets_dir, file)
                     try:
-                        metadata = self.lireMetaDonneesProjet(chemin_fichier)
-                        algo = metadata.get("algo_type", "Inconnu")
-                        label = f"{algo} : {file}"
+                        metadata = lireMetaDonneesProjetJsonV1(chemin_fichier)
+                        algo = metadata["algorithm"]
+                        algoLisible = self.formaterNomAlgorithme(algo)
+                        label = f"Algorithme {algoLisible} : {file}"
                         menu_fichier.add_command(
                             label=label,
-                            command=lambda f=chemin_fichier: self.chargerEtatComplet(f)
+                            command=lambda f=chemin_fichier: self.actionChargerProjet(f)
                         )
-                    except Exception as e:
-                        print(f"[⚠️] Erreur de lecture de métadonnées pour {file} : {e}")
-
-
+                    except (OSError, ValueError) as e:
+                        print(f"[⚠️] Erreur de lecture de métadonnées JSON pour {file} : {e}")
 
         menu_fichier.add_separator()
         menu_fichier.add_command(label="Sauvegarder carte", command=self.sauvegarder_carte)
+        menu_fichier.add_command(label="Imprimer / Exporter la carte...", command=self.ouvrirImpressionCarte)
         menu_fichier.add_separator()
         menu_fichier.add_command(label="Quitter", command=self.quitter_application)
         menubar.add_cascade(label="Fichier", menu=menu_fichier)
 
         # Menu Algorithme
-        menu_algo = tk.Menu(menubar, tearoff=0)
-        menu_algo.add_command(label="Gérer les règles...", command=self.gerer_regles_algo)
-        menu_algo.add_command(label="Créer scénarios automatiques", command=self.creer_scenarios_automatiques)
-        menu_algo.add_separator()
-        menu_algo.add_command(label="Générer un rapport...", command=self.demanderGenerationRapport)
-        menubar.add_cascade(label="Algorithme", menu=menu_algo)
-
-        # Menu Wikipedia
-        menu_wiki = tk.Menu(menubar, tearoff=0)
-        menu_wiki.add_command(label="Filtrage des catégories...", command=self.afficherFiltrageCategories)
-        menu_wiki.add_separator()
-        menu_wiki.add_command(label="Extraire les TAG P31", command=self.extraireTagsP31)
-        menu_wiki.add_command(label="Importer un fichier P31...", command=self.importerFichierP31)
-
-        menubar.add_cascade(label="Wikipedia", menu=menu_wiki)
+        self.menu_algo = tk.Menu(menubar, tearoff=0)
+        self._rafraichir_menu_algorithme()
+        menubar.add_cascade(label="Algorithme", menu=self.menu_algo)
 
         # Menu Fenêtre
         menu_fenetre = tk.Menu(menubar, tearoff=0)
@@ -312,10 +328,164 @@ class InterfaceCarte(tk.Tk):
         menu_carte.add_command(
             label="Charger et calibrer une nouvelle carte...",
             command=self.demarrerCalibrationNouvelleCarte
-)
+        )
         menubar.add_cascade(label="Carte", menu=menu_carte)
 
         self.config(menu=menubar)
+
+    def _rafraichir_menu_algorithme(self):
+        """Met à jour seulement le menu Algorithme selon le segment actif."""
+        if not hasattr(self, "menu_algo"):
+            return
+
+        self.menu_algo.delete(0, "end")
+        self.menu_algo.add_command(label="Gérer les règles...", command=self.gerer_regles_algo)
+        self.menu_algo.add_command(label="Créer scénarios automatiques", command=self.creer_scenarios_automatiques)
+        if self.moteurAlgo.aDesScenarioAutomatiques(self.moteurAlgo.segment_actif):
+            self.menu_algo.add_command(
+                label="Supprimer les scénarios automatiques",
+                command=self.supprimer_scenarios_automatiques,
+            )
+        self.menu_algo.add_command(label="Recharger les données du dataset", command=self.rechargerDataset)
+        self.menu_algo.add_separator()
+        self.menu_algo.add_command(label="Générer un fichier Traces...", command=self.ouvrirFenetreGenerationTraces)
+        self.menu_algo.add_command(label="Générer un rapport...", command=self.demanderGenerationRapport)
+
+    def ouvrirFenetreGenerationTraces(self):
+        """Ouvre la boîte de dialogue légère d'export des objets déjà présents dans les layers."""
+        modules = self.moteurAlgo.getModulesAvecAffichage()
+        if not modules:
+            messagebox.showinfo("Générer un fichier Traces", "Aucun module avec affichage n'est disponible.")
+            return
+
+        segment = self.moteurAlgo.segment_actif
+        scenarios = self.moteurAlgo.getScenariosDict(segment, TypeScenario.UTILISATEUR)
+        scenarios_lisibles = [scenario.getDescriptionLisible() for scenario in scenarios.values()]
+        if not scenarios_lisibles:
+            messagebox.showinfo("Générer un fichier Traces", "Aucun scénario DEFAULT ou UTILISATEUR n'est disponible.")
+            return
+
+        top = tk.Toplevel(self)
+        top.title("Générer un fichier Traces")
+        top.transient(self)
+        top.resizable(False, False)
+        contenu = ttk.Frame(top, padding=12)
+        contenu.grid(sticky="nsew")
+
+        variables_modules = {module_id: tk.BooleanVar(value=True) for module_id, _ in modules}
+        var_scope = tk.StringVar(value="scenario")
+        var_scenario = tk.StringVar(value=scenarios_lisibles[0])
+        selection = self.getNomScenarioSelectionne()
+        if selection:
+            scenario_selectionne = self.moteurAlgo.getScenarioNomLisible(selection, segment)
+            if scenario_selectionne.getTypeScenario() == TypeScenario.AUTOMATIQUE:
+                var_scope.set("automatic_aggregation")
+            elif selection in scenarios_lisibles:
+                var_scenario.set(selection)
+
+        zone_parametres = ttk.Frame(contenu)
+        zone_parametres.grid(row=0, column=0, sticky="nw")
+        zone_actions = ttk.Frame(contenu)
+        zone_actions.grid(row=0, column=1, sticky="ne", padx=(24, 0))
+
+        ligne_modules = ttk.Frame(zone_parametres)
+        ligne_modules.pack(anchor="w", pady=(0, 10))
+        ttk.Label(ligne_modules, text="Objets à exporter :").pack(side="left", padx=(0, 10))
+        for module_id, label in modules:
+            ttk.Checkbutton(ligne_modules, text=label, variable=variables_modules[module_id]).pack(
+                side="left", padx=(0, 8)
+            )
+
+        ligne_scenario = ttk.Frame(zone_parametres)
+        ligne_scenario.pack(anchor="w")
+        ttk.Label(ligne_scenario, text="Source :").pack(side="left", padx=(0, 10))
+        ttk.Radiobutton(ligne_scenario, text="Scénario", value="scenario", variable=var_scope).pack(side="left")
+        combo_scenario = ttk.Combobox(
+            ligne_scenario, textvariable=var_scenario, values=scenarios_lisibles, state="readonly", width=35,
+        )
+        combo_scenario.pack(side="left", padx=(8, 0))
+
+        auto_disponible = self.moteurAlgo.aDesScenarioAutomatiques(segment)
+        radio_auto = ttk.Radiobutton(
+            zone_parametres,
+            text="Agrégation des scénarios automatiques",
+            value="automatic_aggregation",
+            variable=var_scope,
+        )
+        radio_auto.pack(anchor="w", padx=(58, 0), pady=(4, 0))
+        if not auto_disponible:
+            radio_auto.state(["disabled"])
+
+        def actualiser_source(*_):
+            combo_scenario.configure(state="readonly" if var_scope.get() == "scenario" else "disabled")
+
+        var_scope.trace_add("write", actualiser_source)
+        actualiser_source()
+
+        def generer():
+            modules_selectionnes = [
+                (module_id, label) for module_id, label in modules if variables_modules[module_id].get()
+            ]
+            if not modules_selectionnes:
+                messagebox.showinfo("Générer un fichier Traces", "Sélectionnez au moins un objet à exporter.", parent=top)
+                return
+            try:
+                document = construire_document_traces(
+                    self.moteurAlgo,
+                    self.layerManager,
+                    modules_selectionnes,
+                    var_scope.get(),
+                    var_scenario.get() if var_scope.get() == "scenario" else None,
+                )
+            except TraceExportError as erreur:
+                messagebox.showerror("Générer un fichier Traces", str(erreur), parent=top)
+                return
+            nombre_traces = sum(len(module["traces"]) for module in document["modules"])
+            if not nombre_traces:
+                messagebox.showinfo(
+                    "Générer un fichier Traces",
+                    "Aucune trace n'a été trouvée dans la source sélectionnée.",
+                    parent=top,
+                )
+                return
+
+            chemin = filedialog.asksaveasfilename(
+                parent=top,
+                title="Enregistrer le fichier Traces",
+                initialdir=self.dossiers["exports"],
+                initialfile=nom_fichier_traces_par_defaut(self.moteurAlgo, modules_selectionnes),
+                defaultextension=".traces.json",
+                filetypes=[("Fichier Traces", "*.traces.json"), ("JSON", "*.json")],
+            )
+            if not chemin:
+                return
+            try:
+                ecrire_document_traces(document, chemin)
+            except OSError as erreur:
+                messagebox.showerror("Générer un fichier Traces", str(erreur), parent=top)
+                return
+            messagebox.showinfo(
+                "Générer un fichier Traces",
+                f"{nombre_traces} trace(s) exportée(s).",
+                parent=top,
+            )
+            top.destroy()
+
+        ttk.Button(
+            zone_actions,
+            text="Tout sélectionner",
+            command=lambda: [variable.set(True) for variable in variables_modules.values()],
+        ).pack(fill="x")
+        ttk.Button(
+            zone_actions,
+            text="Tout désélectionner",
+            command=lambda: [variable.set(False) for variable in variables_modules.values()],
+        ).pack(fill="x", pady=(4, 0))
+        ttk.Separator(zone_actions, orient="horizontal").pack(fill="x", pady=12)
+        ttk.Button(zone_actions, text="Générer", command=generer).pack(fill="x")
+        ttk.Button(zone_actions, text="Annuler", command=top.destroy).pack(fill="x", pady=(4, 0))
+
+        top.update_idletasks()
 
     def _setup_main_split(self, width, height):
         self.main_pane = PanedWindow(self, orient=tk.HORIZONTAL)
@@ -333,7 +503,7 @@ class InterfaceCarte(tk.Tk):
         style.configure("TitreFrame.TLabelframe.Label", font=("TkDefaultFont", 9, "bold"))
 
         # On crée le side panel
-        self.sidePanel  = tk.Frame(self)
+        self.sidePanel = tk.Frame(self)
         self.sidePanel .pack(side="left", fill="y", padx=10, pady=10)
 
         # On crée une frame pour la gestion des segments
@@ -359,16 +529,16 @@ class InterfaceCarte(tk.Tk):
         label = self.moteurAlgo.getScenario().getDescriptionLisible()
         self.frameIHMAlgo.config(text=f"Scénario : {label}")
 
-
-
-
     def creerSelectionSegments(self, parent):
         segments = self.moteurAlgo.getListeSegments()
 
         if not self.varSegmentAffiche:
             self.varSegmentAffiche = tk.StringVar()
 
-        if segments and not self.varSegmentAffiche.get():
+        segment_actif = self.moteurAlgo.segment_actif
+        if segment_actif in segments:
+            self.varSegmentAffiche.set(segment_actif)
+        elif segments and not self.varSegmentAffiche.get():
             self.varSegmentAffiche.set(segments[0])
 
         comboSegment = ttk.Combobox(
@@ -386,10 +556,11 @@ class InterfaceCarte(tk.Tk):
             self.moteurAlgo.setSegment(segment, self.layerManager)             # 🔁 Changement logique
 #            self.ihm_algo.reconstruire_interface()          # 🔁 Rafraîchit l'IHM centrale
             self.creerLayerControle(self.frameLayers)       # 🔁 Rafraîchit les layers visibles
+            self._rafraichir_menu_algorithme()
 
         comboSegment.bind("<<ComboboxSelected>>", onSegmentChange)
 
-### On gère le controle des layers
+    # On gère le controle des layers
     def getNomScenarioSelectionne(self) -> str:
         selection = self.treeLayers.selection()
         if not selection:
@@ -401,8 +572,7 @@ class InterfaceCarte(tk.Tk):
             self.treeLayers.selection_remove(nom_scenario)
             return
 
-        return nom_scenario # L'IHM utilise le nom lisible comme identifiant
-
+        return nom_scenario  # L'IHM utilise le nom lisible comme identifiant
 
     def cocherTousLesModules(self):
         """
@@ -418,7 +588,6 @@ class InterfaceCarte(tk.Tk):
         """
         self.comboFiltrageNiveau.set("Tous")
         self.onChangementNiveau()  # ou autre nom selon ta méthode liée
-
 
     def mettreAJourCheckboxGlobale(self):
         etats = [var.get() for var in self.checkVarsLayers.values()]
@@ -463,9 +632,7 @@ class InterfaceCarte(tk.Tk):
         self.creerLayerControle(self.frameLayers, scenario_a_selectionner=nom_scenario_lisible)
         self.updaterScenarioActif()
 
-
-
-    def updaterScenarioActif(self, event = None):
+    def updaterScenarioActif(self, event=None):
 
         nom_scenario = self.getNomScenarioSelectionne()
         if nom_scenario is None:
@@ -480,7 +647,6 @@ class InterfaceCarte(tk.Tk):
 
         # On met à jour les boutons Action
         self.mettreAJourEtatBoutonsScenario()
-
 
     def mettreAJourEtatBoutonsScenario(self):
         """
@@ -503,7 +669,6 @@ class InterfaceCarte(tk.Tk):
         icone = self.icone_visible if layer.estVisible() else self.icone_invisible
         self.boutonToggleVisibilite.configure(image=icone, state="normal")
 
-
         # On peut dupliquer n'importe quel type de scénario'
         self.boutonDupliquer.config(state="normal")
 
@@ -524,8 +689,6 @@ class InterfaceCarte(tk.Tk):
         else:
             self.boutonSupprimer.config(state="disabled")
 
-
-
     def creerLayerControle(self, parent, scenario_a_selectionner=None):
 
         # Ne rien crer si le layer control est invisible
@@ -541,74 +704,21 @@ class InterfaceCarte(tk.Tk):
         frame_filtrage.pack(fill="x", padx=5, pady=5)
         self.frameFiltrageLayers = frame_filtrage
 
-        # === Ligne de configuration des POIs ===
-        ligne_poi = ttk.Frame(frame_filtrage)
-        ligne_poi.pack(fill="x", pady=(0, 2))
-
         def togglePOIVisible():
             """Active ou désactive l'affichage des POIs."""
             self.listePOIs.layer.setVisible(self.varPOIVisible.get())
             self._refresh_images()
 
-        ttk.Label(ligne_poi, text="POI").pack(side="left", padx=(0, 2))
-        tk.Checkbutton(
-            ligne_poi,
-            variable=self.varPOIVisible,
-            command=togglePOIVisible
-        ).pack(side="left", padx=(0, 2))
-
-        ttk.Label(ligne_poi, text="Pertinence:").pack(side="left", padx=(0, 4))
-        self.comboPOIPertinence = ttk.Combobox(
-            ligne_poi,
-            values=["Elevée", "Moyenne", "Faible"],
-            textvariable=self.varPOIPertinence,
-            state="readonly",
-            width=8,
-       )
-        self.varPOIPertinence.trace_add("write", lambda *args: self._refresh_images())
-        self.comboPOIPertinence.pack(side="left", padx=(0, 4))
-
-        ttk.Label(ligne_poi, text="Catégories:").pack(side="left", padx=(0, 4))
-        self.comboPOICategorie = ttk.Combobox(
-            ligne_poi,
-            values=["Filtrées", "Toutes"],
-            textvariable=self.varPOICategorie,
-            state="readonly",
-            width=8,
-        )
-        self.varPOICategorie.trace_add("write", lambda *args: self._refresh_images())
-        self.comboPOICategorie.pack(side="left", padx=(0, 4))
-
-        ttk.Label(ligne_poi, text="Sujet:").pack(side="left", padx=(0, 4))
-        try:
-            with sqlite3.connect(self.chemin_bd) as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    "SELECT source_backlink FROM SourceBacklink ORDER BY source_backlink"
-                )
-                sujets = ["Tous"] + [row[0] for row in cursor.fetchall()]
-        except Exception:
-            sujets = []
-        self.comboPOISujet = ttk.Combobox(
-            ligne_poi,
-            values=sujets,
-            textvariable=self.varPOISujet,
-            state="readonly",
-            width=15
-        )
-        if sujets and not self.varPOISujet.get():
-            self.varPOISujet.set(sujets[0])
-        self.varPOISujet.trace_add("write", lambda *args: self._refresh_images())
-        self.comboPOISujet.pack(side="left")
-#
-# 2ème ligne avec filtrage pr TAG
-#
-
-
-
         # === Ligne de filtrage des layers ===
         ligne_niveau_module = ttk.Frame(frame_filtrage)
         ligne_niveau_module.pack(fill="x", pady=(0, 2))
+
+        ttk.Label(ligne_niveau_module, text="POI").pack(side="left", padx=(0, 2))
+        tk.Checkbutton(
+            ligne_niveau_module,
+            variable=self.varPOIVisible,
+            command=togglePOIVisible
+        ).pack(side="left", padx=(0, 10))
 
         ttk.Label(ligne_niveau_module, text="Tracé:").pack(side="left", padx=(0, 4))
         self.comboFiltrageNiveau = ttk.Combobox(ligne_niveau_module, values=["Tous", "Construction", "Design"], state="readonly", width=15)
@@ -629,17 +739,12 @@ class InterfaceCarte(tk.Tk):
             )
             cb.pack(side="left", padx=(2, 2))
 
-
-
-
-
-#
-# Filtrae des layers par attributs
-#
+        #
+        # Filtrae des layers par attributs
+        #
         # === Ligne 2 : Filtrage des layers en eux même ===
         ligne_checkbox = ttk.Frame(frame_filtrage)
         ligne_checkbox.pack(fill="x", pady=(2, 0))
-
 
         def ouvrir_fenetre_filtrage_scenarios_auto():
             segment = self.moteurAlgo.segment_actif
@@ -674,7 +779,6 @@ class InterfaceCarte(tk.Tk):
             self.filtres_vars = {}  # clef = (module, attribut), valeur = {valeur: BooleanVar}
 
             for col_index, (module, attribut) in enumerate(parametresScenario):
-
 
                 valeurs_possibles = self.moteurAlgo.getValeursParametre(module, attribut)
                 if not valeurs_possibles:
@@ -749,8 +853,6 @@ class InterfaceCarte(tk.Tk):
 
             popup.update_idletasks()
 
-
-
         # Checkbox "Tout sélectionner"
         def on_toggle_select_all():
             etat = self.var_select_all.get()
@@ -769,7 +871,6 @@ class InterfaceCarte(tk.Tk):
                     self.treeLayers.set(nom_scenario, column="vis", value="")
                 else:  # État "indéterminé" : on ignore
                     pass
-
 
             self._refresh_images()
 
@@ -803,9 +904,8 @@ class InterfaceCarte(tk.Tk):
         )
         btn_menu.pack(side="left")
 
-
         def ouvrirFenetreEditionScenario(nomscenario, nouveau=False):
-            #On récupère le scénario et le layer pour l'initialisation des données et la sauvegarde
+            # On récupère le scénario et le layer pour l'initialisation des données et la sauvegarde
             scenario = self.moteurAlgo.getScenarioNomLisible(nomscenario)
             layer = self.layerManager.getLayer(scenario.getDescriptionLisible(), segment=scenario.segment)
 
@@ -814,7 +914,6 @@ class InterfaceCarte(tk.Tk):
             top.transient(self)
             top.grab_set()
 
-
             # === Nom ===
             var_nom = tk.StringVar(value=scenario.nom)
             ttk.Label(top, text="Nom du scénario :").pack(anchor="w", padx=10, pady=(10, 2))
@@ -822,9 +921,7 @@ class InterfaceCarte(tk.Tk):
             entry_nom.pack(padx=10, fill="x")
 
             # === Couleur + Épaisseur ===
-            couleur =  "#000000" if nouveau else layer.getCouleur()
             var_couleur = tk.StringVar(value="#000000")
-            epaisseur = 1 if nouveau else layer.getEpaisseur()
             var_epaisseur = tk.IntVar(value=1)
 
             frame_style = ttk.Frame(top)
@@ -849,13 +946,10 @@ class InterfaceCarte(tk.Tk):
             spin_epaisseur = ttk.Spinbox(frame_style, from_=1, to=10, textvariable=var_epaisseur, width=5)
             spin_epaisseur.pack(side="left")
 
-
             # === Scénario solution ===
             solutionActive = scenario.getSolution()
             var_solution = tk.BooleanVar(value=solutionActive)
             ttk.Checkbutton(top, text="Ce scénario est une solution", variable=var_solution).pack(anchor="w", padx=10, pady=(10, 2))
-
-
 
             # === Bouton Sauvegarder ===
             def sauvegarder():
@@ -882,14 +976,13 @@ class InterfaceCarte(tk.Tk):
 
             top.mainloop()
 
-
         def actionDupliquerScenario():
             """
             Crée un nouveau scénario utilisateur basé sur celui sélectionné,
             puis ouvre immédiatement la fenêtre d’édition.
             """
             nom_scenario_lisible = self.getNomScenarioSelectionne()
-            if nom_scenario_lisible == None:
+            if nom_scenario_lisible is None:
                 return
             base = self.moteurAlgo.getScenarioNomLisible(nom_scenario_lisible)
 
@@ -913,10 +1006,9 @@ class InterfaceCarte(tk.Tk):
             # Ouvrir la fenêtre d’édition en lui disant que l'objet est nouveau'
             ouvrirFenetreEditionScenario(label, True)
 
-
         def actionEditerScenario():
             nom_scenario_lisible = self.getNomScenarioSelectionne()
-            if nom_scenario_lisible == None:
+            if nom_scenario_lisible is None:
                 return
             ouvrirFenetreEditionScenario(nom_scenario_lisible)
 
@@ -987,20 +1079,14 @@ class InterfaceCarte(tk.Tk):
         )
         self.boutonSupprimer.pack(side="left", padx=(2, 2))
 
-
-
-
-
-#
-# Affichage des layers
-#
-
+        #
+        # Affichage des layers
+        #
 
         # on crée une troisième ligne dans laquelle on affichera la Tree View + liste de boutons  de commande
         frameLigneLayer = ttk.Frame(parent)
         frameLigneLayer.pack(fill="x", padx=5, pady=2)
         self.frameLigneLayer = frameLigneLayer
-
 
         def onDoubleClickLayer(event):
             item_id = self.treeLayers.identify_row(event.y)
@@ -1009,7 +1095,6 @@ class InterfaceCarte(tk.Tk):
                 return  # On ignore les groupes
 
             self.selectionnerUniquementScenarioActif(item_id)
-
 
         self.treeLayers = ttk.Treeview(
             frameLigneLayer,
@@ -1034,11 +1119,9 @@ class InterfaceCarte(tk.Tk):
         frameLigneLayer.grid_columnconfigure(0, weight=1)
         frameLigneLayer.grid_rowconfigure(0, weight=1)
 
-
-
         # Colonne #0 = texte principal (nom + carré)
-        self.treeLayers.column("#0", width=400, anchor = "w", stretch=True)
-        self.treeLayers.heading("#0", text="Scénario", anchor = "w")
+        self.treeLayers.column("#0", width=400, anchor="w", stretch=True)
+        self.treeLayers.heading("#0", text="Scénario", anchor="w")
 
         # Colonne visibilité
         self.treeLayers.column("vis", width=30, anchor="center", stretch=False)
@@ -1047,8 +1130,6 @@ class InterfaceCarte(tk.Tk):
         # Colonne solution
         self.treeLayers.column("solution", width=30, anchor="center", stretch=False)
         self.treeLayers.heading("solution", text="🥇", anchor="center")
-
-
 
         # Groupes visibles dans colonne #0
         grp_user = self.treeLayers.insert("", "end", iid="grp_user", text="📘 Scénarios personnalisés", open=True)
@@ -1093,7 +1174,6 @@ class InterfaceCarte(tk.Tk):
             )
             self.treeLayers.bind("<<TreeviewSelect>>", self.updaterScenarioActif)
 
-
         # Sélectionne le scénario actif si précisé
         if scenario_a_selectionner:
             self.treeLayers.selection_set(scenario_a_selectionner)
@@ -1113,9 +1193,7 @@ class InterfaceCarte(tk.Tk):
             self.frameSegment.pack_forget()
         self._refresh_images()
 
-
-
-### Gestion des évènements utilisatuer sur l'image'
+    # Gestion des évènements utilisatuer sur l'image'
     def _setup_canvas(self):  # ajout des événements souris
         self.canvas_image = tk.Canvas(self, bg="gray")
         self.canvas_image.bind("<Configure>", self._on_canvas_resize)
@@ -1153,16 +1231,22 @@ class InterfaceCarte(tk.Tk):
 
         self._refresh_images()
 
-    def _refresh_images(self, afficherPOIsUniquement = False):
+    def _refresh_images(self, afficherPOIsUniquement=False):
 
         if not hasattr(self, "canvas_image"):
             return  # L'objet n'est pas encore prêt
 
         (w_img, h_img) = carteConfig.image_size
         if self.modeCalibration:
-            canvas = display(LayerManager(), ListePOIs(self.canvas_image, self.chemin_bd, self), retourner_image=True, afficherPOIsUniquement=False)
+            canvas = display(LayerManager(),
+                             ListePOIs(self.canvas_image, self),
+                             retourner_image=True,
+                             afficherPOIsUniquement=False)
         else:
-            canvas = display(self.layerManager, self.listePOIs, retourner_image=True, afficherPOIsUniquement = afficherPOIsUniquement)
+            canvas = display(self.layerManager,
+                             self.listePOIs,
+                             retourner_image=True,
+                             afficherPOIsUniquement=afficherPOIsUniquement)
 
         image_rgb = cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB)
         image_pil = Image.fromarray(image_rgb)
@@ -1228,7 +1312,7 @@ class InterfaceCarte(tk.Tk):
                 font=("Helvetica", 16, "bold")
             )
 
-### Gesion des évènements souris
+    # Gesion des évènements souris
 
     def _on_mouse_move_global(self, event):
 
@@ -1237,7 +1321,7 @@ class InterfaceCarte(tk.Tk):
             return
 
         # On gère d'abord les tooltips'
-        obj = selectionObjet(px, py, self.layerManager, layerPOIs = self.listePOIs.layer)
+        obj = selectionObjet(px, py, self.layerManager, layerPOIs=self.listePOIs.layer)
         texte = None
         if obj is not None:
             lignes = obj.getTooltipComplet() if hasattr(obj, "getTooltipComplet") else []
@@ -1259,7 +1343,6 @@ class InterfaceCarte(tk.Tk):
             self.tooltip_overlay.bind("<Button-1>", lambda e: "break")  # empêche le tooltip de consommer l'événement
             self.tooltip_overlay.bind("<Button-3>", lambda e: "break")  # empêche aussi le clic droit d’être bloqué
 
-
         if texte:
             self.tooltip_overlay.config(text=texte)
             self.tooltip_overlay.place(x=event.x + 10, y=event.y + 10)
@@ -1268,7 +1351,7 @@ class InterfaceCarte(tk.Tk):
         else:
             self.tooltip_overlay.place_forget()
 
-        #On gère la mesure de la distance
+        # On gère la mesure de la distance
         if not self.pointReferenceMesureDistance:
             return
 
@@ -1289,9 +1372,6 @@ class InterfaceCarte(tk.Tk):
 
         # Texte noir par-dessus
         self.overlay.create_text(10, 15, text=texte, anchor="w", fill="black", font=("TkDefaultFont", 10))
-
-
-
 
     def _on_mouse_press(self, event):
 
@@ -1322,8 +1402,6 @@ class InterfaceCarte(tk.Tk):
                         for o in self.layerManager.getListeObjetsGraphiquesVisible():
                             o.setSelection(False)
                         obj.setSelection(True)
-
-
                 else:
                     # Clic dans le vide : tout désélectionner
                     for o in self.layerManager.getListeObjetsGraphiquesVisible():
@@ -1344,11 +1422,9 @@ class InterfaceCarte(tk.Tk):
             label="Centrer la carte",
             command=lambda: self.centrerCarte(px, py))
 
-
         # Gestion de l'outil de distance
         # 1. Conversion coordonnées pixels image → Lambert93
         x_l93, y_l93 = carteConfig.pixels_to_lambert93(px, py)
-
 
         # 2. Chercher d'abord une ville
         ville = selectionVille(px, py)
@@ -1356,7 +1432,7 @@ class InterfaceCarte(tk.Tk):
         # 3. Si pas de ville, chercher un objet graphique
         point = None
         if not ville:
-            obj = selectionObjet(px, py, self.layerManager, layerPOIs = self.listePOIs.layer)
+            obj = selectionObjet(px, py, self.layerManager, layerPOIs=self.listePOIs.layer)
             if isinstance(obj, PointGraphique) and obj.estVisible():
                 point = obj
 
@@ -1385,7 +1461,6 @@ class InterfaceCarte(tk.Tk):
         if isinstance(point, SymboleWiki):
             self.menu_contextuel.add_command(label=f"Ouvrir le lien « {point.url} »", command=lambda: webbrowser.open(point.url))
 
-
         #
         # Analyse en détail d'un scénario'
         #
@@ -1404,8 +1479,6 @@ class InterfaceCarte(tk.Tk):
         self.menu_contextuel.tk_popup(event.x_root, event.y_root)
         self.menu_contextuel.grab_release()
 
-
-
     def cacher_objet_selectionne(self):
         if hasattr(self, 'objet_selectionne') and self.objet_selectionne:
             self.objet_selectionne.setVisible(False)
@@ -1423,7 +1496,6 @@ class InterfaceCarte(tk.Tk):
         self.last_mouse_pos = (event.x, event.y)
         self._refresh_images()
 
-
     def _on_mouse_wheel(self, event):
         import src.affichage_fenetre as af
         old_zoom = af.zoom_factor
@@ -1437,7 +1509,7 @@ class InterfaceCarte(tk.Tk):
         af.pan_y += int((rel_y) * af.frame_height * (1 / old_zoom - 1 / af.zoom_factor))
         self._refresh_images()
 
-### Gestion de l'outil Distance
+    # Gestion de l'outil Distance
 
     def definirPointReferenceMesure(self, x_l93: float, y_l93: float, nom: str):
         """
@@ -1446,8 +1518,6 @@ class InterfaceCarte(tk.Tk):
         """
         self.pointReferenceMesureDistance = (x_l93, y_l93)
         self.nomReferenceMesureDistance = nom
-
-        print(f"📏 Point de mesure défini : {nom} ({x_l93:.1f}, {y_l93:.1f})")
 
         # Crée dynamiquement l’overlay s’il n’existe pas
         if not hasattr(self, "overlay") or self.overlay is None:
@@ -1469,10 +1539,7 @@ class InterfaceCarte(tk.Tk):
             self.overlay = None
         print("❌ Mode mesure désactivé (touche Échap)")
 
-
-### Centrage de la carte
-
-
+    # Centrage de la carte
     def centrerCarte(self, px, py, zoom_max=2.5):
         from affichage_fenetre import frame_width, frame_height
         w_img, h_img = carteConfig.image_size
@@ -1510,13 +1577,9 @@ class InterfaceCarte(tk.Tk):
         set_globals(pan_x_val=nouveau_pan_x, pan_y_val=nouveau_pan_y, zoom_factor_val=facteur_zoom)
         self._refresh_images()
 
-
-### Analyse d'un scnéario'
-
+    # Analyse d'un scnéario'
     def analyserScenarioDepuisCarte(self, nom_scenario_lisible: str):
-        scenario = self.moteurAlgo.getScenarioNomLisible(nom_scenario_lisible)
-
-         # 1. Réinitialise les modules visibles (coche tous)
+        # 1. Réinitialise les modules visibles (coche tous)
         self.cocherTousLesModules()
 
         # 2. Remet le niveau de filtrage à "Tous"
@@ -1535,312 +1598,74 @@ class InterfaceCarte(tk.Tk):
             self.toggle_affichage_layers()
         return
 
-### Menu Wikipedia'
-
-    def extraireTagsP31(self):
-        """
-        Extrait la liste des P31 avec leur catégorie, statut, et les occurrences dans EntreeHistorique.
-        """
-
-        requete = """
-        SELECT
-            p31c.p31,
-            p31c.label,
-            p31c.categorie,
-            p31c.statut,
-            COUNT(e.qid) AS total,
-            SUM(CASE WHEN e.crossReference = 1 THEN 1 ELSE 0 END) AS nb_cross_ref
-        FROM P31Classification p31c
-        LEFT JOIN EntreeHistorique e ON e.p31 = p31c.p31
-        GROUP BY p31c.p31, p31c.label, p31c.categorie, p31c.statut
-        ORDER BY total DESC;
-        """
-
-        chemin_export = filedialog.asksaveasfilename(
-            defaultextension=".csv",
-            filetypes=[("CSV files", "*.csv")],
-            title="Enregistrer l'extraction des TAG P31"
-        )
-
-        if not chemin_export:
-            return
-
-        try:
-            with sqlite3.connect(self.chemin_bd) as conn:
-                cursor = conn.cursor()
-                cursor.execute(requete)
-                lignes = cursor.fetchall()
-
-            with open(chemin_export, "w", newline="", encoding="utf-8") as f:
-                writer = csv.writer(f)
-                writer.writerow(["p31", "label", "categorie", "statut", "nb_total", "nb_crossReference"])
-                writer.writerows(lignes)
-
-            messagebox.showinfo("Extraction terminée", f"{len(lignes)} P31 extraits dans :\n{chemin_export}")
-
-        except Exception as e:
-            messagebox.showerror("Erreur", f"Une erreur est survenue :\n{e}")
-
-
-
-    def importerFichierP31(self):
-        chemin_fichier = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv")])
-        if not chemin_fichier:
-            return
-
-        try:
-            df = pd.read_csv(chemin_fichier, dtype=str).fillna("")
-        except Exception as e:
-            messagebox.showerror("Erreur", f"Erreur de lecture du fichier : {e}")
-            return
-
-        # Contrôle des colonnes attendues
-        colonnes_attendues = {"p31", "label", "statut", "categorie"}
-        if not colonnes_attendues.issubset(df.columns):
-            messagebox.showerror("Erreur", f"Colonnes attendues manquantes : {colonnes_attendues - set(df.columns)}")
-            return
-
-        # Contrôle des valeurs de 'statut'
-        valeurs_valides = {"garde", "exclu"}
-        statuts_invalides = df.loc[~df["statut"].isin(valeurs_valides), "p31"].tolist()
-        if statuts_invalides:
-            raise ValueError(f"Valeurs invalides dans la colonne 'statut' pour : {', '.join(statuts_invalides)}")
-
-        conn = sqlite3.connect(self.chemin_bd)
-        cursor = conn.cursor()
-
-        try:
-            # Étape 1 : on supprime toutes les catégories
-            cursor.execute("DELETE FROM P31Categorie")
-            categories_crees = set()
-
-            # Étape 2 : on met à jour chaque ligne de P31Classification
-            for _, ligne in df.iterrows():
-                p31 = ligne["p31"]
-                label = ligne["label"]
-                statut = ligne["statut"]
-                categorie = ligne["categorie"] or None
-
-                # Créer la catégorie si nécessaire
-                if categorie and categorie not in categories_crees:
-                    cursor.execute("INSERT INTO P31Categorie (nom, visible) VALUES (?, ?)",
-                                (categorie, 1 if statut == "garde" else 0))
-                    categories_crees.add(categorie)
-
-                # Mise à jour dans P31Classification
-                cursor.execute("""
-                    UPDATE P31Classification
-                    SET label = ?, statut = ?, categorie = ?
-                    WHERE p31 = ?
-                """, (label, statut, categorie, p31))
-
-            conn.commit()
-            messagebox.showinfo("Succès", "Importation des P31 effectuée avec succès.")
-        except Exception as e:
-            conn.rollback()
-            messagebox.showerror("Erreur", f"Erreur lors de l'importation : {e}")
-        finally:
-            conn.close()
-
-    def afficherFiltrageCategories(self):
-        fenetre = tk.Toplevel()
-        fenetre.title("Filtrage des catégories")
-
-        # Connexion base
-        conn = sqlite3.connect(self.chemin_bd)
-        cursor = conn.cursor()
-
-        # Onglets
-        notebook = ttk.Notebook(fenetre)
-        notebook.pack(fill="both", expand=True)
-
-        # === Onglet 1 : CATEGORIES ===
-        tab_categories = ttk.Frame(notebook)
-        notebook.add(tab_categories, text="Catégories")
-
-        frame_gauche = tk.Frame(tab_categories, padx=10, pady=10)
-        frame_gauche.pack(side="left", fill="both", expand=True)
-        frame_droite = tk.Frame(tab_categories, padx=10, pady=10)
-        frame_droite.pack(side="right", fill="y")
-
-        cursor.execute("""
-            SELECT c.nom, c.visible, COUNT(eh.qid) AS nb_cross
-            FROM P31Categorie c
-            LEFT JOIN P31Classification pc ON pc.categorie = c.nom
-            LEFT JOIN EntreeHistorique eh ON eh.p31 = pc.p31 AND eh.crossReference = 1
-            GROUP BY c.nom
-            ORDER BY nb_cross DESC
-        """)
-        categories = cursor.fetchall()
-
-        cursor.execute("""
-            SELECT pc.categorie, pc.label, COUNT(eh.qid) AS total
-            FROM P31Classification pc
-            JOIN EntreeHistorique eh ON pc.p31 = eh.p31
-            WHERE pc.categorie IS NOT NULL
-            GROUP BY pc.p31, pc.label, pc.categorie
-            ORDER BY pc.categorie, total DESC
-        """)
-        rows = cursor.fetchall()
-
-        p31_labels_par_categorie = {}
-        for categorie, label, count in rows:
-            if categorie not in p31_labels_par_categorie:
-                p31_labels_par_categorie[categorie] = []
-            if len(p31_labels_par_categorie[categorie]) < 2:
-                p31_labels_par_categorie[categorie].append(label)
-
-        checkbox_vars_categories = {}
-        for nom, visible, _ in categories:
-            var = tk.BooleanVar(value=bool(int(visible)))
-            labels = p31_labels_par_categorie.get(nom, [])
-            texte = f"{nom} ({', '.join(labels)}...)" if labels else nom
-            chk = tk.Checkbutton(frame_gauche, text=texte, variable=var, anchor="w", justify="left")
-            chk.pack(anchor="w")
-            checkbox_vars_categories[nom] = var
-
-        # === Onglet 2 : THEMES ===
-        tab_themes = ttk.Frame(notebook)
-        notebook.add(tab_themes, text="Thème")
-
-        frame_theme = tk.Frame(tab_themes, padx=10, pady=10)
-        frame_theme.pack(side="left", fill="both", expand=True)
-        checkbox_vars_themes = {}
-
-        cursor.execute("SELECT source_backlink, url, visible FROM SourceBacklink ORDER BY source_backlink")
-        lignes = cursor.fetchall()
-
-        color_vars_themes = {}
-
-        for source, url, visible in lignes:
-            var = tk.BooleanVar(value=bool(int(visible)))
-            checkbox_vars_themes[source] = var
-
-            # Lecture couleur actuelle
-            cursor.execute("SELECT couleur FROM SourceBacklink WHERE source_backlink = ?", (source,))
-            couleur_bgr = cursor.fetchone()[0] or "(0,0,0)"
-            couleur_hex = bgrVersHex(eval(couleur_bgr))
-            color_vars_themes[source] = tk.StringVar(value=couleur_hex)
-
-            # Ligne contenant tous les widgets
-            ligne = tk.Frame(frame_theme)
-            ligne.pack(anchor="w", fill="x", pady=1)
-
-            # CheckBox
-            chk = tk.Checkbutton(ligne, variable=var)
-            chk.pack(side="left")
-
-            # Lien cliquable
-            lien = tk.Label(ligne, text=source, fg="blue", cursor="hand2", underline=1)
-            lien.pack(side="left", padx=4)
-            lien.bind("<Button-1>", lambda e, u=url: webbrowser.open_new(u))
-
-            # Carré de couleur
-            def choisirCouleur(source=source):
-                old_color = color_vars_themes[source].get()
-                new_color = colorchooser.askcolor(initialcolor=old_color)[1]
-                if new_color:
-                    color_vars_themes[source].set(new_color)
-                    frame_couleur.config(bg=new_color)
-
-            frame_couleur = tk.Canvas(ligne, width=20, height=20, bg=couleur_hex, highlightthickness=1, relief="solid")
-            frame_couleur.pack(side="left", padx=10)
-            frame_couleur.bind("<Button-1>", lambda e, s=source: choisirCouleur(s))
-
-
-        # === Onglet 3 : FILTRAGE AVANCÉ ===
-        tab_filtrage = ttk.Frame(notebook)
-        notebook.add(tab_filtrage, text="Filtrage")
-
-        frame_filtrage = tk.Frame(tab_filtrage, padx=10, pady=10)
-        frame_filtrage.pack(fill="both", expand=True)
-
-        ttk.Label(frame_filtrage, text="(Paramètres à venir)").pack(anchor="w", pady=(0, 10))
-        ttk.Label(frame_filtrage, text="Distance max (km) :").pack(anchor="w")
-        entry_distance = ttk.Entry(frame_filtrage)
-        entry_distance.pack(anchor="w")
-
-        # === Actions globales
-        def appliquer():
-            conn = sqlite3.connect(self.chemin_bd)
-            cursor = conn.cursor()
-
-            for nom, var in checkbox_vars_categories.items():
-                cursor.execute("UPDATE P31Categorie SET visible = ? WHERE nom = ?", (1 if var.get() else 0, nom))
-
-            for nom in checkbox_vars_themes:
-                visible = 1 if checkbox_vars_themes[nom].get() else 0
-                couleur_bgr = hexVersBGR(color_vars_themes[nom].get())
-                cursor.execute("""
-                    UPDATE SourceBacklink SET visible = ?, couleur = ?
-                    WHERE source_backlink = ?
-                """, (visible, str(couleur_bgr), nom))
-
-            conn.commit()
-            conn.close()
-            fenetre.destroy()
-
-        def annuler():
-            fenetre.destroy()
-
-        frame_boutons = tk.Frame(fenetre, padx=10, pady=10)
-        frame_boutons.pack(side="bottom", fill="x")
-
-
-        tk.Button(frame_boutons, text="Appliquer", command=appliquer).pack(side="right", padx=5)
-        tk.Button(frame_boutons, text="Annuler", command=annuler).pack(side="right", padx=5)
-
-
-
-### Gestion des fonctions activées depuis le menu
+    # Gestion des fonctions activées depuis le menu
     def quitter_application(self):
         import sys
         self.destroy()
         self.quit()
         sys.exit(0)
 
-
     def actionSauvegarderProjet(self):
         nom_module = type(self.moteurAlgo).__name__
+        chemin_initial = self.cheminProjetCourant or ""
         fichier = filedialog.asksaveasfilename(
-            initialdir=self.dossiers["projets"],
-            defaultextension=".pkl",
-            filetypes=[("{nom_module} (*.pkl)", "*.pkl")],
+            initialdir=os.path.dirname(chemin_initial) if chemin_initial else self.dossiers["projets"],
+            defaultextension=".json",
+            filetypes=[("Projet JSON", "*.json")],
             title="Sauvegarder le projet",
-            initialfile=f"projet_{nom_module}.pkl"
+            initialfile=os.path.basename(chemin_initial) if chemin_initial else f"projet_{nom_module}.json"
         )
         if not fichier:
             return
 
         try:
-            self.sauvegarderEtatComplet(fichier)
-            messagebox.showinfo("Sauvegarde réussie", f"Projet sauvegardé dans :\n{fichier}")
-        except Exception as e:
-            messagebox.showerror("Erreur", f"Erreur lors de la sauvegarde :\n{e}")
+            sauvegarderProjetJsonV1(fichier, self.moteurAlgo, self.layerManager)
+            self.cheminProjetCourant = fichier
+            self.memoriserDernierProjet(fichier)
+            self.mettreAJourTitreFenetre(algo=self.moteurAlgo, cheminProjet=fichier)
+            self._setup_menu()
+        except (OSError, TypeError, ValueError) as e:
+            messagebox.showerror("Erreur sauvegarde", f"Erreur lors de la sauvegarde :\n{e}")
 
+    def actionSauvegarder(self):
+        if not self.cheminProjetCourant:
+            self.actionSauvegarderProjet()
+            return
 
+        try:
+            sauvegarderProjetJsonV1(self.cheminProjetCourant, self.moteurAlgo, self.layerManager)
+        except (OSError, TypeError, ValueError) as e:
+            messagebox.showerror("Erreur sauvegarde", f"Erreur lors de la sauvegarde :\n{e}")
 
-    def actionChargerProjet(self):
-        nom_module = type(self.moteurAlgo).__name__
-        fichier = filedialog.askopenfilename(
-            initialdir=self.dossiers["projets"],
-            filetypes=[("{nom_module} (*.pkl)", "*.pkl")],
-            title="Charger un projet",
-        )
+    def actionChargerProjet(self, fichier=None):
+        if fichier is None:
+            fichier = filedialog.askopenfilename(
+                initialdir=self.dossiers["projets"],
+                filetypes=[("Projet JSON", "*.json")],
+                title="Charger un projet",
+            )
         if not fichier:
             return
 
         try:
-            self.chargerEtatComplet(fichier)
-            messagebox.showinfo("Chargement réussi", f"Projet chargé depuis :\n{fichier}")
-        except Exception as e:
-            messagebox.showerror("Erreur", f"Erreur lors du chargement :\n{e}")
+            moteur, layers = chargerProjetJsonV1(fichier)
+            self.appliquerEtat(layers, moteur)
+            self.cheminProjetCourant = fichier
+            self.memoriserDernierProjet(fichier)
+            self.mettreAJourTitreFenetre(algo=moteur, cheminProjet=fichier)
+        except (OSError, ValueError) as e:
+            messagebox.showerror("Erreur chargement", f"Erreur lors du chargement :\n{e}")
 
     def actionNouveauProjet(self, algo_cls):
         """Crée un nouveau projet basé sur la classe d'algorithme donnée."""
         layer = LayerManager()
         moteur = algo_cls(layer)
         self.appliquerEtat(layer, moteur)
+        self.cheminProjetCourant = None
+        self.mettreAJourTitreFenetre(algo=moteur, estNouveau=True)
+
+    def ouvrirImpressionCarte(self):
+        open_map_print_dialog(self, self.moteurAlgo, self.layerManager)
 
     def sauvegarder_carte(self):
 
@@ -1851,20 +1676,57 @@ class InterfaceCarte(tk.Tk):
             title="Enregistrer la carte annotée"
         )
         if filepath:
-            sauvegarder_carte_complete(filepath)
+            sauvegarder_carte_complete(
+                filepath=filepath,
+                layerManager=self.layerManager,
+                listePOIs=self.listePOIs,
+            )
             print(f"✅ Carte sauvegardée sous : {filepath}")
             print(f"✅ Carte sauvegardée sous : {filepath}")
-
 
     def gerer_regles_algo(self):
         self.ihm_algo.ouvrir_fenetre_regles()
 
     def creer_scenarios_automatiques(self):
-        self.ihm_algo.ouvrir_fenetre_scenarios()
+        open_automatic_scenario_dialog(
+            self,
+            self.moteurAlgo,
+            self.layerManager,
+            on_changed=self._apres_modification_scenarios_automatiques,
+            parametres_csv=self.ihm_algo.parametres_csv,
+        )
+
+    def supprimer_scenarios_automatiques(self):
+        segment = self.moteurAlgo.segment_actif
+        if not messagebox.askyesno(
+            "Confirmation de suppression",
+            f"Supprimer tous les scénarios automatiques du segment :\n\n{segment} ?",
+        ):
+            return
+
+        self.moteurAlgo.supprimerTousScenariosAutomatiques(
+            self.layerManager,
+            segment=segment,
+        )
+        self._apres_modification_scenarios_automatiques()
+
+    def _apres_modification_scenarios_automatiques(self):
+        scenario_actif = self.moteurAlgo.getScenario().getDescriptionLisible()
+        self.creerLayerControle(self.frameLayers, scenario_a_selectionner=scenario_actif)
+        self._refresh_images()
+        self._rafraichir_menu_algorithme()
+
+    def rechargerDataset(self):
+        try:
+            self.moteurAlgo.rechargerDatasetEtRecalculerTout(self.layerManager)
+            self.appliquerEtat(self.layerManager, self.moteurAlgo)
+            messagebox.showinfo("Dataset", "Rechargement OK")
+        except Exception as e:
+            messagebox.showerror("Dataset", str(e))
+            raise
 
     def demanderGenerationRapport(self):
         self.ihm_algo.ouvrirBoiteGenerationRapport(self.dossiers["exports"])
-
 
     def actionChangerCarte(self, json_path):
 
@@ -1879,7 +1741,6 @@ class InterfaceCarte(tk.Tk):
 
         # Important : forcer le redraw complet
         self._refresh_images()
-
 
     def demarrerCalibrationNouvelleCarte(self):
 
@@ -1946,10 +1807,8 @@ class InterfaceCarte(tk.Tk):
         self._on_mouse_move_global_saved = self._on_mouse_move_global
         self._on_mouse_move_global = lambda event: None
 
-
         self.canvas_image.bind("<Button-3>", self._on_right_click_calibrationMode)
         self._escape_bind_id = self.bind("<Escape>", self.annulerCalibration)
-
 
         # Force un redraw
         self._refresh_images()
@@ -2043,7 +1902,7 @@ class InterfaceCarte(tk.Tk):
     def toggle_affichage_algo(self):
         def estAfficheDansPane(widget, pane):
             return str(widget) in [str(p) for p in pane.panes()]
-        
+
         if self.varAfficherAlgo.get():
             if not estAfficheDansPane(self.frameIHMAlgo, self.paneGauche):
                 self.paneGauche.add(self.frameIHMAlgo)
@@ -2054,7 +1913,7 @@ class InterfaceCarte(tk.Tk):
             self.paneGauche.update_idletasks()
             self.paneGauche.paneconfig(self.frameLayers, height=self.paneGauche.winfo_height())
         self._adjust_side_panel_visibility()
-    
+
     def toggle_affichage_layers(self):
         def estAfficheDansPane(widget, pane):
             return str(widget) in [str(p) for p in pane.panes()]
@@ -2067,7 +1926,7 @@ class InterfaceCarte(tk.Tk):
             if not estAfficheDansPane(self.frameLayers, self.paneGauche):
                 self.paneGauche.add(self.frameLayers, before=self.paneGauche.panes()[0])
                 self.paneGauche.paneconfig(self.frameLayers, height=200)
- 
+
         else:
 
             # self.frameSegment.pack_forget()
@@ -2077,7 +1936,6 @@ class InterfaceCarte(tk.Tk):
 
         self._adjust_side_panel_visibility()
 
-
     def _adjust_side_panel_visibility(self):
         if not self.varAfficherAlgo.get() and not self.varAfficherLayers.get():
             if self.sidePanel in self.main_pane.panes():
@@ -2085,7 +1943,6 @@ class InterfaceCarte(tk.Tk):
         else:
             if self.sidePanel not in self.main_pane.panes():
                 self.main_pane.add(self.sidePanel, before=self.canvas_image, minsize=200)
-
 
 
 if __name__ == "__main__":

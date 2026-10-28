@@ -1,0 +1,68 @@
+{
+  "format": "chouette-or-project",
+  "schema_version": 1,
+  "algorithm": "AlgorithmeCadranFinal",
+  "dataset": {
+    "events": [
+      {
+        "event": "15 Aout 778 : Bataille de Roncevaux",
+        "LettreSegment": "C",
+        "Extremite1": "Roncevaux",
+        "MilieuSegment": "X",
+        "Extremite2": "Bourges",
+        "DateSegment": "25/07/778",
+        "Date": "15/08/778",
+        "Stylet": "Roncevaux",
+        "LettreDecl": "F",
+        "Base1": "Saint-Amour",
+        "Base2": "Rocamadour"
+      }
+    ]
+  },
+  "rules": {},
+  "active_segment": "15 Aout 778 : Bataille de Roncevaux",
+  "active_scenario": "Lac Trémelin",
+  "segments": [
+    {
+      "segment": "15 Aout 778 : Bataille de Roncevaux",
+      "scenarios": [
+        {
+          "name": "Lac Trémelin",
+          "type": "utilisateur",
+          "segment": "15 Aout 778 : Bataille de Roncevaux",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Roncevaux"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "+2",
+              "octave": "/4"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "sensCarte": "Endroit"
+            }
+          },
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
+          }
+        }
+      ]
+    }
+  ]
+}
