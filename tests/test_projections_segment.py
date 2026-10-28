@@ -74,7 +74,7 @@ def test_distance_angulaire_circulaire(angle, cible, attendu):
 
 @pytest.mark.parametrize("projection", astro.PROJECTIONS_HELIOCENTRIQUES)
 @pytest.mark.parametrize("orientation", [-1, 1])
-@pytest.mark.parametrize("tolerance,accepte", [("2.5", False), ("4.0", True)])
+@pytest.mark.parametrize("tolerance,accepte", [("2.5", False), ("5.0", True)])
 def test_annees_transmet_projection_et_tolerance_et_affiche_erreur_circulaire(monkeypatch, projection, orientation, tolerance, accepte):
     module = segment.PlaneteAnnee()
     module.projection = projection
@@ -127,20 +127,63 @@ def test_interface_propose_les_nouveaux_choix_sans_lancer_de_recherche(monkeypat
         ihm.moteurAlgo.getValeursParametre.side_effect = lambda m, a: module.getValeursParametre(a)
         ihm.updateModuleEtInterface = Mock(side_effect=lambda m, a, v: module.setParametre(a, v))
         lignes = ihm.parser_csv(str(Path("config/AlgorithmeSegment.csv")))
-        choix = [r for r in lignes if r.get("Module") == "annee" and r.get("Attribut") in ("projection", "tolerance")]
-        assert len(choix) == 2
+        choix = [r for r in lignes if r.get("Module") == "annee" and r.get("Widget") == "combo"]
+        assert len(choix) == 4
         assert all(r["Section"] == "Recherche de l'année" and r["Widget"] == "combo" for r in choix)
-        for champ in choix:
-            ihm.ajouter_ligne_widgets(root, [champ])
+        champs = {c["Attribut"]: c for c in choix}
+        assert champs["borneMin"]["Ligne"] == champs["periode"]["Ligne"] == "8"
+        assert champs["projection"]["Ligne"] == champs["tolerance"]["Ligne"] == "9"
+        for numero in ("8", "9"):
+            frame = ihm_module.ttk.Frame(root)
+            frame.pack(anchor="w")
+            ihm.ajouter_ligne_widgets(frame, [c for c in choix if c["Ligne"] == numero])
+        root.update_idletasks()
+        assert all(f.winfo_reqwidth() <= 530 for f in root.winfo_children())
         assert ihm.parametres_widgets["annee.projection"].get() == astro.PROJECTION_ECLIPTIQUE_J2000
         assert float(ihm.parametres_widgets["annee.tolerance"].get()) == 2.5
-        combos = [w for f in root.winfo_children() for w in f.winfo_children() if isinstance(w, ihm_module.ttk.Combobox)]
-        assert tuple(combos[0]["values"]) == astro.PROJECTIONS_HELIOCENTRIQUES
-        assert tuple(map(float, combos[1]["values"])) == (2.5, 4)
-        ihm.parametres_widgets["annee.projection"].set(astro.PROJECTION_EQUATORIALE)
-        ihm.parametres_widgets["annee.tolerance"].set("4.0")
+        combos = [w for f in root.winfo_children() for c in f.winfo_children()
+                  for w in c.winfo_children() if isinstance(w, ihm_module.ttk.Combobox)]
+        assert [int(c["width"]) for c in combos] == [5, 5, 18, 5]
+        assert all(str(c["state"]) == "readonly" for c in combos)
+        assert tuple(map(int, combos[0]["values"])) == tuple(module.getValeursBorneMin())
+        assert tuple(map(int, combos[1]["values"])) == tuple(module.getValeursPeriode())
+        assert tuple(combos[2]["values"]) == astro.PROJECTIONS_HELIOCENTRIQUES
+        assert tuple(map(float, combos[3]["values"])) == (2.5, 5)
+        # Exercer la sélection des quatre listes et leurs callbacks réels Tk.
+        for combo, valeur in zip(combos, (1300, 200, astro.PROJECTION_EQUATORIALE, 5.0)):
+            valeurs = tuple(map(str, combo["values"]))
+            combo.current(valeurs.index(str(valeur)))
+        assert int(module.borneMin) == 1300
+        assert int(module.periode) == 200
         assert module.projection == astro.PROJECTION_EQUATORIALE
-        assert float(module.tolerance) == 4
+        assert float(module.tolerance) == 5
+        assert ihm.updateModuleEtInterface.call_count == 4
         recherche.assert_not_called()
+    finally:
+        root.destroy()
+
+
+@pytest.mark.parametrize("field_type,largeur", [("shorttext", 15), ("longtext", 40), ("int", 5)])
+def test_combo_sans_largeur_specifique_conserve_la_largeur_historique(field_type, largeur):
+    import tkinter as tk
+    import src.IHMAlgorithme as ihm_module
+
+    root = tk.Tk()
+    root.withdraw()
+    try:
+        ihm = IHMAlgorithme.__new__(IHMAlgorithme)
+        ihm.parametres_widgets = {}
+        ihm.moteurAlgo = Mock()
+        ihm.moteurAlgo.getParametre.return_value = "A"
+        ihm.moteurAlgo.getValeursParametre.return_value = ("A", "B")
+        ihm.updateModuleEtInterface = Mock()
+        ihm.ajouter_ligne_widgets(root, [{"Widget": "combo", "FieldType": field_type,
+                                        "Module": "autre", "Attribut": "choix"}])
+        combo = next(w for c in root.winfo_children() for w in c.winfo_children()
+                     if isinstance(w, ihm_module.ttk.Combobox))
+        assert int(combo["width"]) == largeur
+        assert tuple(combo["values"]) == ("A", "B")
+        combo.current(1)
+        ihm.updateModuleEtInterface.assert_called_once_with("autre", "choix", "B")
     finally:
         root.destroy()

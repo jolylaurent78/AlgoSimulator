@@ -427,7 +427,7 @@ class IHMAlgorithme(tk.Frame):
                 # 2. Obtenir les valeurs possibles depuis getValeursXxx()
                 liste = self.moteurAlgo.getValeursParametre(module, attribut)
                 combo = ttk.Combobox(container, values=liste, textvariable=var, state='readonly')
-                combo.config(width=self.get_field_char_width(field_type))
+                combo.config(width=int(champ.get('Largeur') or self.get_field_char_width(field_type)))
                 combo.pack(side="left")
 
                 # 4. Réaction au changement

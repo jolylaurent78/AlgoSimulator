@@ -2,8 +2,9 @@
 
 Dans **Recherche de l'année**, choisir la projection et la tolérance puis
 cliquer sur **Rechercher les années**. Les nouveaux calculs utilisent par défaut
-**Écliptique J2000** et **2,5°**. Le choix **Équatorial** avec **4°** permet de
-retrouver l'ancien mode. Le tableau des années candidates garde ses colonnes.
+**Écliptique J2000** et **2,5°**. Les tolérances proposées sont **2,5°** et **5°** ;
+le choix **Équatorial** conserve l'ancienne projection. Le tableau des années
+candidates garde ses colonnes.
 
 ## Calcul
 

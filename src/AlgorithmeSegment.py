@@ -371,7 +371,7 @@ class PlaneteAnnee(ModuleAlgo):
         return PROJECTIONS_HELIOCENTRIQUES
 
     def getValeursTolerance(self):
-        return (2.5, 4.0)
+        return (2.5, 5.0)
 
     def getValeursBorneMin(self):
         return list(range(700, 1900, 100))
