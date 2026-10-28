@@ -91,7 +91,8 @@ def test_planete_annee_reinitialise_listes_selection_et_centres(monkeypatch):
     module.planetePlanete = "Mars"
     appels = []
 
-    def trouver_date(azimut, annee, planete, jd_centre=None):
+    def trouver_date(azimut, annee, planete, jd_centre=None, projection=None):
+        assert projection == module.projection
         appels.append((azimut, annee, planete, jd_centre))
         return MyJulianDate(1 if azimut < 180 else 2, 1, int(annee))
 
@@ -99,7 +100,7 @@ def test_planete_annee_reinitialise_listes_selection_et_centres(monkeypatch):
     monkeypatch.setattr(
         segment_module,
         "azimutHeliocentrique",
-        lambda jd, _planete, _annee: 15 if jd.enTuple()[2] == 1 else 185,
+        lambda jd, _planete, _annee, projection: 15 if jd.enTuple()[2] == 1 else 185,
     )
 
     assert module.calculerAnnees(init=True) is False

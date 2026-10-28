@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from src.ProjectPersistence import chargerProjetJsonV1
+from src.calculAstronomique import PROJECTION_EQUATORIALE, PROJECTION_ECLIPTIQUE_J2000
 
 
 pytestmark = [
@@ -72,6 +73,10 @@ def test_chargement_golden_guerande_restitue_modules_et_cache(projet_guerande):
 def test_cycle_astronomique_reel_1365_depuis_le_golden(projet_guerande):
     moteur, _ = projet_guerande
     annee = moteur.getScenario().modules["annee"]
+    # Rejouer explicitement le mode historique ; les nouveaux calculs ont
+    # désormais pour défaut l'écliptique J2000 avec une tolérance de 2,5°.
+    annee.projection = PROJECTION_EQUATORIALE
+    annee.tolerance = 4.0
     annee.listeAnnees = []
     annee.listeAnneesSelection = None
 
@@ -87,3 +92,23 @@ def test_cycle_astronomique_reel_1365_depuis_le_golden(projet_guerande):
     assert entree[0] == 1365
     assert float(entree[1]) == pytest.approx(2219751.125, abs=1e-6)
     assert entree[2:] == ("Opposé", "53.24°", "283.22°", "3.51°")
+
+
+def test_cycle_ecliptique_j2000_1365_depuis_la_meme_geometrie(projet_guerande):
+    moteur, _ = projet_guerande
+    annee = moteur.getScenario().modules["annee"]
+    geometrie = (annee.extremite1, annee.milieuSegment, annee.extremite2,
+                 annee.azimutAxeterre, annee.angleAnalyse, annee.planetePlanete)
+    assert annee.projection == PROJECTION_ECLIPTIQUE_J2000
+    assert annee.tolerance == 2.5
+    annee.calculerAnnees(init=True)
+    annee.annee = 1365
+    annee.calculerAnnees(init=False)
+
+    assert len(annee.listeAnnees) == 1
+    entree = annee.listeAnnees[0]
+    assert entree[0] == 1365
+    assert float(entree[1]) == pytest.approx(2219749.625, abs=1e-6)
+    assert entree[2:] == ("Opposé", "53.24°", "280.79°", "1.07°")
+    assert (annee.extremite1, annee.milieuSegment, annee.extremite2,
+            annee.azimutAxeterre, annee.angleAnalyse, annee.planetePlanete) == geometrie

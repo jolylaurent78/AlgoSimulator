@@ -9,7 +9,10 @@ from src.Sentinelle import Sentinelle, LieuxObservation
 
 # Librairie calcul astronomique
 from src.calculAstronomique import trouverDatesPourDeclinaison, azimutHeliocentrique, trouverDatePourAzimut
-from src.calculAstronomique import MyJulianDate
+from src.calculAstronomique import (
+    MyJulianDate, distanceAngulaire, PROJECTIONS_HELIOCENTRIQUES,
+    PROJECTION_ECLIPTIQUE_J2000,
+)
 
 # Affichage des objects graphiques
 from src.affichage_objets import ObjetGraphique, PointGraphique, LigneEntreVilles, LigneAzimut, ArcOriente
@@ -364,6 +367,12 @@ class PlaneteAnnee(ModuleAlgo):
     def getValeursChoixAngle(self):
         return "=", "complémentaire"
 
+    def getValeursProjection(self):
+        return PROJECTIONS_HELIOCENTRIQUES
+
+    def getValeursTolerance(self):
+        return (2.5, 4.0)
+
     def getValeursBorneMin(self):
         return list(range(700, 1900, 100))
 
@@ -401,6 +410,8 @@ class PlaneteAnnee(ModuleAlgo):
         self.angleAnalyse = None
         self.choixAngle = "="
 
+        self.projection = PROJECTION_ECLIPTIQUE_J2000
+        self.tolerance = 2.5
         self.borneMin = 1000
         self.periode = 100
         self.annee = None
@@ -447,15 +458,18 @@ class PlaneteAnnee(ModuleAlgo):
                         planete: str,
                         marge_erreur: float
                         ):
-            jd_direct = trouverDatePourAzimut(azimut, annee, planete="Terre", jd_centre=jd_centre)
+            jd_direct = trouverDatePourAzimut(
+                azimut, annee, planete="Terre", jd_centre=jd_centre,
+                projection=self.projection,
+            )
 
-            az_planete = azimutHeliocentrique(jd_direct, planete, annee)
+            az_planete = azimutHeliocentrique(jd_direct, planete, annee, projection=self.projection)
             az_cible1 = (azimut + delta_azimut) % 360
             az_cible2 = (azimut - delta_azimut) % 360
 
-            if abs((az_planete - az_cible1 + 180) % 360 - 180) <= marge_erreur or \
-               abs((az_planete - az_cible2 + 180) % 360 - 180) <= marge_erreur:
-                erreurCible = min(abs(az_cible1 - az_planete)  , abs(az_cible2 - az_planete))
+            erreurCible = min(distanceAngulaire(az_planete, az_cible1),
+                              distanceAngulaire(az_planete, az_cible2))
+            if erreurCible <= marge_erreur:
                 self.listeAnnees.append((annee, jd_direct, sens, f"{azimut:.2f}°", f"{az_planete:.2f}°", f"{erreurCible:.2f}°"))
 
             y, m, d = jd_direct.enTuple()
@@ -477,7 +491,7 @@ class PlaneteAnnee(ModuleAlgo):
                                                 self.angleAnalyse,
                                                 "Identique",
                                                 self.planetePlanete,
-                                                4
+                                                float(self.tolerance)
                                                 )
 
             self.jd_centre_oppose = testerAnnee(self.annee,
@@ -486,7 +500,7 @@ class PlaneteAnnee(ModuleAlgo):
                                                 self.angleAnalyse,
                                                 "Opposé",
                                                 self.planetePlanete,
-                                                4
+                                                float(self.tolerance)
                                                 )
             self.annee += 1
 

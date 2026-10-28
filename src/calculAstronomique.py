@@ -3,7 +3,7 @@ from skyfield.toposlib import Topos
 
 from skyfield.almanac import sunrise_sunset, find_discrete, meridian_transits
 
-from skyfield.framelib import ecliptic_frame
+from skyfield.framelib import ecliptic_frame, ecliptic_J2000_frame
 from skyfield import almanac
 
 from functools import total_ordering
@@ -769,11 +769,41 @@ def trouverDatesPourDeclinaison(delta_cible, annee):
 memo_equinoxes = {}
 
 
-def azimutHeliocentrique(jd, nom_planete, annee=None):
+PROJECTION_EQUATORIALE = "Équatorial"
+PROJECTION_ECLIPTIQUE_J2000 = "Écliptique J2000"
+PROJECTIONS_HELIOCENTRIQUES = (PROJECTION_EQUATORIALE, PROJECTION_ECLIPTIQUE_J2000)
+
+
+def ecartAngulaire(angle, cible):
+    """Écart signé le plus court, dans [-180°, 180°[."""
+    return (angle - cible + 180) % 360 - 180
+
+
+def distanceAngulaire(angle, cible):
+    """Distance circulaire, dans [0°, 180°]."""
+    return abs(ecartAngulaire(angle, cible))
+
+
+def _positionHeliocentriqueProjetee(jd, nom_planete, projection):
+    t = ts.ut1_jd(float(jd))
+    if projection == PROJECTION_EQUATORIALE:
+        # Conserver exactement le calcul historique (y compris le temps de lumière).
+        return sun.at(t).observe(ASTRES[nom_planete]).position.km
+    if projection == PROJECTION_ECLIPTIQUE_J2000:
+        # Vecteur Soleil–astre au même instant, exprimé dans le repère FIXE J2000.
+        # ecliptic_frame serait l'écliptique de la date et ne convient pas ici.
+        position = (ASTRES[nom_planete] - sun).at(t)
+        return position.frame_xyz(ecliptic_J2000_frame).km
+    raise ValueError(f"Projection héliocentrique inconnue : {projection}")
+
+
+def azimutHeliocentrique(jd, nom_planete, annee=None, projection=PROJECTION_EQUATORIALE):
     """
     Azimut héliocentrique d'une planète à la date donnée,
     dans un repère où 0° correspond à la direction de la Terre lors de l’équinoxe de printemps
-    de la même année que la date jd.
+    de la même année que la date jd, dans la projection choisie.
+    Le mode équatorial conserve le calcul historique ; le mode écliptique
+    projette les vecteurs géométriques dans le plan écliptique fixe J2000.
     """
     # Étape 1 : retrouver l’équinoxe de printemps de l’année de jd
     if not annee:
@@ -783,13 +813,11 @@ def azimutHeliocentrique(jd, nom_planete, annee=None):
     jd_equinoxe = memo_equinoxes[annee]
 
     # Étape 2 : position héliocentrique de la Terre à l’équinoxe
-    t_ref = ts.ut1_jd(float(jd_equinoxe))
-    pos_terre_ref = sun.at(t_ref).observe(ASTRES['Terre']).position.km
+    pos_terre_ref = _positionHeliocentriqueProjetee(jd_equinoxe, 'Terre', projection)
     angle_ref = degrees(arctan2(pos_terre_ref[1], pos_terre_ref[0])) % 360
 
     # Étape 3 : position héliocentrique de la planète à la date cible
-    t = ts.ut1_jd(float(jd))
-    pos_planete = sun.at(t).observe(ASTRES[nom_planete]).position.km
+    pos_planete = _positionHeliocentriqueProjetee(jd, nom_planete, projection)
     angle_planete = degrees(arctan2(pos_planete[1], pos_planete[0])) % 360
 
     # Résultat : azimut relatif à l'équinoxe de printemps de l'année de jd
@@ -798,7 +826,9 @@ def azimutHeliocentrique(jd, nom_planete, annee=None):
 
 def azimutHeliocentriqueJ2000(jd, nom_planete):
     """
-    Azimut héliocentrique d'une planète dans le plan XY du repère J2000.
+    Azimut historique dans le plan XY ÉQUATORIAL du repère J2000.
+    Cette fonction n'est pas une projection écliptique ; pour celle-ci utiliser
+    azimutHeliocentrique(..., projection=PROJECTION_ECLIPTIQUE_J2000).
     Le 0° correspond à la direction de l’équinoxe de printemps J2000 (axe X du repère inertiel ICRF).
     """
     t = ts.ut1_jd(float(jd))
@@ -812,10 +842,14 @@ def azimutHeliocentriqueJ2000(jd, nom_planete):
     return angle_deg
 
 
-def trouverDatePourAzimut(azimut_cible, annee, planete="Terre", jd_centre=None, marge_jours=30, precision_heures=6):
+def trouverDatePourAzimut(azimut_cible, annee, planete="Terre", jd_centre=None, marge_jours=30, precision_heures=6,
+                          projection=PROJECTION_EQUATORIALE):
     """
     Recherche la date où la planète est à l’azimut héliocentrique donné (0° = Terre à l’équinoxe de printemps de l’année).
     """
+    if precision_heures <= 0:
+        raise ValueError("La précision en heures doit être strictement positive")
+    azimut_cible %= 360
     # Déterminer l’intervalle de recherche
     if jd_centre:
         jd_centre_float = float(jd_centre)
@@ -827,19 +861,19 @@ def trouverDatePourAzimut(azimut_cible, annee, planete="Terre", jd_centre=None, 
 
     def azimut(jd_float):
         jd_obj = MyJulianDate.fromJD(jd_float)
-        return azimutHeliocentrique(jd_obj, planete, annee)
+        return azimutHeliocentrique(jd_obj, planete, annee, projection)
 
     # --- Étape 1 : balayage large (4 jour)
     PAS_ETAPE1 = 4
     meilleur_jd = jd_start
     meilleur_azimut = azimut(jd_start)
-    min_ecart = abs(meilleur_azimut - azimut_cible)
+    min_ecart = distanceAngulaire(meilleur_azimut, azimut_cible)
 
     jour = jd_start + PAS_ETAPE1
 
     while jour <= jd_end:
         a = azimut(jour)
-        ecart = abs(a - azimut_cible)
+        ecart = distanceAngulaire(a, azimut_cible)
         if ecart < min_ecart:
             min_ecart = ecart
             meilleur_jd = jour
@@ -853,7 +887,7 @@ def trouverDatePourAzimut(azimut_cible, annee, planete="Terre", jd_centre=None, 
     t = jd1
     while t <= jd2:
         a = azimut(t)
-        ecart = abs(a - azimut_cible)
+        ecart = distanceAngulaire(a, azimut_cible)
         if ecart < min_ecart:
             min_ecart = ecart
             meilleur_jd = t
@@ -869,9 +903,9 @@ def trouverDatePourAzimut(azimut_cible, annee, planete="Terre", jd_centre=None, 
     while (jd2 - jd1) > seuil:
         milieu = (jd1 + jd2) / 2
         az_milieu = azimut(milieu)
-        if az_milieu == azimut_cible:
+        if distanceAngulaire(az_milieu, azimut_cible) == 0:
             return MyJulianDate.fromJD(milieu)
-        if (az1 - azimut_cible) * (az_milieu - azimut_cible) < 0:
+        if ecartAngulaire(az1, azimut_cible) * ecartAngulaire(az_milieu, azimut_cible) < 0:
             jd2, _ = milieu, az_milieu
         else:
             jd1, az1 = milieu, az_milieu
