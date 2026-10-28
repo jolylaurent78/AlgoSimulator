@@ -142,7 +142,7 @@ class CarteConfig:
         Sauvegarde le calibrage courant (A, offset) dans un fichier .json.
 
         json_path : chemin complet du fichier json à créer.
-        image_file : nom du fichier image associé (ex: "899.jpg")
+        image_file : nom du fichier image associé (ex: "fond.jpg")
         calibration_villes : liste des villes de calibration
         """
         import json
@@ -165,7 +165,7 @@ class CarteConfig:
 # === Instance globale ===
 # On recharge la dernière carte utilisée (si existe)
 cfg = ConfigGlobale()
-dernier_json = cfg.get("Carte", "lastCarte", défaut="data/carto/899.json")
+dernier_json = cfg.get("Carte", "lastCarte", défaut="data/carto/899 - extended v2 corse_calibree.json")
 carteConfig = CarteConfig(dernier_json)
 
 

@@ -1786,7 +1786,7 @@ class InterfaceCarte(tk.Tk):
         print(f"[✅] Image chargée ({w_img}x{h_img}) — prêt pour calibration.")
 
         # Met à jour carteConfig pour bénéficier du zoom/pan standard
-        self._jsonCartePrecedente = self.cfg.get("Carte", "lastCarte", défaut="data/carto/899.json")
+        self._jsonCartePrecedente = self.cfg.get("Carte", "lastCarte", défaut="data/carto/899 - extended v2 corse_calibree.json")
         carteConfig.img = calibrationImage
         carteConfig.image_size = calibrationImageSize
         carteConfig.description = "Calibration en cours"

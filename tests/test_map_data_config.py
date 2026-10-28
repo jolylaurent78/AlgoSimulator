@@ -183,7 +183,8 @@ def test_config_globale_persiste_et_restitue_la_derniere_carte(tmp_path):
     chemin = tmp_path / "simulateur.ini"
     configuration = ConfigGlobale(chemin)
 
-    assert configuration.get("Carte", "lastCarte", "data/carto/899.json") == "data/carto/899.json"
+    carte_defaut = "data/carto/899 - extended v2 corse_calibree.json"
+    assert configuration.get("Carte", "lastCarte", carte_defaut) == carte_defaut
     configuration.set("Carte", "lastCarte", "data/carto/carte test.json")
     configuration.save()
 
