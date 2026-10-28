@@ -160,44 +160,35 @@
               "choixAngle": "complémentaire",
               "borneMin": "700",
               "periode": 100,
-              "listeAnneesSelection": 7
+              "projection": "Écliptique J2000",
+              "tolerance": 2.5,
+              "listeAnneesSelection": 3
             }
           },
           "cached_results": {
             "annee": {
               "listeAnnees": [
                 [
-                  710.0,
+                  727.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 1980647.875
+                    "jd": 1986670.375
                   },
-                  "Opposé",
-                  "180.10°",
-                  "305.07°",
-                  "3.62°"
-                ],
-                [
-                  719.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 1983935.125
-                  },
-                  "Opposé",
-                  "180.10°",
-                  "48.30°",
-                  "3.22°"
+                  "Identique",
+                  "0.10°",
+                  "131.09°",
+                  "2.40°"
                 ],
                 [
                   735.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 1989592.625
+                    "jd": 1989592.375
                   },
                   "Identique",
                   "0.10°",
-                  "233.29°",
-                  "1.78°"
+                  "233.20°",
+                  "1.69°"
                 ],
                 [
                   740.0,
@@ -207,41 +198,8 @@
                   },
                   "Opposé",
                   "180.10°",
-                  "312.18°",
-                  "3.49°"
-                ],
-                [
-                  749.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 1994892.375
-                  },
-                  "Opposé",
-                  "180.10°",
-                  "54.60°",
-                  "3.09°"
-                ],
-                [
-                  756.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 1997262.625
-                  },
-                  "Identique",
-                  "0.10°",
-                  "130.11°",
-                  "1.42°"
-                ],
-                [
-                  769.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2002197.125
-                  },
-                  "Opposé",
-                  "180.10°",
-                  "306.59°",
-                  "2.11°"
+                  "308.12°",
+                  "0.57°"
                 ],
                 [
                   778.0,
@@ -251,30 +209,19 @@
                   },
                   "Opposé",
                   "180.10°",
-                  "49.84°",
-                  "1.67°"
+                  "49.98°",
+                  "1.53°"
                 ],
                 [
-                  785.0,
+                  799.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2007854.625
+                    "jd": 2013154.375
                   },
-                  "Identique",
-                  "0.10°",
-                  "125.39°",
-                  "3.30°"
-                ],
-                [
-                  794.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2011141.875
-                  },
-                  "Identique",
-                  "0.10°",
-                  "235.07°",
-                  "3.56°"
+                  "Opposé",
+                  "180.10°",
+                  "309.78°",
+                  "1.09°"
                 ]
               ]
             }
@@ -324,7 +271,9 @@
               "choixAngle": "complémentaire",
               "borneMin": "1800",
               "periode": 100,
-              "listeAnneesSelection": 2
+              "projection": "Écliptique J2000",
+              "tolerance": "5.0",
+              "listeAnneesSelection": 3
             }
           },
           "cached_results": {
@@ -334,122 +283,155 @@
                   1803.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2379753.875
+                    "jd": 2379753.375
                   },
                   "Identique",
                   "79.86°",
-                  "7.09°",
-                  "0.13°"
+                  "7.11°",
+                  "0.15°"
+                ],
+                [
+                  1808.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 2381579.625
+                  },
+                  "Identique",
+                  "79.86°",
+                  "155.20°",
+                  "2.43°"
                 ],
                 [
                   1813.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2383590.125
+                    "jd": 2383589.625
                   },
                   "Opposé",
                   "259.86°",
-                  "332.06°",
-                  "0.71°"
+                  "329.43°",
+                  "3.34°"
                 ],
                 [
                   1815.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2384136.625
+                    "jd": 2384136.375
                   },
                   "Identique",
                   "79.86°",
-                  "10.75°",
-                  "3.79°"
+                  "11.10°",
+                  "4.14°"
                 ],
                 [
                   1825.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2387973.125
+                    "jd": 2387972.625
                   },
                   "Opposé",
                   "259.86°",
-                  "335.91°",
-                  "3.15°"
+                  "333.48°",
+                  "0.72°"
+                ],
+                [
+                  1837.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 2392355.625
+                  },
+                  "Opposé",
+                  "259.86°",
+                  "337.52°",
+                  "4.75°"
                 ],
                 [
                   1844.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2394912.625
+                    "jd": 2394912.125
                   },
                   "Opposé",
                   "259.86°",
-                  "186.37°",
-                  "0.59°"
+                  "186.32°",
+                  "0.64°"
                 ],
                 [
                   1856.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2399295.625
+                    "jd": 2399295.125
                   },
                   "Opposé",
                   "259.86°",
-                  "190.73°",
-                  "3.77°"
+                  "191.05°",
+                  "4.09°"
                 ],
                 [
                   1874.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2405686.125
+                    "jd": 2405685.625
                   },
                   "Identique",
                   "79.86°",
-                  "3.61°",
-                  "3.35°"
+                  "3.33°",
+                  "3.64°"
                 ],
                 [
                   1879.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2407512.375
+                    "jd": 2407511.625
                   },
                   "Identique",
                   "79.86°",
-                  "152.96°",
-                  "0.20°"
+                  "150.39°",
+                  "2.38°"
                 ],
                 [
                   1886.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2410068.875
+                    "jd": 2410068.375
                   },
                   "Identique",
                   "79.86°",
-                  "7.20°",
-                  "0.24°"
+                  "7.23°",
+                  "0.27°"
+                ],
+                [
+                  1891.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 2411894.625
+                  },
+                  "Identique",
+                  "79.86°",
+                  "155.19°",
+                  "2.42°"
                 ],
                 [
                   1896.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2413905.375
+                    "jd": 2413904.875
                   },
                   "Opposé",
                   "259.86°",
-                  "332.10°",
-                  "0.67°"
+                  "329.53°",
+                  "3.24°"
                 ],
                 [
                   1898.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2414451.875
+                    "jd": 2414451.375
                   },
                   "Identique",
                   "79.86°",
-                  "10.84°",
-                  "3.88°"
+                  "11.19°",
+                  "4.23°"
                 ]
               ]
             }
@@ -499,99 +481,79 @@
               "choixAngle": "complémentaire",
               "borneMin": "1400",
               "periode": 100,
-              "listeAnneesSelection": 4
+              "projection": "Écliptique J2000",
+              "tolerance": 2.5,
+              "listeAnneesSelection": 2
             }
           },
           "cached_results": {
             "annee": {
               "listeAnnees": [
                 [
-                  1411.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2236523.375
-                  },
-                  "Identique",
-                  "25.20°",
-                  "343.60°",
-                  "0.68°"
-                ],
-                [
                   1414.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2237619.125
+                    "jd": 2237617.375
                   },
                   "Identique",
                   "25.20°",
-                  "65.11°",
-                  "1.02°"
+                  "65.59°",
+                  "0.54°"
                 ],
                 [
                   1423.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2240906.375
+                    "jd": 2240904.625
                   },
                   "Identique",
                   "25.20°",
-                  "347.35°",
-                  "3.07°"
-                ],
-                [
-                  1426.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2242002.125
-                  },
-                  "Identique",
-                  "25.20°",
-                  "69.66°",
-                  "3.53°"
+                  "345.53°",
+                  "1.25°"
                 ],
                 [
                   1431.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2244014.625
+                    "jd": 2244012.875
                   },
                   "Opposé",
                   "205.20°",
-                  "246.29°",
-                  "0.17°"
+                  "246.71°",
+                  "0.58°"
                 ],
                 [
                   1464.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2256067.625
+                    "jd": 2256065.875
                   },
                   "Opposé",
                   "205.20°",
-                  "164.09°",
-                  "0.18°"
+                  "161.99°",
+                  "2.29°"
                 ],
                 [
                   1494.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2266838.625
+                    "jd": 2266836.875
                   },
                   "Identique",
                   "25.20°",
-                  "343.90°",
-                  "0.38°"
+                  "341.81°",
+                  "2.47°"
                 ],
                 [
                   1497.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2267934.375
+                    "jd": 2267932.625
                   },
                   "Identique",
                   "25.20°",
-                  "65.26°",
-                  "0.87°"
+                  "65.89°",
+                  "0.24°"
                 ]
               ]
             }
@@ -641,99 +603,68 @@
               "choixAngle": "complémentaire",
               "borneMin": "1300",
               "periode": 100,
-              "listeAnneesSelection": 6
+              "projection": "Écliptique J2000",
+              "tolerance": 2.5,
+              "listeAnneesSelection": 3
             }
           },
           "cached_results": {
             "annee": {
               "listeAnnees": [
                 [
-                  1300.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2196195.125
-                  },
-                  "Identique",
-                  "233.24°",
-                  "10.16°",
-                  "3.39°"
-                ],
-                [
-                  1319.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2203134.875
-                  },
-                  "Identique",
-                  "233.24°",
-                  "96.71°",
-                  "3.01°"
-                ],
-                [
                   1320.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2203500.125
+                    "jd": 2203498.875
                   },
                   "Identique",
                   "233.24°",
-                  "101.17°",
-                  "1.46°"
+                  "98.79°",
+                  "0.92°"
                 ],
                 [
                   1342.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2211350.375
+                    "jd": 2211349.125
                   },
                   "Opposé",
                   "53.24°",
-                  "184.26°",
-                  "2.51°"
+                  "184.30°",
+                  "2.47°"
                 ],
                 [
                   1343.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2211715.625
+                    "jd": 2211714.375
                   },
                   "Opposé",
                   "53.24°",
-                  "187.91°",
-                  "1.14°"
-                ],
-                [
-                  1364.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2219385.875
-                  },
-                  "Opposé",
-                  "53.24°",
-                  "278.40°",
-                  "1.32°"
+                  "188.25°",
+                  "1.48°"
                 ],
                 [
                   1365.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2219751.125
+                    "jd": 2219749.625
                   },
                   "Opposé",
                   "53.24°",
-                  "283.22°",
-                  "3.51°"
+                  "280.79°",
+                  "1.07°"
                 ],
                 [
                   1383.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2226510.375
+                    "jd": 2226509.125
                   },
                   "Identique",
                   "233.24°",
-                  "6.69°",
-                  "0.07°"
+                  "6.94°",
+                  "0.17°"
                 ]
               ]
             }
@@ -783,132 +714,123 @@
               "choixAngle": "=",
               "borneMin": "1200",
               "periode": 100,
-              "listeAnneesSelection": 1
+              "projection": "Écliptique J2000",
+              "tolerance": 2.5,
+              "listeAnneesSelection": 0
             }
           },
           "cached_results": {
             "annee": {
               "listeAnnees": [
                 [
-                  1202.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2160305.125
-                  },
-                  "Opposé",
-                  "142.21°",
-                  "122.31°",
-                  "3.57°"
-                ],
-                [
                   1214.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2164688.125
+                    "jd": 2164691.125
                   },
                   "Opposé",
                   "142.21°",
-                  "126.85°",
-                  "0.97°"
+                  "123.52°",
+                  "2.36°"
                 ],
                 [
                   1215.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2165053.375
+                    "jd": 2165056.375
                   },
                   "Opposé",
                   "142.21°",
-                  "158.33°",
-                  "0.22°"
+                  "156.17°",
+                  "2.37°"
                 ],
                 [
-                  1220.0,
+                  1226.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2166693.875
+                    "jd": 2169074.125
                   },
-                  "Identique",
-                  "322.21°",
-                  "302.98°",
-                  "2.90°"
+                  "Opposé",
+                  "142.21°",
+                  "128.21°",
+                  "2.33°"
+                ],
+                [
+                  1227.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 2169439.375
+                  },
+                  "Opposé",
+                  "142.21°",
+                  "160.99°",
+                  "2.44°"
                 ],
                 [
                   1232.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2171076.875
+                    "jd": 2171079.625
                   },
                   "Identique",
                   "322.21°",
-                  "307.17°",
-                  "1.29°"
+                  "303.82°",
+                  "2.06°"
                 ],
                 [
-                  1233.0,
+                  1244.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2171442.125
+                    "jd": 2175462.625
                   },
                   "Identique",
                   "322.21°",
-                  "334.73°",
-                  "3.82°"
+                  "307.94°",
+                  "2.06°"
                 ],
                 [
                   1245.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2175824.875
+                    "jd": 2175827.875
                   },
                   "Identique",
                   "322.21°",
-                  "338.47°",
-                  "0.08°"
+                  "336.29°",
+                  "2.26°"
                 ],
                 [
                   1257.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2180207.875
+                    "jd": 2180210.875
                   },
                   "Identique",
                   "322.21°",
-                  "342.19°",
-                  "3.64°"
-                ],
-                [
-                  1285.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2190620.375
-                  },
-                  "Opposé",
-                  "142.21°",
-                  "122.14°",
-                  "3.74°"
+                  "340.30°",
+                  "1.75°"
                 ],
                 [
                   1297.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2195003.125
+                    "jd": 2195006.375
                   },
                   "Opposé",
                   "142.21°",
-                  "126.80°",
-                  "0.92°"
+                  "123.59°",
+                  "2.29°"
                 ],
                 [
                   1298.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2195368.375
+                    "jd": 2195371.375
                   },
                   "Opposé",
                   "142.21°",
-                  "158.31°",
-                  "0.23°"
+                  "156.17°",
+                  "2.37°"
                 ]
               ]
             }
@@ -958,7 +880,9 @@
               "choixAngle": "=",
               "borneMin": 1000,
               "periode": 100,
-              "listeAnneesSelection": 6
+              "projection": "Écliptique J2000",
+              "tolerance": 2.5,
+              "listeAnneesSelection": 3
             }
           },
           "cached_results": {
@@ -968,89 +892,56 @@
                   1020.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2093852.625
+                    "jd": 2093854.125
                   },
                   "Opposé",
                   "161.58°",
-                  "0.28°",
-                  "0.66°"
-                ],
-                [
-                  1032.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2098235.375
-                  },
-                  "Opposé",
-                  "161.58°",
-                  "3.87°",
-                  "2.93°"
-                ],
-                [
-                  1037.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2099875.125
-                  },
-                  "Identique",
-                  "341.58°",
-                  "140.33°",
-                  "1.88°"
+                  "359.84°",
+                  "1.10°"
                 ],
                 [
                   1049.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2104258.125
+                    "jd": 2104259.625
                   },
                   "Identique",
                   "341.58°",
-                  "144.88°",
-                  "2.66°"
-                ],
-                [
-                  1054.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2106270.625
-                  },
-                  "Opposé",
-                  "161.58°",
-                  "319.33°",
-                  "2.88°"
+                  "141.68°",
+                  "0.54°"
                 ],
                 [
                   1062.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2109006.125
+                    "jd": 2109007.875
                   },
                   "Identique",
                   "341.58°",
-                  "179.96°",
-                  "0.98°"
+                  "179.54°",
+                  "1.40°"
                 ],
                 [
                   1066.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2110653.625
+                    "jd": 2110655.375
                   },
                   "Opposé",
                   "161.58°",
-                  "323.25°",
-                  "1.04°"
+                  "319.98°",
+                  "2.23°"
                 ],
                 [
-                  1074.0,
+                  1078.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2113389.125
+                    "jd": 2115038.125
                   },
-                  "Identique",
-                  "341.58°",
-                  "184.16°",
-                  "3.22°"
+                  "Opposé",
+                  "161.58°",
+                  "324.02°",
+                  "1.81°"
                 ]
               ]
             }
@@ -1100,88 +991,68 @@
               "choixAngle": "=",
               "borneMin": "900",
               "periode": 100,
-              "listeAnneesSelection": 3
+              "projection": "Écliptique J2000",
+              "tolerance": 2.5,
+              "listeAnneesSelection": 1
             }
           },
           "cached_results": {
             "annee": {
               "listeAnnees": [
                 [
-                  930.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2060941.625
-                  },
-                  "Opposé",
-                  "125.76°",
-                  "297.76°",
-                  "3.04°"
-                ],
-                [
-                  931.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2061306.875
-                  },
-                  "Opposé",
-                  "125.76°",
-                  "300.00°",
-                  "0.80°"
-                ],
-                [
                   932.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2061672.125
+                    "jd": 2061675.875
                   },
                   "Opposé",
                   "125.76°",
-                  "302.22°",
-                  "1.42°"
+                  "298.56°",
+                  "2.24°"
                 ],
                 [
                   933.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2062037.375
+                    "jd": 2062041.125
                   },
                   "Opposé",
                   "125.76°",
-                  "304.43°",
-                  "3.63°"
+                  "300.76°",
+                  "0.04°"
                 ],
                 [
-                  935.0,
+                  934.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2062767.875
+                    "jd": 2062406.375
                   },
                   "Opposé",
                   "125.76°",
-                  "308.85°",
-                  "1.88°"
-                ],
-                [
-                  936.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2063133.125
-                  },
-                  "Opposé",
-                  "125.76°",
-                  "311.02°",
-                  "0.30°"
+                  "302.99°",
+                  "2.20°"
                 ],
                 [
                   937.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2063498.375
+                    "jd": 2063502.125
                   },
                   "Opposé",
                   "125.76°",
-                  "313.18°",
-                  "2.45°"
+                  "309.57°",
+                  "1.16°"
+                ],
+                [
+                  938.0,
+                  {
+                    "__persist_type__": "MyJulianDate",
+                    "jd": 2063867.375
+                  },
+                  "Opposé",
+                  "125.76°",
+                  "311.76°",
+                  "1.03°"
                 ]
               ]
             }
@@ -1231,7 +1102,9 @@
               "choixAngle": "=",
               "borneMin": "1100",
               "periode": 100,
-              "listeAnneesSelection": 4
+              "projection": "Écliptique J2000",
+              "tolerance": 2.5,
+              "listeAnneesSelection": 1
             }
           },
           "cached_results": {
@@ -1241,122 +1114,56 @@
                   1103.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2124282.125
+                    "jd": 2124284.375
                   },
                   "Opposé",
                   "277.35°",
-                  "68.63°",
-                  "0.86°"
-                ],
-                [
-                  1108.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2126108.375
-                  },
-                  "Opposé",
-                  "277.35°",
-                  "127.35°",
-                  "0.41°"
-                ],
-                [
-                  1118.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2129578.625
-                  },
-                  "Identique",
-                  "97.35°",
-                  "243.83°",
-                  "3.93°"
-                ],
-                [
-                  1132.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2134874.125
-                  },
-                  "Opposé",
-                  "277.35°",
-                  "63.87°",
-                  "3.90°"
+                  "68.38°",
+                  "0.62°"
                 ],
                 [
                   1152.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2141996.875
+                    "jd": 2141999.375
                   },
                   "Identique",
                   "97.35°",
-                  "310.06°",
-                  "3.13°"
-                ],
-                [
-                  1162.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2145831.375
-                  },
-                  "Opposé",
-                  "277.35°",
-                  "70.69°",
-                  "2.92°"
+                  "306.45°",
+                  "0.49°"
                 ],
                 [
                   1167.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2147657.625
+                    "jd": 2147660.125
                   },
                   "Opposé",
                   "277.35°",
-                  "129.33°",
-                  "2.39°"
+                  "125.73°",
+                  "1.21°"
                 ],
                 [
                   1177.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2151127.875
+                    "jd": 2151130.375
                   },
                   "Identique",
                   "97.35°",
-                  "246.15°",
-                  "1.62°"
-                ],
-                [
-                  1181.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2152588.875
-                  },
-                  "Identique",
-                  "97.35°",
-                  "304.25°",
-                  "2.69°"
+                  "246.22°",
+                  "1.54°"
                 ],
                 [
                   1191.0,
                   {
                     "__persist_type__": "MyJulianDate",
-                    "jd": 2156423.625
+                    "jd": 2156425.875
                   },
                   "Opposé",
                   "277.35°",
-                  "65.87°",
-                  "1.89°"
-                ],
-                [
-                  1196.0,
-                  {
-                    "__persist_type__": "MyJulianDate",
-                    "jd": 2158249.875
-                  },
-                  "Opposé",
-                  "277.35°",
-                  "124.67°",
-                  "2.27°"
+                  "65.97°",
+                  "1.80°"
                 ]
               ]
             }
