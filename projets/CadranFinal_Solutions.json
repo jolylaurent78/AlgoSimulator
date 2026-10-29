@@ -88,7 +88,7 @@
         "Extremite1": "Dieppe",
         "MilieuSegment": "Angers",
         "Extremite2": "Hericourt",
-        "DateSegment": "16/05/933",
+        "DateSegment": "18/05/933",
         "Date": "19/07/933",
         "Stylet": "Saint-Valentin",
         "LettreDecl": "F",
@@ -124,8 +124,8 @@
     ]
   },
   "rules": {},
-  "active_segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
-  "active_scenario": "Beaurevoir",
+  "active_segment": "19 Juillet 933 : Hommage de Guillaume Longue Epée",
+  "active_scenario": "Lampouy",
   "segments": [
     {
       "segment": "15 Aout 778 : Bataille de Roncevaux",
@@ -190,80 +190,6 @@
             "ombre": {
               "choixCalendrier": "Déclinaison",
               "choixHeure": "-2",
-              "sensCarte": "Endroit"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Bordeaux",
-          "type": "utilisateur",
-          "segment": "15 Aout 778 : Bataille de Roncevaux",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Roncevaux"
-            },
-            "stylet": {
-              "choixBase": "Base 1",
-              "choixCalendrier": "Déclinaison",
-              "P2M2": "=",
-              "octave": "/2"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "=",
-              "heureAMPM": "AM"
-            },
-            "ombre": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "=",
-              "sensCarte": "Endroit"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Beaugency",
-          "type": "utilisateur",
-          "segment": "15 Aout 778 : Bataille de Roncevaux",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Roncevaux"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Déclinaison",
-              "P2M2": "+2",
-              "octave": "/4"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "+2",
-              "heureAMPM": "PM"
-            },
-            "ombre": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "=",
               "sensCarte": "Endroit"
             }
           },
@@ -349,44 +275,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Poitiers",
-          "type": "utilisateur",
-          "segment": "15 Aout 778 : Bataille de Roncevaux",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Roncevaux"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Déclinaison",
-              "P2M2": "=",
-              "octave": "/4"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "=",
-              "heureAMPM": "PM"
-            },
-            "ombre": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "=",
-              "sensCarte": "Envers"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
+            "visible": true
           }
         },
         {
@@ -411,43 +300,6 @@
             },
             "ombre": {
               "choixCalendrier": "Standard",
-              "choixHeure": "=",
-              "sensCarte": "Endroit"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": true
-          }
-        },
-        {
-          "name": "Antioche",
-          "type": "utilisateur",
-          "segment": "15 Aout 778 : Bataille de Roncevaux",
-          "solution": true,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Roncevaux"
-            },
-            "stylet": {
-              "choixBase": "Base 1",
-              "choixCalendrier": "Standard",
-              "P2M2": "=",
-              "octave": "x1"
-            },
-            "lumiere": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "+2",
-              "heureAMPM": "PM"
-            },
-            "ombre": {
-              "choixCalendrier": "Déclinaison",
               "choixHeure": "=",
               "sensCarte": "Endroit"
             }
@@ -487,80 +339,6 @@
               "choixCalendrier": "Déclinaison",
               "choixHeure": "11:00",
               "sensCarte": "Endroit"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Turin",
-          "type": "utilisateur",
-          "segment": "15 Aout 778 : Bataille de Roncevaux",
-          "solution": true,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Roncevaux"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Déclinaison",
-              "P2M2": "+2",
-              "octave": "/2"
-            },
-            "lumiere": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "-2",
-              "heureAMPM": "PM"
-            },
-            "ombre": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "-2",
-              "sensCarte": "Envers"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Soulac sur Mer",
-          "type": "default",
-          "segment": "15 Aout 778 : Bataille de Roncevaux",
-          "solution": true,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Roncevaux"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Standard",
-              "P2M2": "+2",
-              "octave": "/2"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "Clef",
-              "heureAMPM": "AM"
-            },
-            "ombre": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "+2",
-              "sensCarte": "Envers"
             }
           },
           "cached_results": {},
@@ -1483,117 +1261,6 @@
       "segment": "20 Mars 1815 : Début des 100 jours",
       "scenarios": [
         {
-          "name": "Carnac",
-          "type": "utilisateur",
-          "segment": "20 Mars 1815 : Début des 100 jours",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Bourges"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Standard",
-              "P2M2": "+2",
-              "octave": "x1"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "11:00",
-              "heureAMPM": "AM"
-            },
-            "ombre": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "=",
-              "sensCarte": "Endroit"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Vézelay",
-          "type": "utilisateur",
-          "segment": "20 Mars 1815 : Début des 100 jours",
-          "solution": true,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Bourges"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Standard",
-              "P2M2": "=",
-              "octave": "/2"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "-2",
-              "heureAMPM": "PM"
-            },
-            "ombre": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "-2",
-              "sensCarte": "Endroit"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Ham",
-          "type": "utilisateur",
-          "segment": "20 Mars 1815 : Début des 100 jours",
-          "solution": true,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Bourges"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Standard",
-              "P2M2": "+2",
-              "octave": "/2"
-            },
-            "lumiere": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "-2",
-              "heureAMPM": "AM"
-            },
-            "ombre": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "11:00",
-              "sensCarte": "Endroit"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
           "name": "Dover",
           "type": "utilisateur",
           "segment": "20 Mars 1815 : Début des 100 jours",
@@ -1648,7 +1315,7 @@
             "lumiere": {
               "choixCalendrier": "Déclinaison",
               "choixHeure": "+2",
-              "heureAMPM": "PM"
+              "heureAMPM": "AM"
             },
             "ombre": {
               "choixCalendrier": "Déclinaison",
@@ -1705,43 +1372,6 @@
           }
         },
         {
-          "name": "Mayence",
-          "type": "utilisateur",
-          "segment": "20 Mars 1815 : Début des 100 jours",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Bourges"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Standard",
-              "P2M2": "-2",
-              "octave": "x2"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "=",
-              "heureAMPM": "PM"
-            },
-            "ombre": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "=",
-              "sensCarte": "Endroit"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
           "name": "Quiberon",
           "type": "utilisateur",
           "segment": "20 Mars 1815 : Début des 100 jours",
@@ -1776,6 +1406,43 @@
             ],
             "thickness": 1,
             "visible": true
+          }
+        },
+        {
+          "name": "Vézelay",
+          "type": "utilisateur",
+          "segment": "20 Mars 1815 : Début des 100 jours",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Bourges"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "sensCarte": "Endroit"
+            }
+          },
+          "cached_results": {},
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
           }
         }
       ]
@@ -2096,7 +1763,7 @@
             "stylet": {
               "choixBase": "Base 2",
               "choixCalendrier": "Déclinaison",
-              "P2M2": "Clef",
+              "P2M2": "Clef 2",
               "octave": "x1"
             },
             "lumiere": {
@@ -2144,7 +1811,7 @@
             "ombre": {
               "choixCalendrier": "Standard",
               "choixHeure": "=",
-              "sensCarte": "Envers"
+              "sensCarte": "Endroit"
             }
           },
           "cached_results": {},
@@ -2170,7 +1837,7 @@
             "stylet": {
               "choixBase": "Base 2",
               "choixCalendrier": "Déclinaison",
-              "P2M2": "=",
+              "P2M2": "Clef 2",
               "octave": "x2"
             },
             "lumiere": {
@@ -2181,80 +1848,6 @@
             "ombre": {
               "choixCalendrier": "Déclinaison",
               "choixHeure": "+2",
-              "sensCarte": "Endroit"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Crécy",
-          "type": "utilisateur",
-          "segment": "19 Juillet 933 : Hommage de Guillaume Longue Epée",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Dieppe"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Standard",
-              "P2M2": "=",
-              "octave": "/2"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "=",
-              "heureAMPM": "PM"
-            },
-            "ombre": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "=",
-              "sensCarte": "Envers"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": " St Valéry",
-          "type": "utilisateur",
-          "segment": "19 Juillet 933 : Hommage de Guillaume Longue Epée",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Dieppe"
-            },
-            "stylet": {
-              "choixBase": "Base 1",
-              "choixCalendrier": "Standard",
-              "P2M2": "=",
-              "octave": "x1"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "+2",
-              "heureAMPM": "PM"
-            },
-            "ombre": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "11:00",
               "sensCarte": "Endroit"
             }
           },
