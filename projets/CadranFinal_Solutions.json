@@ -124,8 +124,8 @@
     ]
   },
   "rules": {},
-  "active_segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
-  "active_scenario": "Montmirail",
+  "active_segment": "20 Mars 1815 : Début des 100 jours",
+  "active_scenario": "3RDV",
   "segments": [
     {
       "segment": "15 Aout 778 : Bataille de Roncevaux",
@@ -164,7 +164,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         },
         {
@@ -201,7 +201,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         },
         {
@@ -375,7 +375,7 @@
             "lumiere": {
               "choixCalendrier": "Standard",
               "choixHeure": "+2",
-              "heureAMPM": "AM"
+              "heureAMPM": "PM"
             },
             "ombre": {
               "choixCalendrier": "Standard",
@@ -391,7 +391,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         },
         {
@@ -405,17 +405,17 @@
             },
             "stylet": {
               "choixBase": "Base 1",
-              "choixCalendrier": "Standard",
-              "P2M2": "-2",
+              "choixCalendrier": "Déclinaison",
+              "P2M2": "+2",
               "octave": "x2"
             },
             "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "-2",
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "+2",
               "heureAMPM": "AM"
             },
             "ombre": {
-              "choixCalendrier": "Standard",
+              "choixCalendrier": "Déclinaison",
               "choixHeure": "11:00",
               "sensCarte": "Envers"
             }
@@ -502,7 +502,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         }
       ]
@@ -712,8 +712,8 @@
             "stylet": {
               "choixBase": "Base 1",
               "choixCalendrier": "Standard",
-              "P2M2": "=",
-              "octave": "x1"
+              "P2M2": "Clef",
+              "octave": "x2"
             },
             "lumiere": {
               "choixCalendrier": "Standard",
@@ -734,7 +734,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         },
         {
@@ -771,7 +771,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         },
         {
@@ -882,7 +882,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         }
       ]
@@ -961,7 +961,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         },
         {
@@ -1035,7 +1035,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         },
         {
@@ -1365,14 +1365,14 @@
               "octave": "x1"
             },
             "lumiere": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "10:09",
+              "choixCalendrier": "Standard",
+              "choixHeure": "Clef",
               "heureAMPM": "PM"
             },
             "ombre": {
               "choixCalendrier": "Standard",
               "choixHeure": "11:00",
-              "sensCarte": "Endroit"
+              "sensCarte": "Envers"
             }
           },
           "cached_results": {},
@@ -1383,7 +1383,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         },
         {
@@ -1531,7 +1531,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         }
       ]
