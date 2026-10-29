@@ -114,7 +114,7 @@
         "Extremite1": "Carnac",
         "MilieuSegment": "Beaufort-en-Vallée",
         "Extremite2": "Lampouy",
-        "DateSegment": "20/08/1152",
+        "DateSegment": "19/08/1152",
         "Date": "18/05/1152",
         "Stylet": "Loudun",
         "LettreDecl": "G",
@@ -124,8 +124,8 @@
     ]
   },
   "rules": {},
-  "active_segment": "19 Juillet 933 : Hommage de Guillaume Longue Epée",
-  "active_scenario": "Lampouy",
+  "active_segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+  "active_scenario": "Montmirail",
   "segments": [
     {
       "segment": "15 Aout 778 : Bataille de Roncevaux",
@@ -164,7 +164,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         },
         {
@@ -275,7 +275,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         },
         {
@@ -395,43 +395,6 @@
           }
         },
         {
-          "name": "Carnac",
-          "type": "utilisateur",
-          "segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Roncevaux"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Standard",
-              "P2M2": "=",
-              "octave": "x1"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "-2",
-              "heureAMPM": "AM"
-            },
-            "ombre": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "-2",
-              "sensCarte": "Endroit"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
           "name": "Donon",
           "type": "utilisateur",
           "segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
@@ -443,7 +406,7 @@
             "stylet": {
               "choixBase": "Base 1",
               "choixCalendrier": "Standard",
-              "P2M2": "=",
+              "P2M2": "-2",
               "octave": "x2"
             },
             "lumiere": {
@@ -528,7 +491,7 @@
             "ombre": {
               "choixCalendrier": "Standard",
               "choixHeure": "Clef",
-              "sensCarte": "Endroit"
+              "sensCarte": "Envers"
             }
           },
           "cached_results": {},
@@ -541,86 +504,12 @@
             "thickness": 1,
             "visible": true
           }
-        },
-        {
-          "name": "Beaurevoir",
-          "type": "utilisateur",
-          "segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Roncevaux"
-            },
-            "stylet": {
-              "choixBase": "Base 1",
-              "choixCalendrier": "Standard",
-              "P2M2": "Clef",
-              "octave": "x1"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "Clef",
-              "heureAMPM": "PM"
-            },
-            "ombre": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "+2",
-              "sensCarte": "Envers"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
         }
       ]
     },
     {
       "segment": "27 Juillet 1214 : Bataille des Bouvines",
       "scenarios": [
-        {
-          "name": "Guérande",
-          "type": "default",
-          "segment": "27 Juillet 1214 : Bataille des Bouvines",
-          "solution": true,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Cherbourg"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Déclinaison",
-              "P2M2": "-2",
-              "octave": "/2"
-            },
-            "lumiere": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "=",
-              "heureAMPM": "PM"
-            },
-            "ombre": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "=",
-              "sensCarte": "Envers"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
         {
           "name": "Brétigny",
           "type": "utilisateur",
@@ -645,80 +534,6 @@
               "choixCalendrier": "Déclinaison",
               "choixHeure": "-2",
               "sensCarte": "Endroit"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Bordeaux",
-          "type": "utilisateur",
-          "segment": "27 Juillet 1214 : Bataille des Bouvines",
-          "solution": true,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Cherbourg"
-            },
-            "stylet": {
-              "choixBase": "Base 1",
-              "choixCalendrier": "Déclinaison",
-              "P2M2": "-2",
-              "octave": "x1"
-            },
-            "lumiere": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "-2",
-              "heureAMPM": "PM"
-            },
-            "ombre": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "+2",
-              "sensCarte": "Envers"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Barfleur",
-          "type": "utilisateur",
-          "segment": "27 Juillet 1214 : Bataille des Bouvines",
-          "solution": true,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Cherbourg"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Déclinaison",
-              "P2M2": "-2",
-              "octave": "x1"
-            },
-            "lumiere": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "11:00",
-              "heureAMPM": "AM"
-            },
-            "ombre": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "Clef",
-              "sensCarte": "Envers"
             }
           },
           "cached_results": {},
@@ -770,43 +585,6 @@
           }
         },
         {
-          "name": "Dieppe",
-          "type": "utilisateur",
-          "segment": "27 Juillet 1214 : Bataille des Bouvines",
-          "solution": true,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Cherbourg"
-            },
-            "stylet": {
-              "choixBase": "Base 1",
-              "choixCalendrier": "Déclinaison",
-              "P2M2": "=",
-              "octave": "/4"
-            },
-            "lumiere": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "=",
-              "heureAMPM": "PM"
-            },
-            "ombre": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "Clef",
-              "sensCarte": "Endroit"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
           "name": "Dinard",
           "type": "utilisateur",
           "segment": "27 Juillet 1214 : Bataille des Bouvines",
@@ -840,7 +618,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         },
         {
@@ -877,7 +655,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         }
       ]
@@ -885,43 +663,6 @@
     {
       "segment": "12 Avril 1365 : Traité de Guérande",
       "scenarios": [
-        {
-          "name": "Sourdon",
-          "type": "utilisateur",
-          "segment": "12 Avril 1365 : Traité de Guérande",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Dieppe"
-            },
-            "stylet": {
-              "choixBase": "Base 1",
-              "choixCalendrier": "Standard",
-              "P2M2": "+2",
-              "octave": "x2"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "-2",
-              "heureAMPM": "PM"
-            },
-            "ombre": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "11:00",
-              "sensCarte": "Envers"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
         {
           "name": "Paris",
           "type": "utilisateur",
@@ -993,81 +734,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Villefrancoeur",
-          "type": "utilisateur",
-          "segment": "12 Avril 1365 : Traité de Guérande",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Dieppe"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Standard",
-              "P2M2": "=",
-              "octave": "/4"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "=",
-              "heureAMPM": "AM"
-            },
-            "ombre": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "11:00",
-              "sensCarte": "Envers"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Calais",
-          "type": "utilisateur",
-          "segment": "12 Avril 1365 : Traité de Guérande",
-          "solution": true,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Dieppe"
-            },
-            "stylet": {
-              "choixBase": "Base 1",
-              "choixCalendrier": "Standard",
-              "P2M2": "Clef",
-              "octave": "x4"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "-2",
-              "heureAMPM": "AM"
-            },
-            "ombre": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "=",
-              "sensCarte": "Envers"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
+            "visible": true
           }
         },
         {
@@ -1119,86 +786,12 @@
             "stylet": {
               "choixBase": "Base 1",
               "choixCalendrier": "Standard",
-              "P2M2": "=",
-              "octave": "x2"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "-2",
-              "heureAMPM": "AM"
-            },
-            "ombre": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "=",
-              "sensCarte": "Envers"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Waterloo (Reims)",
-          "type": "utilisateur",
-          "segment": "12 Avril 1365 : Traité de Guérande",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Dieppe"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Déclinaison",
               "P2M2": "Clef",
               "octave": "x4"
             },
             "lumiere": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "-2",
-              "heureAMPM": "PM"
-            },
-            "ombre": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "-2",
-              "sensCarte": "Envers"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Thury-sous-Clermont",
-          "type": "utilisateur",
-          "segment": "12 Avril 1365 : Traité de Guérande",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Dieppe"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
               "choixCalendrier": "Standard",
-              "P2M2": "-2",
-              "octave": "x2"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "11:00",
+              "choixHeure": "-2",
               "heureAMPM": "AM"
             },
             "ombre": {
@@ -1241,6 +834,43 @@
             "ombre": {
               "choixCalendrier": "Standard",
               "choixHeure": "Clef",
+              "sensCarte": "Endroit"
+            }
+          },
+          "cached_results": {},
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Le Bec",
+          "type": "utilisateur",
+          "segment": "12 Avril 1365 : Traité de Guérande",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Dieppe"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "-2",
+              "octave": "x2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "+2",
               "sensCarte": "Endroit"
             }
           },
@@ -1488,117 +1118,6 @@
           }
         },
         {
-          "name": "Boulogne",
-          "type": "utilisateur",
-          "segment": "15 Juin 1066 : Guillaume le conquérant",
-          "solution": true,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Cherbourg"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Standard",
-              "P2M2": "-2",
-              "octave": "x1"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "-2",
-              "heureAMPM": "AM"
-            },
-            "ombre": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "=",
-              "sensCarte": "Envers"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Pevensey",
-          "type": "default",
-          "segment": "15 Juin 1066 : Guillaume le conquérant",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Cherbourg"
-            },
-            "stylet": {
-              "choixBase": "Base 1",
-              "choixCalendrier": "Standard",
-              "P2M2": "+2",
-              "octave": "x1"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "+2",
-              "heureAMPM": "AM"
-            },
-            "ombre": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "+2",
-              "sensCarte": "Envers"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Rumigny",
-          "type": "utilisateur",
-          "segment": "15 Juin 1066 : Guillaume le conquérant",
-          "solution": true,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Cherbourg"
-            },
-            "stylet": {
-              "choixBase": "Base 1",
-              "choixCalendrier": "Déclinaison",
-              "P2M2": "=",
-              "octave": "/2"
-            },
-            "lumiere": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "Clef",
-              "heureAMPM": "AM"
-            },
-            "ombre": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "11:00",
-              "sensCarte": "Envers"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
           "name": "Come",
           "type": "utilisateur",
           "segment": "15 Juin 1066 : Guillaume le conquérant",
@@ -1658,43 +1177,6 @@
             "ombre": {
               "choixCalendrier": "Déclinaison",
               "choixHeure": "Clef",
-              "sensCarte": "Envers"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Bâle",
-          "type": "utilisateur",
-          "segment": "15 Juin 1066 : Guillaume le conquérant",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Cherbourg"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Standard",
-              "P2M2": "=",
-              "octave": "/2"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "-2",
-              "heureAMPM": "AM"
-            },
-            "ombre": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "=",
               "sensCarte": "Envers"
             }
           },
@@ -1822,7 +1304,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         },
         {
@@ -1859,7 +1341,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         }
       ]
@@ -1867,117 +1349,6 @@
     {
       "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
       "scenarios": [
-        {
-          "name": "Beaugency",
-          "type": "utilisateur",
-          "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
-          "solution": true,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Cherbourg"
-            },
-            "stylet": {
-              "choixBase": "Base 1",
-              "choixCalendrier": "Déclinaison",
-              "P2M2": "=",
-              "octave": "/4"
-            },
-            "lumiere": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "11:00",
-              "heureAMPM": "PM"
-            },
-            "ombre": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "+2",
-              "sensCarte": "Endroit"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Rouen",
-          "type": "utilisateur",
-          "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Cherbourg"
-            },
-            "stylet": {
-              "choixBase": "Base 1",
-              "choixCalendrier": "Standard",
-              "P2M2": "-2",
-              "octave": "x1"
-            },
-            "lumiere": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "=",
-              "heureAMPM": "PM"
-            },
-            "ombre": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "+2",
-              "sensCarte": "Endroit"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Guérande",
-          "type": "utilisateur",
-          "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Cherbourg"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Standard",
-              "P2M2": "+2",
-              "octave": "x1"
-            },
-            "lumiere": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "+2",
-              "heureAMPM": "AM"
-            },
-            "ombre": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "-2",
-              "sensCarte": "Endroit"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
         {
           "name": "Pic du Midi",
           "type": "utilisateur",
@@ -1990,7 +1361,7 @@
             "stylet": {
               "choixBase": "Base 1",
               "choixCalendrier": "Standard",
-              "P2M2": "+2",
+              "P2M2": "Clef",
               "octave": "x1"
             },
             "lumiere": {
@@ -2002,43 +1373,6 @@
               "choixCalendrier": "Standard",
               "choixHeure": "11:00",
               "sensCarte": "Endroit"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Lac Trémelin",
-          "type": "utilisateur",
-          "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Cherbourg"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Déclinaison",
-              "P2M2": "+2",
-              "octave": "x1"
-            },
-            "lumiere": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "11:00",
-              "heureAMPM": "PM"
-            },
-            "ombre": {
-              "choixCalendrier": "Déclinaison",
-              "choixHeure": "-2",
-              "sensCarte": "Envers"
             }
           },
           "cached_results": {},
@@ -2076,43 +1410,6 @@
               "choixCalendrier": "Déclinaison",
               "choixHeure": "+2",
               "sensCarte": "Envers"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": true
-          }
-        },
-        {
-          "name": "Pertuis d'Antioche",
-          "type": "utilisateur",
-          "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
-          "solution": true,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Cherbourg"
-            },
-            "stylet": {
-              "choixBase": "Base 2",
-              "choixCalendrier": "Standard",
-              "P2M2": "-2",
-              "octave": "x1"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "11:00",
-              "heureAMPM": "PM"
-            },
-            "ombre": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "-2",
-              "sensCarte": "Endroit"
             }
           },
           "cached_results": {},
@@ -2161,6 +1458,80 @@
             ],
             "thickness": 1,
             "visible": false
+          }
+        },
+        {
+          "name": "Le Mans",
+          "type": "utilisateur",
+          "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "+2",
+              "octave": "/2"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "Clef",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "sensCarte": "Envers"
+            }
+          },
+          "cached_results": {},
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Montmirail",
+          "type": "utilisateur",
+          "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 2",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "/4"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "heureAMPM": "PM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "11:00",
+              "sensCarte": "Envers"
+            }
+          },
+          "cached_results": {},
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
           }
         }
       ]
