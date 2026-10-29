@@ -36,6 +36,7 @@ def cercle_pret(references, note="C", ampm="AM"):
     module.sentinelle = references
     module.styletDataset = "Roncevaux"
     module.dateDataset = "15/08/778"
+    module.choixCalendrierSegment = "Déclinaison"
     module.lettreChoixSegment = note if note != "J" else "C"
     module.heureSubstitution = "11:00" if note == "J" else "="
     module.heureAMPM = ampm
@@ -166,8 +167,113 @@ def test_rouen_joker_pm_garde_heure_automatique_s5_miroir(references):
     assert h.heureStylet == "12:04:01"
 
 
+@pytest.mark.parametrize("calendrier,substitution,note", [
+    ("Standard", "=", "B"),
+    ("Standard", "+2", "D"),
+    ("Standard", "-2", "G"),
+    ("Standard", "11:00", "J"),
+    ("Déclinaison", "=", "G"),
+    ("Déclinaison", "+2", "B"),
+    ("Déclinaison", "-2", "E"),
+    ("Déclinaison", "11:00", "J"),
+])
+@pytest.mark.parametrize("periode", ["AM", "PM"])
+def test_calendrier_selectionne_note_depart_avant_substitution(references, calendrier, substitution, note, periode):
+    h = cercle_pret(references)
+    h.styletDataset = "Saint-Valentin"
+    h.dateDataset = "19/07/933"
+    h.choixCalendrierSegment = calendrier
+    h.lettreChoixSegment = "D" if calendrier == "Standard" else "G"
+    h.heureSubstitution = substitution
+    h.heureAMPM = periode
+    points = []
+    for cercle in ("AM", "PM"):
+        h.cercleAMPM = cercle
+        h.calculer()
+        assert (h.selectionHoraire.note, h.selectionHoraire.branche) == ("B", "miroir")
+        assert h.heureStylet == "12:33:19"
+        assert h.heureStyletSecondes == references.heurePourNote("B", "miroir").secondes
+        assert h.styletAMPM == "PM"
+        assert h.noteHoraire == note
+        direction = references.directionPourNote(note, periode)
+        assert h.heureSentinelleSecondes == direction.heure_locale.secondes
+        assert h.heureSentinelle == direction.heure_locale.toString()
+        if calendrier == "Standard":
+            attendues = {
+                "=": {"AM": "11:30:42", "PM": "12:33:19"},
+                "+2": {"AM": "08:14:46", "PM": "15:49:38"},
+                "-2": {"AM": "12:00:00", "PM": "12:04:01"},
+                "11:00": {"AM": "10:55:00", "PM": "13:09:03"},
+            }
+            assert h.heureSentinelle == attendues[substitution][periode]
+        assert h.brancheReference == ("directe" if direction is references.par_note[note].directe else "miroir")
+        ctx = contexte("Carnac", "19/07/933")
+        assert float(h.dateObservationUT1) == float(ctx.versUT1(direction.heure_locale))
+        assert h.angleHoraire == pytest.approx(abs(180 - positionSoleil(ctx.coordonnees, h.dateObservationUT1)[1]))
+        assert h.angleHoraire > 0
+        points.append(cote_axe(h))
+    assert points[0] * points[1] < 0
+
+
+@pytest.mark.parametrize("periode", ["AM", "PM"])
+@pytest.mark.parametrize("substitution", ["=", "+2", "-2"])
+def test_standard_joker_detecte_reste_joker_avec_substitutions(references, periode, substitution):
+    h = cercle_pret(references)
+    h.styletDataset = "Alise-Sainte-Reine"
+    h.dateDataset = "12/04/1365"
+    h.choixCalendrierSegment = "Standard"
+    h.lettreChoixSegment = "G"
+    h.heureSubstitution = substitution
+    h.heureAMPM = periode
+    h.calculer()
+    assert h.selectionHoraire.note == "J"
+    assert h.heureStylet == "13:09:03"
+    assert h.noteHoraire == "J"
+    assert h.heureSentinelleSecondes == references.heurePourNote("J", periode).secondes
+    assert h.heureStyletSecondes == h.selectionHoraire.heure_locale.secondes
+
+
 @pytest.mark.integration
-def test_bases_reelles_apres_correction_du_cote_geometrique():
+def test_chalus_standard_et_propagation_distance_sans_ecriture(references):
+    from pathlib import Path
+    from hashlib import sha256
+    from src.ProjectPersistence import chargerProjetJsonV1
+
+    fichier = Path("projets/BaseCadran.json")
+    empreinte = sha256(fichier.read_bytes()).hexdigest()
+    moteur, _ = chargerProjetJsonV1(fichier)
+    # Le nom du scénario est conservé tel qu'il est enregistré dans le JSON.
+    segment = next(seg for seg in moteur._scenarios if "933" in seg)
+    scenario = moteur.getScenario("Chalus", segment)
+    h = scenario.modules["cercleHoraire"]
+    d = scenario.modules["cercleDistance"]
+    assert (h.choixCalendrierSegment, h.heureSubstitution, h.cercleAMPM) == ("Standard", "=", "PM")
+    assert (h.noteHoraire, h.heureSentinelle, h.brancheReference) == ("B", "12:33:19", "miroir")
+    assert h.angleHoraire == pytest.approx(14.543273, abs=.000001)
+    automatique = (h.heureStylet, h.heureStyletSecondes, h.styletAMPM)
+    assert automatique[0] == "12:33:19"
+    moteur.dataset.segment = segment
+    moteur.dataset.calculer()
+    for periode in ("AM", "PM"):
+        h.heureAMPM = periode
+        for centre in ("Stylet", "Ouverture"):
+            d.centreCercle = centre
+            moteur.calculerModules("Chalus", segment)
+            assert (h.heureStylet, h.heureStyletSecondes, h.styletAMPM) == automatique
+            assert h.heureSentinelle == ("11:30:42" if periode == "AM" else "12:33:19")
+            heure = references.heurePourNote("B", periode) if centre == "Stylet" else HeureMoyenneLocale(43200)
+            assert d.heureReferenceSecondes == heure.secondes
+            assert d.heureSentinelleSecondesCerclehoraire == h.heureSentinelleSecondes
+            ctx = contexte("Carnac", "19/07/933")
+            assert float(d.dateObservationUT1) == float(ctx.versUT1(heure))
+            hauteur = positionSoleil(ctx.coordonnees, ctx.versUT1(heure))[0]
+            assert d.hauteurSoleil == pytest.approx(hauteur)
+            assert d.distanceRef == pytest.approx(d.hauteurStylet * d.tableauOctave[d.octave] / tan(radians(hauteur)))
+    assert sha256(fichier.read_bytes()).hexdigest() == empreinte
+
+
+@pytest.mark.integration
+def test_bases_reelles_conservent_les_criteres_geometriques():
     from pathlib import Path
     from hashlib import sha256
     from src.ProjectPersistence import chargerProjetJsonV1
@@ -181,9 +287,13 @@ def test_bases_reelles_apres_correction_du_cote_geometrique():
         "Chateau Gaillard": [],
         "Domremy": [],
         "Fontevraud": [],
-        "Aléria": [(856647.523938, 6476757.133063)],
+        "Aléria": [(851613.572852, 6469725.117041), (1210156.204428, 6085830.624852)],
         "Rouen": [],
         "St Michael's Mount": [],
+        "Chalus": [],
+        "Pont de Noirmoutiers": [(311417.214003, 6642264.743463), (988498.335152, 6626489.521880)],
+        "Reims": [],
+        "Saint Cyr Coetquidan": [],
     }
     verifies = set()
     for scenarios in moteur._scenarios.values():
@@ -203,6 +313,13 @@ def test_bases_reelles_apres_correction_du_cote_geometrique():
             ch = CercleGraphique.depuisTroisPoints(c.pointBourges, c.pointStylet, c.pointChoix)
             cd = CercleGraphique(c.centreCercledistance, c.distanceRefCercledistance)
             intersections = cd.intersectionCercle(ch)
+            if not intersections:
+                assert not attendus[nom]
+                ecarts = [p.distance(q) for ligne in c.candidatsPartition
+                          for p in ligne.intersectionCercle(ch)
+                          for q in ligne.intersectionCercle(cd)]
+                assert min(ecarts, default=float("inf")) >= 20
+                continue
             assert len(intersections) == 2
             milieux = []
             for pt in intersections:

@@ -164,12 +164,18 @@ class CercleHoraire(ModuleAlgo):
             # On prend en compte les heures de substitution
             if self.heureSubstitution == "11:00":
                 choixNote = "J"
-            # elif self.choixCalendrierSegment == "Standard":
-            #    self.heureSentinelle = self.heureStylet
             else:
-                tabDec = {"=": 0, "+2": 2, "-2": 1}
-                listeNotes = decalageGamme(self.lettreChoixSegment)  # On décale sans susbtition Fa/Sol
-                choixNote = listeNotes[tabDec[self.heureSubstitution]]
+                if self.choixCalendrierSegment == "Standard":
+                    noteDepart = self.selectionHoraire.note
+                else:
+                    noteDepart = self.lettreChoixSegment
+                # Le Joker reste hors de la gamme, même avec +2 ou -2.
+                if noteDepart == "J" or self.heureSubstitution == "=":
+                    choixNote = noteDepart
+                else:
+                    tabDec = {"+2": 2, "-2": 1}
+                    listeNotes = decalageGamme(noteDepart)  # On décale sans susbtition Fa/Sol
+                    choixNote = listeNotes[tabDec[self.heureSubstitution]]
             self.noteHoraire = choixNote
             direction = self.sentinelle.directionPourNote(choixNote, self.heureAMPM)
             self.brancheReference = ("directe" if direction is self.sentinelle.par_note[choixNote].directe else "miroir")

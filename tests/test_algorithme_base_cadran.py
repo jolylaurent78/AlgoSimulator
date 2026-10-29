@@ -165,6 +165,7 @@ def test_cercle_horaire_applique_substitution_ampm_et_signe(monkeypatch, substit
     module.styletDataset = "Roncevaux"
     module.lettreChoixSegment = "F"
     module.dateDataset = "15/08/778"
+    module.choixCalendrierSegment = "Déclinaison"
     module.heureSubstitution = substitution
     module.heureAMPM = ampm
 
