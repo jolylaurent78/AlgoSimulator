@@ -1,5 +1,7 @@
 # Lot 3 — Cadrans de base et final
 
+Le correctif du 29/10/2026 est documenté [en fin de rapport](#correctif-du-29102026--indépendance-période--côté-du-cercle) : l'angle national est positif et le choix du cercle contrôle seul son côté géométrique. Les mesures du lot 3 initial ci-dessous restent historiques.
+
 ## Périmètre et interfaces
 
 Migration de `CercleHoraire`, `CercleDistance`, `LumiereFinal` et `LigneHoraireFinal`. Les classes `Partition`, `CandidatBase`, `Segment` final, `StyletFinal`, `StyletLumiere` et `CandidatFinal` conservent leur corps de code (contrôle AST avant/après). Aucun nouveau moteur astronomique.
@@ -174,3 +176,78 @@ Les changements de candidats documentés sont attendus de la migration et du ret
 La vérification d'impression porte sur les objets, leurs libellés et leur placement par le moteur d'impression ; aucune impression physique n'est lancée. La validation intégrée et l'examen visuel exhaustif de toutes les superpositions restent au lot 4. La combinaison Lampouy angulaire + centre Stylet n'existe pas dans les scénarios sauvegardés ; son heure dépend toujours du calcul antérieur, comme historiquement. Ce comportement est conservé et signalé pour la validation métier du lot 4 ; aucune nouvelle politique horaire n'est imposée à la substitution angulaire. Les projets et caches restent à recalculer manuellement par l'utilisateur lors de la stabilisation.
 
 Deux changements locaux hors livraison sont préservés et exclus du commit : `config/simulateurAlgo.ini` (déjà modifié au démarrage) et `projets/StyletInitial_solutions.json` (ajout de champs `cached_results: {}` apparu pendant la session, sans appel d'écriture de la mission).
+
+## Correctif du 29/10/2026 — Indépendance période / côté du cercle
+
+Cette section corrige l'interprétation du signe dans le lot 3 initial. Les sections précédentes et leurs mesures décrivent le commit historique `57211087bd9a03b28a70463e443d6c7c58efffec`, avant ce correctif. En particulier, les explications antérieures attribuant le côté géométrique au signe solaire ne constituent plus la règle métier.
+
+### Modification ciblée
+
+Dans `CercleHoraire.calculer()`, ajout de deux lignes après le traitement historique du signe de Lampouy :
+
+```python
+elif not self.horaireLampouy:
+    self.angleHoraire = abs(180 - azimutSoleil)
+```
+
+La période sélectionne toujours la véritable heure AM ou PM, sa branche et ses secondes fractionnaires ; elle détermine la grandeur positive de l'angle. La sélection automatique du stylet reste indépendante et n'est jamais réaffectée par cette période. Le choix `self.pointChoix = pt1 if self.cercleAMPM == "PM" else pt2` reste strictement inchangé et contrôle seul le côté. Les formules du troisième point, des distances, des partitions et les seuils sont inchangés. Lampouy conserve exactement son angle imposé et son inversion historique PM, sans valeur absolue ajoutée.
+
+Le contrôle avant/après du code confirme que **seules ces deux lignes sont ajoutées** au fichier de production ; 59 fichiers protégés sont identiques, notamment CadranFinal, les moteurs astronomiques, les données, les cartes, les paramètres locaux et les projets. Les deux fichiers de tests adaptés et le présent rapport complètent la livraison. Aucune assertion golden existante n'est remplacée : la fixture Rocamadour AM reste identique.
+
+### Rouen — 20 mars 1815
+
+Stylet Golfe-Juan, lieu Carnac, substitution Joker `11:00`. Dans les quatre combinaisons des commandes, l'heure automatique du stylet reste **S5 miroir, 12:04:01**, avec ses secondes internes inchangées.
+
+| Période | Heure de calcul | Secondes internes TML | Angle avant | Angle après |
+|---|---|---|---|---|
+| AM | 10:55:00 | 39300,0 | +23,880046° | +23,880046° |
+| PM | 13:09:03 | 47343,44082706372 | −20,224477° | +20,224477° |
+
+| Période | Choix du cercle | Troisième point après, Lambert-93 (m) |
+|---|---|---|
+| AM | AM | (−61885,188 ; 5589965,173) |
+| AM | PM | (1745583,136 ; 7357647,682) |
+| PM | AM | (−229688,672 ; 5425855,363) |
+| PM | PM | (1913386,620 ; 7521757,492) |
+
+Le déterminant orienté de l'axe Bourges–Stylet et du troisième point garde le même signe pour un choix de cercle fixé, en passant de la période AM à PM. Pour une période fixée, les deux points sont opposés autour du milieu Bourges–Stylet. Cette propriété est testée dans les quatre combinaisons pour chacune des huit références, dont S3 et S4 directes PM.
+
+### Candidats avant/après
+
+Comparaison au commit de référence `5721108`, chargement en mémoire des **18 scénarios BaseCadran**, sans sauvegarde des JSON ni des caches. Coordonnées des centres en mètres Lambert-93. Les états de sélection, heures exactes, hauteurs solaires et distances sont identiques avant/après pour les 18 scénarios. Les sorties de Partition peuvent évoluer parce que le cercle utilisé pour filtrer ses lignes a changé de côté ; son code reste inchangé.
+
+| Base / année | Candidats avant → après | Coordonnées avant | Coordonnées après |
+|---|---|---|---|
+| Metz / 27 Juillet 1214 | 0 → 1 | — | (288918.834 ; 6708245.351) |
+| Chateau Gaillard / 27 Juillet 1214 | 0 → 0 | — | — |
+| Domremy / 30 Mai 1431 | 0 → 0 | — | — |
+| Fontevraud / 19 Juillet 933 | 0 → 0 | — | — |
+| Aléria / 20 Mars 1815 | 0 → 1 | — | (856647.524 ; 6476757.133) |
+| Rouen / 20 Mars 1815 | 1 → 0 | (411784.239 ; 6740948.091) | — |
+| St Michael's Mount / 20 Mars 1815 | 1 → 0 | (2222454.994 ; 5930070.127) | — |
+
+Metz et Aléria retrouvent chacun un candidat, sans ajustement des seuils. Château-Gaillard, Domrémy et Fontevraud restent absents. Rouen et St Michael's Mount perdent chacun le candidat obtenu avec le côté inversé du lot 3. Le total des 18 scénarios reste **11 candidats**, avec une répartition différente. Châlus reste sans candidat ; les autres scénarios gardent leurs candidats et coordonnées.
+
+### Diagnostic géométrique
+
+Les deux cercles s'intersectent encore dans les sept cas du tableau ci-dessous. Le critère actif est la distance entre une intersection et sa projection sur une partition candidate, **strictement inférieure à 20 km**. Le repli réservé à l'absence d'intersection ne s'applique donc pas ici.
+
+| Base | Partitions candidates avant → après | Distance minimale à une partition avant → après (km) |
+|---|---|---|
+| Metz | 2 → 3 | 79.978222 → 13.165947 |
+| Chateau Gaillard | 2 → 2 | 25.030631 → 25.030631 |
+| Domremy | 2 → 1 | 112.708844 → 65.620337 |
+| Fontevraud | 1 → 0 | 46.669751 → aucune |
+| Aléria | 6 → 5 | 24.881095 → 15.035362 |
+| Rouen | 3 → 4 | 17.717349 → 28.965142 |
+| St Michael's Mount | 5 → 4 | 17.177560 → 114.036871 |
+
+Les centres réapparus sont vérifiés géométriquement comme milieux d'une intersection des cercles et de sa projection sur la partition admissible, puis comparés aux coordonnées de référence dans le test d'intégration. Fontevraud ne possède plus de partition candidate après filtrage par le cercle. Château-Gaillard est AM : le correctif ne change donc ni son angle ni sa géométrie. Pour Châlus, les cercles ne s'intersectent toujours pas et le meilleur écart du repli est 357,840440 km, au-delà de 20 km.
+
+### Validation et limites du correctif
+
+- Tests ciblés : `python -m pytest tests/test_algorithme_base_cadran.py tests/test_algorithme_base_cadran_golden.py tests/test_cadrans_sentinelles_lot3.py -q --tb=short` — **76 réussites**.
+- Suite complète : `python -m pytest -q --tb=short` — **768 réussites en 223,56 s** sur le code final.
+- Les tests couvrent les heures exactes des huit références, les quatre combinaisons période/cercle, S3/S4 directes PM, l'heure automatique du stylet, Rouen, les sept bases contrôlées et le mécanisme historique de Lampouy.
+
+Les disparitions de Rouen et St Michael's Mount ainsi que les absences restantes sont des résultats géométriques du correctif, sans compensation artificielle. Aucun projet ni état de sélection sauvegardé n'est réécrit. Les modifications locales préexistantes de `config/simulateurAlgo.ini`, `projets/Lumiere_Solutions.json` et `projets/StyletInitial_solutions.json` sont préservées et exclues du commit. Les limites de validation intégrée et visuelle du lot 4 restent applicables.

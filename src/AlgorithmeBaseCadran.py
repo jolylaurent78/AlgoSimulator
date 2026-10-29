@@ -189,6 +189,8 @@ class CercleHoraire(ModuleAlgo):
         self.angleHoraire = 180-azimutSoleil
         if self.horaireLampouy and self.heureAMPM == "PM":
             self.angleHoraire = -self.angleHoraire  # seule la substitution angulaire historique
+        elif not self.horaireLampouy:
+            self.angleHoraire = abs(180 - azimutSoleil)  # le côté dépend uniquement de cercleAMPM
 
         # On crée la ligne Bourges - Stylet
         self.pointBourges = PointGraphique(villes_dict["Bourges"])

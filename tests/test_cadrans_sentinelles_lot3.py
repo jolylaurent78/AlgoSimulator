@@ -88,14 +88,14 @@ def test_base_et_final_conservent_toutes_les_heures_exactes(references, note, am
     ctx = contexte("Carnac", "15/08/778")
     assert float(h.dateObservationUT1) == float(ctx.versUT1(heure))
     _, az = positionSoleil(ctx.coordonnees, ctx.versUT1(heure))
-    assert h.angleHoraire == pytest.approx(180 - az)
-    assert h.angleHoraire > 0 if ampm == "AM" else h.angleHoraire < 0
+    assert h.angleHoraire == pytest.approx(abs(180 - az))
+    assert h.angleHoraire > 0
     # Le choix de côté géométrique reste indépendant de l'heure.
     premier = h.coordPointChoix
     h.cercleAMPM = "PM"
     h.calculer()
     assert h.coordPointChoix != premier
-    assert h.angleHoraire == pytest.approx(180 - az)
+    assert h.angleHoraire == pytest.approx(abs(180 - az))
 
     l = lumiere_prete(references, note, ampm)
     l.calculer()
@@ -108,6 +108,114 @@ def test_base_et_final_conservent_toutes_les_heures_exactes(references, note, am
     assert l.azimut == pytest.approx(azimut)
     assert l.distance == pytest.approx(l.hauteurStylet / tan(radians(hauteur)))
     assert len(l.construireRepresentationCarte()) == 2
+
+
+def cote_axe(module):
+    bx, by = module.pointBourges.coordonneesLambert()
+    sx, sy = module.pointStylet.coordonneesLambert()
+    px, py = module.coordPointChoix
+    return (sx - bx) * (py - by) - (sy - by) * (px - bx)
+
+
+@pytest.mark.parametrize("note", NOTES)
+def test_periode_et_cote_du_cercle_sont_independants(references, note):
+    h = cercle_pret(references, note)
+    cotes = {}
+    selection_initiale = None
+    for periode in ("AM", "PM"):
+        h.heureAMPM = periode
+        points = []
+        for cercle in ("AM", "PM"):
+            h.cercleAMPM = cercle
+            h.calculer()
+            auto = (h.heureStylet, h.heureStyletSecondes, h.styletAMPM,
+                    h.selectionHoraire.repere, h.selectionHoraire.branche)
+            selection_initiale = auto if selection_initiale is None else selection_initiale
+            assert auto == selection_initiale
+            heure = references.heurePourNote(note, periode)
+            assert h.heureSentinelleSecondes == heure.secondes
+            assert h.angleHoraire == pytest.approx(abs(180 - h.azimutSoleil))
+            cotes[periode, cercle] = cote_axe(h)
+            points.append(h.coordPointChoix)
+        # Les deux points sont opposés autour du milieu de Bourges–Stylet.
+        b = h.pointBourges.coordonneesLambert()
+        s = h.pointStylet.coordonneesLambert()
+        assert [points[0][i] + points[1][i] for i in (0, 1)] == pytest.approx([b[i] + s[i] for i in (0, 1)])
+        assert cotes[periode, "AM"] * cotes[periode, "PM"] < 0
+    for cercle in ("AM", "PM"):
+        assert cotes["AM", cercle] * cotes["PM", cercle] > 0
+
+
+def test_rouen_joker_pm_garde_heure_automatique_s5_miroir(references):
+    h = cercle_pret(references, "J", "PM")
+    h.styletDataset = "Golfe-Juan"
+    h.dateDataset = "20/03/1815"
+    h.calculer()
+    assert (h.selectionHoraire.repere, h.selectionHoraire.branche) == ("S5", "miroir")
+    assert h.heureStylet == "12:04:01"
+    assert h.heureStyletSecondes == references.heurePourNote("G", "miroir").secondes
+    assert h.heureSentinelle == "13:09:03"
+    assert h.heureSentinelleSecondes == references.heurePourNote("J", "PM").secondes
+    assert h.angleHoraire == pytest.approx(20.22, abs=.01)
+    cote_pm = cote_axe(h)
+    h.heureAMPM = "AM"
+    h.calculer()
+    assert h.heureSentinelle == "10:55:00"
+    assert h.angleHoraire > 0
+    assert cote_pm * cote_axe(h) > 0
+    assert h.heureStylet == "12:04:01"
+
+
+@pytest.mark.integration
+def test_bases_reelles_apres_correction_du_cote_geometrique():
+    from pathlib import Path
+    from hashlib import sha256
+    from src.ProjectPersistence import chargerProjetJsonV1
+    from src.affichage_objets import CercleGraphique
+
+    fichier = Path("projets/BaseCadran.json")
+    empreinte = sha256(fichier.read_bytes()).hexdigest()
+    moteur, _ = chargerProjetJsonV1(fichier)
+    attendus = {
+        "Metz": [(288918.834056, 6708245.350638)],
+        "Chateau Gaillard": [],
+        "Domremy": [],
+        "Fontevraud": [],
+        "Aléria": [(856647.523938, 6476757.133063)],
+        "Rouen": [],
+        "St Michael's Mount": [],
+    }
+    verifies = set()
+    for scenarios in moteur._scenarios.values():
+        for nom, scenario in scenarios.items():
+            if nom not in attendus:
+                continue
+            verifies.add(nom)
+            h = scenario.modules["cercleHoraire"]
+            c = scenario.modules["candidatBase"]
+            assert h.angleHoraire > 0
+            assert len(c.listeCandidats) == len(attendus[nom])
+            for pt, coord in zip(c.listeCandidats, attendus[nom]):
+                assert pt.coordonneesLambert() == pytest.approx(coord, abs=.001)
+            # Vérification géométrique des deux retours : le candidat est
+            # le milieu d'une intersection des cercles et de sa projection
+            # sur une partition, avec l'écart strictement inférieur à 20 km.
+            ch = CercleGraphique.depuisTroisPoints(c.pointBourges, c.pointStylet, c.pointChoix)
+            cd = CercleGraphique(c.centreCercledistance, c.distanceRefCercledistance)
+            intersections = cd.intersectionCercle(ch)
+            assert len(intersections) == 2
+            milieux = []
+            for pt in intersections:
+                for ligne in c.candidatsPartition:
+                    projection = ligne.projectionPointGraphique(pt)
+                    if pt.distance(projection) < 20:
+                        p, q = pt.coordonneesLambert(), projection.coordonneesLambert()
+                        milieux.append(tuple((p[i] + q[i]) / 2 for i in (0, 1)))
+            assert len(milieux) == len(attendus[nom])
+            for milieu, coord in zip(milieux, attendus[nom]):
+                assert milieu == pytest.approx(coord, abs=.001)
+    assert verifies == set(attendus)
+    assert sha256(fichier.read_bytes()).hexdigest() == empreinte
 
 
 @pytest.mark.parametrize("note", NOTES)

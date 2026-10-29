@@ -151,7 +151,7 @@ def test_segment_setup_et_calendrier_standard_ou_declinaison(monkeypatch):
         ("+2", "AM", "11:42:00", 40.0),
         ("-2", "AM", "08:14:46", 40.0),
         ("11:00", "AM", "10:55:00", 40.0),
-        ("=", "PM", "13:39:02", -40.0),
+        ("=", "PM", "13:39:02", 40.0),
     ],
 )
 def test_cercle_horaire_applique_substitution_ampm_et_signe(monkeypatch, substitution, ampm, heure_attendue, angle_attendu):
