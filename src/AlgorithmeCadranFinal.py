@@ -650,8 +650,8 @@ class CandidatFinal(ModuleAlgo):
                                 triplets.append(ptb)
                                 triplet_valide = True
 
-                        # On gère le cas des droites pratiquement parallèles avec pt1 et pt2 < 10km
-                        if not triplet_valide and distance12 <= CandidatFinal.RAYON_CANDIDAT/2:
+                        # Secours : chaque point doit être à 20 km maximum de leur milieu.
+                        if not triplet_valide and distance12 <= 2 * CandidatFinal.RAYON_CANDIDAT:
                             xb_l93 = (pt1x_l93 + pt2x_l93) / 2
                             yb_l93 = (pt1y_l93 + pt2y_l93) / 2
                             ptb = PointGraphique("Barycentre", xb_l93, yb_l93)

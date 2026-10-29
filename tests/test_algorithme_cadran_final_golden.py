@@ -110,6 +110,9 @@ def test_chargement_golden_lac_tremelin_restitue_le_pipeline_cadran_final_reel()
     assert {"15:59:05", "C directe 09:43:00"} <= {placement.text for placement in placements}
     assert all(len(placement.text.split()[-1]) == 8 for placement in placements)
     candidats = modules["candidat"].construireRepresentationCarte()
-    assert len(candidats) == 1
-    assert candidats[0].pointCentre.coordonneesLambert() == pytest.approx((319918.185, 6787297.401), abs=.001)
+    assert len(candidats) == 2
+    # Le nouveau milieu est ajouté ; l'ancien barycentre reste identique.
+    assert candidats[0].pointCentre.coordonneesLambert() == pytest.approx((998466.407, 6605645.842), abs=.001)
+    assert candidats[1].pointCentre.coordonneesLambert() == pytest.approx((319918.185, 6787297.401), abs=.001)
+    assert all(c.getRayonKm() == 20 for c in candidats)
     assert scenario.solutionScenario is True

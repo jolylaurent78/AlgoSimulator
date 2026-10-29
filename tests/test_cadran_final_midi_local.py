@@ -124,24 +124,34 @@ def test_fixture_778_candidat_verifie_par_triplet_geometrique():
     modules = m.getScenario().modules
     c = modules["candidat"]
     produit = c.construireRepresentationCarte()
-    assert len(produit) == 1
-    centre = produit[0].pointCentre
+    assert len(produit) == 2
+    centres = [p.pointCentre for p in produit]
     cercle = CercleGraphique(villes_dict["Bourges"], c.distanceLumiere)
-    verifie = False
+    triplets_valides = []
+    milieux_valides = []
     for signe in (-1, 1):
         lumiere = LigneAzimut(villes_dict["Bourges"], c.azimutMidiStylet + signe * (180 - c.azimutLumiere))
         for _, heure in c.listeCandidatsHeureOmbre:
             xy = heure.intersectionLigne(lumiere)
-            if xy is None:
-                continue
-            p3 = PointGraphique("intersection", *xy)
-            if not p3.estVisibledansImage():
-                continue
+            p3 = PointGraphique("intersection", *xy) if xy is not None else None
+            if p3 is not None and not p3.estVisibledansImage():
+                p3 = None
             for p1 in lumiere.intersectionCercle(cercle):
                 for p2 in heure.intersectionCercle(cercle):
-                    coords = [p.coordonneesLambert() for p in (p1, p2, p3)]
-                    bary = PointGraphique("barycentre", *(sum(p[i] for p in coords) / 3 for i in (0, 1)))
-                    if all(p.distance(bary) <= 20 for p in (p1, p2, p3)):
-                        assert bary.distance(centre) < 1e-8
-                        verifie = True
-    assert verifie
+                    triplet_valide = False
+                    if p3 is not None:
+                        coords = [p.coordonneesLambert() for p in (p1, p2, p3)]
+                        bary = PointGraphique("barycentre", *(sum(p[i] for p in coords) / 3 for i in (0, 1)))
+                        triplet_valide = all(p.distance(bary) <= 20 for p in (p1, p2, p3))
+                        if triplet_valide:
+                            triplets_valides.append(bary)
+                    if not triplet_valide and p1.distance(p2) <= 40:
+                        assert p1.distance(p2) > 10  # Ce milieu n'était pas admissible auparavant.
+                        coords = [p.coordonneesLambert() for p in (p1, p2)]
+                        milieu = PointGraphique("milieu", *(sum(p[i] for p in coords) / 2 for i in (0, 1)))
+                        assert all(p.distance(milieu) <= 20 for p in (p1, p2))
+                        milieux_valides.append(milieu)
+    assert len(triplets_valides) == len(milieux_valides) == 1
+    assert triplets_valides[0].coordonneesLambert() == pytest.approx((319918.185, 6787297.401), abs=.001)
+    for attendu in triplets_valides + milieux_valides:
+        assert sum(attendu.distance(centre) < 1e-8 for centre in centres) == 1

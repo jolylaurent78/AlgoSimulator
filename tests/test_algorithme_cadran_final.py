@@ -315,7 +315,8 @@ class PointCandidatFictif:
 
 class CercleCandidatFictif:
     def __init__(self, *args, **kwargs):
-        pass
+        self.pointCentre = args[0]
+        self.rayon = args[1]
 
 
 class LigneLumiereFictive:
@@ -366,9 +367,17 @@ def test_candidat_final_cree_un_barycentre_a_trois_points(monkeypatch):
     objets = module.construireRepresentationCarte()
 
     assert len(objets) == 2
+    # Le milieu (1.5, 0) serait aussi admissible, mais ne remplace pas le triplet.
+    for cercle in objets:
+        assert cercle.pointCentre.coordonneesLambert() == pytest.approx((1.0, 1.0))
+        assert cercle.rayon == 20
 
 
-@pytest.mark.parametrize(("distance", "visible", "nombre_attendu"), [(8.0, False, 2), (11.0, False, 0)])
+@pytest.mark.parametrize(
+    ("distance", "visible", "nombre_attendu"),
+    [(8.0, False, 2), (10.0, False, 2), (20.0, False, 2),
+     (30.0, False, 2), (40.0, False, 2), (40.000001, False, 0)],
+)
 def test_candidat_final_fallback_parallelisme_et_point_hors_image(monkeypatch, distance, visible, nombre_attendu):
     module = preparer_candidat_final(
         monkeypatch,
@@ -381,3 +390,21 @@ def test_candidat_final_fallback_parallelisme_et_point_hors_image(monkeypatch, d
     objets = module.construireRepresentationCarte()
 
     assert len(objets) == nombre_attendu
+    for cercle in objets:
+        assert cercle.pointCentre.coordonneesLambert() == pytest.approx((distance / 2, 0.0))
+        assert cercle.rayon == 20
+
+
+@pytest.mark.parametrize("intersection", [None, (0.0, 100.0)])
+def test_candidat_final_secours_si_triplet_absent_ou_invalide(monkeypatch, intersection):
+    module = preparer_candidat_final(
+        monkeypatch,
+        [PointCandidatFictif("p1", 0.0, 0.0)],
+        [PointCandidatFictif("p2", 30.0, 0.0)],
+        intersection,
+    )
+
+    objets = module.construireRepresentationCarte()
+
+    assert len(objets) == 2
+    assert all(c.pointCentre.coordonneesLambert() == (15.0, 0.0) for c in objets)
