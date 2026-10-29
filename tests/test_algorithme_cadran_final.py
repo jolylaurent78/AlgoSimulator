@@ -140,7 +140,7 @@ def test_stylet_final_choisit_base_note_octave_et_axe(monkeypatch, base, calendr
 
     hauteur_base = 100.0 / StyletFinal.tableauGamme["F"] * StyletFinal.tableauGamme[lettre_attendue]
     assert module.getValeursChoixBase() == ("Base 1", "Base 2")
-    assert module.getValeursP2M2() == ("=", "+2", "-2", "Clef")
+    assert module.getValeursP2M2() == ("=", "+2", "-2", "Clef", "Clef 2")
     assert module.getValeursOctave() == ("x1", "x2", "x4", "/2", "/4", "/8")
     assert module.getValeursChoixCalendrier() == ["Standard", "Déclinaison"]
     assert (module.base, module.lettreChoix, module.lettre) == (base_attendue, "C" if calendrier == "Standard" else "F", lettre_attendue)
@@ -185,7 +185,7 @@ def test_lumiere_final_applique_substitution_ampm_utc_et_distance(monkeypatch, c
 
     module.calculer()
 
-    assert module.getValeursChoixHeure() == ["=", "+2", "-2", "Clef", "11:00"]
+    assert module.getValeursChoixHeure() == ["=", "+2", "-2", "Clef", "Clef 2", "11:00"]
     assert module.lettreChoix == "C"
     assert module.heureLocale == heure_attendue
     heure = HeureMoyenneLocale.depuisTexte(heure_attendue)
@@ -281,7 +281,7 @@ def test_ligne_horaire_final_regles_et_sens_azimut(monkeypatch, ampm, calendrier
     module.calculer()
 
     assert module.getValeursChoixCalendrier() == ["Standard", "Déclinaison"]
-    assert module.getValeursChoixHeure() == ["=", "+2", "-2", "Clef", "11:00"]
+    assert module.getValeursChoixHeure() == ["=", "+2", "-2", "Clef", "Clef 2", "11:00"]
     assert module.getValeursSensCarte() == ["Endroit", "Envers"]
     assert module._regleSensCarte() == sens_attendu
     assert module._regleChoixCalendrier() == calendrier_attendu

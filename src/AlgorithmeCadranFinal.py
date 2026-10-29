@@ -23,6 +23,20 @@ from src.data_loader import villes_dict
 from src.layerManager import LayerManager
 
 
+def _noteSourceClef2(notes):
+    """Première note définie pour Clef 2 : initiale, puis +2, puis -2."""
+    return next((note for note in (notes[0], notes[2], notes[1]) if note in ("C", "F")), None)
+
+
+def noteAvecSubstitutionCadranFinal(note, substitution):
+    """Conserver les choix historiques ; Clef 2 envoie Do ou Fa vers Sol."""
+    notes = decalageGamme(note)
+    if substitution == "Clef 2":
+        # Sol et les autres cas sans correspondance définie gardent leur note.
+        return "G" if _noteSourceClef2(notes) is not None else note
+    return notes[{"=": 0, "+2": 2, "-2": 1, "Clef": 3}[substitution]]
+
+
 class AlgorithmeCadranFinal(AlgorithmeManager):
 
     def __init__(self, layerManager: LayerManager):
@@ -95,7 +109,7 @@ class StyletFinal(ModuleAlgo):
         return "Base 1", "Base 2"
 
     def getValeursP2M2(self):
-        return "=", "+2", "-2", "Clef"
+        return "=", "+2", "-2", "Clef", "Clef 2"
 
     def getValeursOctave(self):
         return "x1", "x2", "x4", "/2", "/4", "/8"
@@ -153,9 +167,7 @@ class StyletFinal(ModuleAlgo):
         self.lettreChoix = self.lettreDomSegment if self.choixCalendrier == "Standard" else self.lettreDeclDataset
 
         # On sélectionne la hauteur du stylet
-        tabDec = {"=": 0, "+2": 2, "-2": 1, "Clef": 3}
-        listeNotes = decalageGamme(self.lettreChoix)  # On décale sans susbtition Fa/Sol
-        self.lettre = listeNotes[tabDec[self.P2M2]]
+        self.lettre = noteAvecSubstitutionCadranFinal(self.lettreChoix, self.P2M2)
 
         longFA = StyletFinal.tableauGamme["F"]
         longNote = StyletFinal.tableauGamme[self.lettre]
@@ -263,7 +275,7 @@ class LumiereFinal(ModuleAlgo):
         return ["Standard", "Déclinaison"]
 
     def getValeursChoixHeure(self):
-        list = ["=", "+2", "-2", "Clef", "11:00"]
+        list = ["=", "+2", "-2", "Clef", "Clef 2", "11:00"]
         if self.dateDataset == "18/05/1152":
             heureLampouy = self.sentinelle["L"]["HeureLocale"]
             list.append(heureLampouy)
@@ -329,10 +341,8 @@ class LumiereFinal(ModuleAlgo):
         # On prend en compte les heures de substitution
         if self.choixHeure == "11:00":
             choixNote = "J"
-        elif self.choixHeure in ("=", "+2", "-2", "Clef"):
-            tabDec = {"=": 0, "+2": 2, "-2": 1, "Clef": 3}
-            listeNotes = decalageGamme(self.lettreChoix)  # On décale sans susbtition Fa/Sol
-            choixNote = listeNotes[tabDec[self.choixHeure]]
+        elif self.choixHeure in ("=", "+2", "-2", "Clef", "Clef 2"):
+            choixNote = noteAvecSubstitutionCadranFinal(self.lettreChoix, self.choixHeure)
         elif self.choixHeure == self.sentinelle["L"]["HeureLocale"]:
             choixNote = "L"
         else:
@@ -428,7 +438,7 @@ class LigneHoraireFinal(ModuleAlgo):
         return ["Standard", "Déclinaison"]
 
     def getValeursChoixHeure(self):
-        list = ["=", "+2", "-2", "Clef", "11:00"]
+        list = ["=", "+2", "-2", "Clef", "Clef 2", "11:00"]
         if self.dateDataset == "18/05/1152":
             heureLampouy = self.sentinelleLumiere["L"]["HeureLocale"]
             list.append(heureLampouy)
@@ -493,10 +503,8 @@ class LigneHoraireFinal(ModuleAlgo):
         # On prend en compte les heures de substitution
         if self.choixHeure == "11:00":
             self.noteHoraire = "J"
-        elif self.choixHeure in ("=", "+2", "-2", "Clef"):
-            tabDec = {"=": 0, "+2": 2, "-2": 1, "Clef": 3}
-            listeNotes = decalageGamme(self.lettreChoix)  # On décale sans susbtition Fa/Sol
-            self.noteHoraire = listeNotes[tabDec[self.choixHeure]]
+        elif self.choixHeure in ("=", "+2", "-2", "Clef", "Clef 2"):
+            self.noteHoraire = noteAvecSubstitutionCadranFinal(self.lettreChoix, self.choixHeure)
         elif self.choixHeure == self.sentinelleLumiere["L"]["HeureLocale"]:
             self.noteHoraire = "L"
         else:
