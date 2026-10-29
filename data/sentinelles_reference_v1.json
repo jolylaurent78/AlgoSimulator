@@ -2,6 +2,23 @@
   "version": 1,
   "description": "Références de travail du lot 1 ; les témoins arrondis ne sont pas des autorités supplémentaires.",
   "convention_azimut_physique_initial": "AzimutGeant du CSV historique, conservé comme provenance, sans assimilation à l'azimut solaire.",
+  "historique_calibrations": [
+    {
+      "date_reevaluation": "2026-10-29",
+      "identifiant": "S7",
+      "motif": "Réévaluation de la lecture physique : azimut solaire de travail 169° ; le relevé historique 170° reste conservé dans azimut_physique_initial.",
+      "cible_horaire_indicative": "11:35:49",
+      "calibration_precedente": {
+        "identifiant": "S7", "note": "B", "nature": "sentinelle",
+        "azimut_physique_initial": 170.0,
+        "autorite": "heure", "valeur_reference": "11:30:42",
+        "origine": "Heure affinée par confrontation à la direction de Saint-Valentin.",
+        "statut": "affinee_geographiquement",
+        "temoins": {"azimut_direct": 166.885, "heure_directe": "11:30:42", "azimut_miroir": 193.115, "heure_miroir": "12:33:15"}
+      },
+      "calcul_precedent_de406": {"azimut_direct": 166.86868839693545, "secondes_directes_tml": 41442.0, "azimut_miroir": 193.13131605790574, "secondes_miroir_tml": 45199.456841580075}
+    }
+  ],
   "directions": [
     {
       "identifiant": "S1", "note": "C", "nature": "sentinelle",
@@ -54,10 +71,10 @@
     {
       "identifiant": "S7", "note": "B", "nature": "sentinelle",
       "azimut_physique_initial": 170.0,
-      "autorite": "heure", "valeur_reference": "11:30:42",
-      "origine": "Heure affinée par confrontation à la direction de Saint-Valentin.",
-      "statut": "affinee_geographiquement",
-      "temoins": {"azimut_direct": 166.885, "heure_directe": "11:30:42", "azimut_miroir": 193.115, "heure_miroir": "12:33:15"}
+      "autorite": "azimut", "valeur_reference": 169.0,
+      "origine": "Réévaluation de la lecture physique des Sentinelles : 169° solaire de travail ; relevé historique 170° conservé en provenance. Heure cible 11:35:49 indicative, heure exacte déterminée par DE406.",
+      "statut": "reevaluee_physiquement",
+      "temoins": {"azimut_direct": 169.0, "heure_directe": "11:35:51", "azimut_miroir": 191.0, "heure_miroir": "12:28:10"}
     },
     {
       "identifiant": "Joker", "note": "J", "nature": "axe_rangee",

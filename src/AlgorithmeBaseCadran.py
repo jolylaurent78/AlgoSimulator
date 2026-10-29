@@ -177,9 +177,13 @@ class CercleHoraire(ModuleAlgo):
                     listeNotes = decalageGamme(noteDepart)  # On décale sans susbtition Fa/Sol
                     choixNote = listeNotes[tabDec[self.heureSubstitution]]
             self.noteHoraire = choixNote
-            direction = self.sentinelle.directionPourNote(choixNote, self.heureAMPM)
+            direction = self.sentinelle.directionPourNote(choixNote, "AM")
             self.brancheReference = ("directe" if direction is self.sentinelle.par_note[choixNote].directe else "miroir")
-            heure = self.sentinelle.heurePourNote(choixNote, self.heureAMPM)
+            heure = self.sentinelle.heurePourNote(choixNote, "AM")
+            if self.heureAMPM == "PM":
+                # Convention propre aux bases ; le miroir national reste astronomique.
+                heure = HeureMoyenneLocale((86400 - heure.secondes) % 86400)
+                self.brancheReference = "symetrie_tml"
 
             # On se place au lieu d'observation
             coordObs = villes_dict[self.lieuObservation].getCoordonneesGPS()

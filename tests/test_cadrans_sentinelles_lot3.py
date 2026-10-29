@@ -31,6 +31,11 @@ def contexte(lieu, date):
     return ContexteObservation(lieu, lat, lon, date)
 
 
+def heure_base(references, note, periode):
+    am = references.heurePourNote(note, "AM")
+    return am if periode == "AM" else HeureMoyenneLocale((86400 - am.secondes) % 86400)
+
+
 def cercle_pret(references, note="C", ampm="AM"):
     module = base.CercleHoraire()
     module.sentinelle = references
@@ -83,12 +88,13 @@ def test_base_et_final_conservent_toutes_les_heures_exactes(references, note, am
         assert branche == ("miroir" if ampm == "AM" else "directe")
     h = cercle_pret(references, note, ampm)
     h.calculer()
-    assert h.heureSentinelleSecondes == heure.secondes
-    assert h.heureSentinelle == heure.toString()
-    assert h.brancheReference == branche
+    heure_calcul = heure_base(references, note, ampm)
+    assert h.heureSentinelleSecondes == heure_calcul.secondes
+    assert h.heureSentinelle == heure_calcul.toString()
+    assert h.brancheReference == (branche if ampm == "AM" else "symetrie_tml")
     ctx = contexte("Carnac", "15/08/778")
-    assert float(h.dateObservationUT1) == float(ctx.versUT1(heure))
-    _, az = positionSoleil(ctx.coordonnees, ctx.versUT1(heure))
+    assert float(h.dateObservationUT1) == float(ctx.versUT1(heure_calcul))
+    _, az = positionSoleil(ctx.coordonnees, ctx.versUT1(heure_calcul))
     assert h.angleHoraire == pytest.approx(abs(180 - az))
     assert h.angleHoraire > 0
     # Le choix de côté géométrique reste indépendant de l'heure.
@@ -133,7 +139,7 @@ def test_periode_et_cote_du_cercle_sont_independants(references, note):
                     h.selectionHoraire.repere, h.selectionHoraire.branche)
             selection_initiale = auto if selection_initiale is None else selection_initiale
             assert auto == selection_initiale
-            heure = references.heurePourNote(note, periode)
+            heure = heure_base(references, note, periode)
             assert h.heureSentinelleSecondes == heure.secondes
             assert h.angleHoraire == pytest.approx(abs(180 - h.azimutSoleil))
             cotes[periode, cercle] = cote_axe(h)
@@ -155,9 +161,10 @@ def test_rouen_joker_pm_garde_heure_automatique_s5_miroir(references):
     assert (h.selectionHoraire.repere, h.selectionHoraire.branche) == ("S5", "miroir")
     assert h.heureStylet == "12:04:01"
     assert h.heureStyletSecondes == references.heurePourNote("G", "miroir").secondes
-    assert h.heureSentinelle == "13:09:03"
-    assert h.heureSentinelleSecondes == references.heurePourNote("J", "PM").secondes
-    assert h.angleHoraire == pytest.approx(20.22, abs=.01)
+    assert h.heureSentinelle == "13:05:00"
+    assert h.heureSentinelleSecondes == 47100
+    assert h.brancheReference == "symetrie_tml"
+    assert h.angleHoraire == pytest.approx(18.927594, abs=.000001)
     cote_pm = cote_axe(h)
     h.heureAMPM = "AM"
     h.calculer()
@@ -191,24 +198,26 @@ def test_calendrier_selectionne_note_depart_avant_substitution(references, calen
         h.cercleAMPM = cercle
         h.calculer()
         assert (h.selectionHoraire.note, h.selectionHoraire.branche) == ("B", "miroir")
-        assert h.heureStylet == "12:33:19"
+        assert h.heureStylet == "12:28:10"
         assert h.heureStyletSecondes == references.heurePourNote("B", "miroir").secondes
         assert h.styletAMPM == "PM"
         assert h.noteHoraire == note
         direction = references.directionPourNote(note, periode)
-        assert h.heureSentinelleSecondes == direction.heure_locale.secondes
-        assert h.heureSentinelle == direction.heure_locale.toString()
+        heure_calcul = heure_base(references, note, periode)
+        assert h.heureSentinelleSecondes == heure_calcul.secondes
+        assert h.heureSentinelle == heure_calcul.toString()
         if calendrier == "Standard":
             attendues = {
-                "=": {"AM": "11:30:42", "PM": "12:33:19"},
-                "+2": {"AM": "08:14:46", "PM": "15:49:38"},
-                "-2": {"AM": "12:00:00", "PM": "12:04:01"},
-                "11:00": {"AM": "10:55:00", "PM": "13:09:03"},
+                "=": {"AM": "11:35:51", "PM": "12:24:09"},
+                "+2": {"AM": "08:14:46", "PM": "15:45:14"},
+                "-2": {"AM": "12:00:00", "PM": "12:00:00"},
+                "11:00": {"AM": "10:55:00", "PM": "13:05:00"},
             }
             assert h.heureSentinelle == attendues[substitution][periode]
-        assert h.brancheReference == ("directe" if direction is references.par_note[note].directe else "miroir")
+        assert h.brancheReference == ("symetrie_tml" if periode == "PM" else
+                                     "directe" if direction is references.par_note[note].directe else "miroir")
         ctx = contexte("Carnac", "19/07/933")
-        assert float(h.dateObservationUT1) == float(ctx.versUT1(direction.heure_locale))
+        assert float(h.dateObservationUT1) == float(ctx.versUT1(heure_calcul))
         assert h.angleHoraire == pytest.approx(abs(180 - positionSoleil(ctx.coordonnees, h.dateObservationUT1)[1]))
         assert h.angleHoraire > 0
         points.append(cote_axe(h))
@@ -229,7 +238,7 @@ def test_standard_joker_detecte_reste_joker_avec_substitutions(references, perio
     assert h.selectionHoraire.note == "J"
     assert h.heureStylet == "13:09:03"
     assert h.noteHoraire == "J"
-    assert h.heureSentinelleSecondes == references.heurePourNote("J", periode).secondes
+    assert h.heureSentinelleSecondes == heure_base(references, "J", periode).secondes
     assert h.heureStyletSecondes == h.selectionHoraire.heure_locale.secondes
 
 
@@ -248,10 +257,10 @@ def test_chalus_standard_et_propagation_distance_sans_ecriture(references):
     h = scenario.modules["cercleHoraire"]
     d = scenario.modules["cercleDistance"]
     assert (h.choixCalendrierSegment, h.heureSubstitution, h.cercleAMPM) == ("Standard", "=", "PM")
-    assert (h.noteHoraire, h.heureSentinelle, h.brancheReference) == ("B", "12:33:19", "miroir")
-    assert h.angleHoraire == pytest.approx(14.543273, abs=.000001)
+    assert (h.noteHoraire, h.heureSentinelle, h.brancheReference) == ("B", "12:24:09", "symetrie_tml")
+    assert h.angleHoraire == pytest.approx(10.002615, abs=.000001)
     automatique = (h.heureStylet, h.heureStyletSecondes, h.styletAMPM)
-    assert automatique[0] == "12:33:19"
+    assert automatique[0] == "12:28:10"
     moteur.dataset.segment = segment
     moteur.dataset.calculer()
     for periode in ("AM", "PM"):
@@ -260,8 +269,8 @@ def test_chalus_standard_et_propagation_distance_sans_ecriture(references):
             d.centreCercle = centre
             moteur.calculerModules("Chalus", segment)
             assert (h.heureStylet, h.heureStyletSecondes, h.styletAMPM) == automatique
-            assert h.heureSentinelle == ("11:30:42" if periode == "AM" else "12:33:19")
-            heure = references.heurePourNote("B", periode) if centre == "Stylet" else HeureMoyenneLocale(43200)
+            assert h.heureSentinelle == ("11:35:51" if periode == "AM" else "12:24:09")
+            heure = heure_base(references, "B", periode) if centre == "Stylet" else HeureMoyenneLocale(43200)
             assert d.heureReferenceSecondes == heure.secondes
             assert d.heureSentinelleSecondesCerclehoraire == h.heureSentinelleSecondes
             ctx = contexte("Carnac", "19/07/933")
@@ -283,14 +292,14 @@ def test_bases_reelles_conservent_les_criteres_geometriques():
     empreinte = sha256(fichier.read_bytes()).hexdigest()
     moteur, _ = chargerProjetJsonV1(fichier)
     attendus = {
-        "Metz": [(288918.834056, 6708245.350638)],
+        "Metz": [],
         "Chateau Gaillard": [],
-        "Domremy": [],
+        "Domremy": [(895978.733016, 6813738.873863)],
         "Fontevraud": [],
-        "Aléria": [(851613.572852, 6469725.117041), (1210156.204428, 6085830.624852)],
+        "Aléria": [(852694.661063, 6470829.982993), (1203409.397248, 6079766.537974)],
         "Rouen": [],
         "St Michael's Mount": [],
-        "Chalus": [],
+        "Chalus": [(555798.304722, 6503124.556810)],
         "Pont de Noirmoutiers": [(311417.214003, 6642264.743463), (988498.335152, 6626489.521880)],
         "Reims": [],
         "Saint Cyr Coetquidan": [],

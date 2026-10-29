@@ -27,7 +27,7 @@ ATTENDUS = {
     "S4": ("F", "azimut", 218.0, "mesure_provisoire"),
     "S5": ("G", "heure", "12:00:00", "structurante"),
     "S6": ("A", "heure", "11:42:00", "structurante"),
-    "S7": ("B", "heure", "11:30:42", "affinee_geographiquement"),
+    "S7": ("B", "azimut", 169.0, "reevaluee_physiquement"),
     "Joker": ("J", "heure", "10:55:00", "hypothese_de_travail"),
 }
 
