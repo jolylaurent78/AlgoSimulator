@@ -14,18 +14,17 @@ def national():
     return SentinelleNationale()
 
 
-def test_s7_169_de406_trois_heures_et_provenance(national):
+def test_s7_169_5_de406_trois_heures_et_provenance(national):
     r = national.par_note["B"]
-    assert (r.autorite, r.valeur_reference, r.azimut_physique_initial) == ("azimut", 169, 170)
-    assert r.azimut_direct == pytest.approx(169, abs=.0001)
-    assert r.azimut_miroir == pytest.approx(191, abs=.0001)
-    assert r.heure_directe.secondes == pytest.approx(41751.130102, abs=.02)
-    assert r.heure_miroir.secondes == pytest.approx(44890.153108, abs=.02)
+    assert (r.autorite, r.valeur_reference, r.azimut_physique_initial) == ("azimut", 169.5, 170)
+    assert r.azimut_direct == pytest.approx(169.5, abs=.0001)
+    assert r.azimut_miroir == pytest.approx(190.5, abs=.0001)
+    assert r.heure_directe.secondes == pytest.approx(41823.305772, abs=.02)
+    assert r.heure_miroir.secondes == pytest.approx(44817.941349, abs=.02)
     base_pm = (86400 - r.heure_directe.secondes) % 86400
-    assert base_pm == pytest.approx(44648.869898, abs=.02)
-    assert HeureMoyenneLocale(base_pm).toString() == "12:24:09"
-    assert r.heure_miroir.toString() == "12:28:10"
-    assert r.heure_directe.secondes - HeureMoyenneLocale.depuisTexte("11:35:49").secondes == pytest.approx(2.130102, abs=.02)
+    assert base_pm == pytest.approx(44576.694228, abs=.02)
+    assert HeureMoyenneLocale(base_pm).toString() == "12:22:57"
+    assert r.heure_miroir.toString() == "12:26:58"
     assert r.heure_directe.secondes != round(r.heure_directe.secondes)
 
 
@@ -35,10 +34,12 @@ def test_ancienne_calibration_archivee_et_autres_references_inchangees(national,
     archive = donnees["historique_calibrations"][-1]
     ancienne = archive["calibration_precedente"]
     assert archive["identifiant"] == "S7"
-    assert archive["cible_horaire_indicative"] == "11:35:49"
+    premiere = donnees["historique_calibrations"][0]
+    assert premiere["cible_horaire_indicative"] == "11:35:49"
+    assert premiere["calibration_precedente"]["valeur_reference"] == "11:30:42"
     assert ancienne["azimut_physique_initial"] == 170
-    assert (ancienne["autorite"], ancienne["valeur_reference"]) == ("heure", "11:30:42")
-    assert ancienne["temoins"]["azimut_direct"] == 166.885
+    assert (ancienne["autorite"], ancienne["valeur_reference"]) == ("azimut", 169.0)
+    assert ancienne["temoins"]["azimut_direct"] == 169.0
     donnees["directions"] = [ancienne if d["identifiant"] == "S7" else d for d in donnees["directions"]]
     chemin = tmp_path / "referentiel_avant_s7.json"
     chemin.write_text(json.dumps(donnees), encoding="utf-8")
@@ -48,8 +49,8 @@ def test_ancienne_calibration_archivee_et_autres_references_inchangees(national,
         if r.identifiant != "S7":
             assert (r.directe, r.miroir) == (old.directe, old.miroir)
         else:
-            assert old.heure_directe.secondes == 41442
-            assert old.azimut_direct == pytest.approx(166.868688, abs=.000001)
+            assert old.heure_directe.secondes == pytest.approx(41751.130102, abs=.02)
+            assert old.azimut_direct == pytest.approx(169, abs=.0001)
 
 
 @pytest.mark.parametrize("note", list("CDEFGABJ"))

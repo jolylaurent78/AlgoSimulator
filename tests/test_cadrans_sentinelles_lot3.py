@@ -198,7 +198,7 @@ def test_calendrier_selectionne_note_depart_avant_substitution(references, calen
         h.cercleAMPM = cercle
         h.calculer()
         assert (h.selectionHoraire.note, h.selectionHoraire.branche) == ("B", "miroir")
-        assert h.heureStylet == "12:28:10"
+        assert h.heureStylet == "12:26:58"
         assert h.heureStyletSecondes == references.heurePourNote("B", "miroir").secondes
         assert h.styletAMPM == "PM"
         assert h.noteHoraire == note
@@ -208,7 +208,7 @@ def test_calendrier_selectionne_note_depart_avant_substitution(references, calen
         assert h.heureSentinelle == heure_calcul.toString()
         if calendrier == "Standard":
             attendues = {
-                "=": {"AM": "11:35:51", "PM": "12:24:09"},
+                "=": {"AM": "11:37:03", "PM": "12:22:57"},
                 "+2": {"AM": "08:14:46", "PM": "15:45:14"},
                 "-2": {"AM": "12:00:00", "PM": "12:00:00"},
                 "11:00": {"AM": "10:55:00", "PM": "13:05:00"},
@@ -257,10 +257,13 @@ def test_chalus_standard_et_propagation_distance_sans_ecriture(references):
     h = scenario.modules["cercleHoraire"]
     d = scenario.modules["cercleDistance"]
     assert (h.choixCalendrierSegment, h.heureSubstitution, h.cercleAMPM) == ("Standard", "=", "PM")
-    assert (h.noteHoraire, h.heureSentinelle, h.brancheReference) == ("B", "12:24:09", "symetrie_tml")
-    assert h.angleHoraire == pytest.approx(10.002615, abs=.000001)
+    assert (h.noteHoraire, h.heureSentinelle, h.brancheReference) == ("B", "12:22:57", "symetrie_tml")
+    ctx_initial = contexte("Carnac", "19/07/933")
+    heure_initiale = heure_base(references, "B", "PM")
+    azimut_initial = positionSoleil(ctx_initial.coordonnees, ctx_initial.versUT1(heure_initiale))[1]
+    assert h.angleHoraire == pytest.approx(abs(180 - azimut_initial))
     automatique = (h.heureStylet, h.heureStyletSecondes, h.styletAMPM)
-    assert automatique[0] == "12:28:10"
+    assert automatique[0] == "12:26:58"
     moteur.dataset.segment = segment
     moteur.dataset.calculer()
     for periode in ("AM", "PM"):
@@ -269,7 +272,7 @@ def test_chalus_standard_et_propagation_distance_sans_ecriture(references):
             d.centreCercle = centre
             moteur.calculerModules("Chalus", segment)
             assert (h.heureStylet, h.heureStyletSecondes, h.styletAMPM) == automatique
-            assert h.heureSentinelle == ("11:35:51" if periode == "AM" else "12:24:09")
+            assert h.heureSentinelle == ("11:37:03" if periode == "AM" else "12:22:57")
             heure = heure_base(references, "B", periode) if centre == "Stylet" else HeureMoyenneLocale(43200)
             assert d.heureReferenceSecondes == heure.secondes
             assert d.heureSentinelleSecondesCerclehoraire == h.heureSentinelleSecondes
@@ -299,7 +302,7 @@ def test_bases_reelles_conservent_les_criteres_geometriques():
         "Aléria": [(852694.661063, 6470829.982993), (1203409.397248, 6079766.537974)],
         "Rouen": [],
         "St Michael's Mount": [],
-        "Chalus": [(555798.304722, 6503124.556810)],
+        "Chalus": [(548079.690644, 6508194.248413)],
         "Pont de Noirmoutiers": [(311417.214003, 6642264.743463), (988498.335152, 6626489.521880)],
         "Reims": [],
         "Saint Cyr Coetquidan": [],

@@ -17,6 +17,20 @@
         "temoins": {"azimut_direct": 166.885, "heure_directe": "11:30:42", "azimut_miroir": 193.115, "heure_miroir": "12:33:15"}
       },
       "calcul_precedent_de406": {"azimut_direct": 166.86868839693545, "secondes_directes_tml": 41442.0, "azimut_miroir": 193.13131605790574, "secondes_miroir_tml": 45199.456841580075}
+    },
+    {
+      "date_reevaluation": "2026-10-29",
+      "identifiant": "S7",
+      "motif": "Ajustement expérimental de 169° à 169,5° ; relevé physique historique 170° inchangé.",
+      "calibration_precedente": {
+        "identifiant": "S7", "note": "B", "nature": "sentinelle",
+        "azimut_physique_initial": 170.0,
+        "autorite": "azimut", "valeur_reference": 169.0,
+        "origine": "Réévaluation de la lecture physique des Sentinelles : 169° solaire de travail ; relevé historique 170° conservé en provenance. Heure cible 11:35:49 indicative, heure exacte déterminée par DE406.",
+        "statut": "reevaluee_physiquement",
+        "temoins": {"azimut_direct": 169.0, "heure_directe": "11:35:51", "azimut_miroir": 191.0, "heure_miroir": "12:28:10"}
+      },
+      "calcul_precedent_de406": {"azimut_direct": 169.0000183724259, "secondes_directes_tml": 41751.13010191123, "azimut_miroir": 190.99996750271725, "secondes_miroir_tml": 44890.1531078736}
     }
   ],
   "directions": [
@@ -71,10 +85,10 @@
     {
       "identifiant": "S7", "note": "B", "nature": "sentinelle",
       "azimut_physique_initial": 170.0,
-      "autorite": "azimut", "valeur_reference": 169.0,
-      "origine": "Réévaluation de la lecture physique des Sentinelles : 169° solaire de travail ; relevé historique 170° conservé en provenance. Heure cible 11:35:49 indicative, heure exacte déterminée par DE406.",
+      "autorite": "azimut", "valeur_reference": 169.5,
+      "origine": "Ajustement expérimental de la valeur de travail de 169° à 169,5° solaire. Relevé physique historique 170° et calibration 169° conservés en provenance ; heures calculées par DE406, sans heure imposée.",
       "statut": "reevaluee_physiquement",
-      "temoins": {"azimut_direct": 169.0, "heure_directe": "11:35:51", "azimut_miroir": 191.0, "heure_miroir": "12:28:10"}
+      "temoins": {"azimut_direct": 169.5, "heure_directe": "11:37:03", "azimut_miroir": 190.5, "heure_miroir": "12:26:58"}
     },
     {
       "identifiant": "Joker", "note": "J", "nature": "axe_rangee",
