@@ -124,8 +124,8 @@
     ]
   },
   "rules": {},
-  "active_segment": "20 Mars 1815 : Début des 100 jours",
-  "active_scenario": "3RDV",
+  "active_segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
+  "active_scenario": "Thury sous Clermont",
   "segments": [
     {
       "segment": "15 Aout 778 : Bataille de Roncevaux",
@@ -391,7 +391,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         },
         {
@@ -469,7 +469,7 @@
           }
         },
         {
-          "name": "La Ferté Alais",
+          "name": "Thury sous Clermont",
           "type": "utilisateur",
           "segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
           "solution": true,
@@ -479,7 +479,7 @@
             },
             "stylet": {
               "choixBase": "Base 1",
-              "choixCalendrier": "Déclinaison",
+              "choixCalendrier": "Standard",
               "P2M2": "+2",
               "octave": "/2"
             },
@@ -490,8 +490,8 @@
             },
             "ombre": {
               "choixCalendrier": "Standard",
-              "choixHeure": "Clef",
-              "sensCarte": "Envers"
+              "choixHeure": "=",
+              "sensCarte": "Endroit"
             }
           },
           "cached_results": {},
@@ -502,7 +502,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         }
       ]
@@ -1138,8 +1138,8 @@
               "heureAMPM": "AM"
             },
             "ombre": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "=",
+              "choixCalendrier": "Déclinaison",
+              "choixHeure": "-2",
               "sensCarte": "Envers"
             }
           },
@@ -1151,7 +1151,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         },
         {
@@ -1225,7 +1225,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         }
       ]
@@ -1444,7 +1444,7 @@
               "heureAMPM": "AM"
             },
             "ombre": {
-              "choixCalendrier": "Déclinaison",
+              "choixCalendrier": "Standard",
               "choixHeure": "10:09",
               "sensCarte": "Endroit"
             }
@@ -1532,6 +1532,48 @@
             ],
             "thickness": 1,
             "visible": false
+          }
+        }
+      ]
+    },
+    {
+      "segment": "28 Septembre 1066: Débarquement de Guillaume le Conquérant",
+      "scenarios": [
+        {
+          "name": "Scénario par défaut",
+          "type": "default",
+          "segment": "28 Septembre 1066: Débarquement de Guillaume le Conquérant",
+          "solution": false,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Cherbourg"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "=",
+              "octave": "x1"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "sensCarte": "Endroit"
+            }
+          },
+          "cached_results": {},
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": true
           }
         }
       ]
