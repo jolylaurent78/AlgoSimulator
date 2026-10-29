@@ -123,7 +123,7 @@ def test_fixture_778_candidat_verifie_par_triplet_geometrique():
     m, _ = chargerProjetJsonV1(fichier)
     modules = m.getScenario().modules
     c = modules["candidat"]
-    produit = c.construireRepresentationCarte()
+    produit = c.construireRepresentationCarte(methode="historique")
     assert len(produit) == 2
     centres = [p.pointCentre for p in produit]
     cercle = CercleGraphique(villes_dict["Bourges"], c.distanceLumiere)

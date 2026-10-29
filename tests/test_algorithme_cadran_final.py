@@ -364,7 +364,7 @@ def test_candidat_final_cree_un_barycentre_a_trois_points(monkeypatch):
         (0.0, 3.0),
     )
 
-    objets = module.construireRepresentationCarte()
+    objets = module.construireRepresentationCarte(methode="historique")
 
     assert len(objets) == 2
     # Le milieu (1.5, 0) serait aussi admissible, mais ne remplace pas le triplet.
@@ -387,7 +387,7 @@ def test_candidat_final_fallback_parallelisme_et_point_hors_image(monkeypatch, d
         visible=visible,
     )
 
-    objets = module.construireRepresentationCarte()
+    objets = module.construireRepresentationCarte(methode="historique")
 
     assert len(objets) == nombre_attendu
     for cercle in objets:
@@ -404,7 +404,7 @@ def test_candidat_final_secours_si_triplet_absent_ou_invalide(monkeypatch, inter
         intersection,
     )
 
-    objets = module.construireRepresentationCarte()
+    objets = module.construireRepresentationCarte(methode="historique")
 
     assert len(objets) == 2
     assert all(c.pointCentre.coordonneesLambert() == (15.0, 0.0) for c in objets)

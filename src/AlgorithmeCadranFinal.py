@@ -1,4 +1,4 @@
-from math import tan, radians
+from math import tan, radians, hypot, atan2, degrees, isfinite
 from dataclasses import dataclass
 
 # Moteur Algo générique
@@ -21,6 +21,7 @@ from src.data_loader import villes_dict
 
 # Gestion des layers graphiques
 from src.layerManager import LayerManager
+from src.carte_config import carteConfig
 
 
 def _noteSourceClef2(notes):
@@ -584,6 +585,69 @@ class LigneHoraireFinal(ModuleAlgo):
         return listeObjets
 
 
+@dataclass(frozen=True)
+class CandidatPondere:
+    a: tuple
+    b: tuple | None
+    c: tuple | None
+    q: tuple
+    m: tuple
+    g: tuple | None
+    p: tuple
+    distance_aq: float
+    angle: float
+    poids: float
+    methode: str
+    distance_pa: float
+    distance_p_droite: float
+
+
+def calculerCandidatPondere(a, intersections_b, origine_ombre, direction_ombre, direction_lumiere):
+    """Géométrie métrique en Lambert-93 ; distances retournées en kilomètres."""
+    def unitaire(v):
+        norme = hypot(*v)
+        if norme == 0:
+            raise ValueError("Direction nulle")
+        return v[0] / norme, v[1] / norme
+
+    u, v = unitaire(direction_lumiere), unitaire(direction_ombre)
+    # Projection par la normale : pas de soustraction de deux grands produits.
+    n = (-v[1], v[0])
+    h = (a[0] - origine_ombre[0]) * n[0] + (a[1] - origine_ombre[1]) * n[1]
+    q = (a[0] - h * n[0], a[1] - h * n[1])
+    distance_aq = abs(h) / 1000
+    if distance_aq > 30:
+        return None
+    m = ((a[0] + q[0]) / 2, (a[1] + q[1]) / 2)
+    det = u[0] * v[1] - u[1] * v[0]
+    angle = degrees(atan2(abs(det), abs(u[0] * v[0] + u[1] * v[1])))
+    poids = min(1.0, (angle / 45) ** 2)
+    b = min(intersections_b, key=lambda p: hypot(p[0]-a[0], p[1]-a[1]), default=None)
+    c = g = None
+    methode = "milieu (droites parallèles)" if det == 0 else "milieu (C absent)"
+    p = m
+    if det != 0:
+        delta = (origine_ombre[0]-a[0], origine_ombre[1]-a[1])
+        numerateur = delta[0] * v[1] - delta[1] * v[0]
+        s = numerateur / det
+        candidat_c = (a[0] + s * u[0], a[1] + s * u[1])
+        if all(isfinite(x) for x in candidat_c):
+            c = candidat_c
+            if b is not None:
+                g = tuple((a[i] + b[i] + c[i]) / 3 for i in (0, 1))
+                # t*C est évalué via (t/det)*numérateur : limite stable en angle nul.
+                poids_s = (poids / det) * numerateur
+                p = tuple(m[i] + poids * (a[i] - m[i] + (b[i]-a[i])/3)
+                          + poids_s * u[i]/3 for i in (0, 1))
+                methode = "barycentre pondéré selon l’angle"
+    if b is None:
+        methode = "milieu (B absent" + (", C absent)" if c is None else ")")
+    distance_pa = hypot(p[0]-a[0], p[1]-a[1])/1000
+    distance_p_droite = abs((p[0]-origine_ombre[0])*n[0] + (p[1]-origine_ombre[1])*n[1])/1000
+    return CandidatPondere(a, b, c, q, m, g, p, distance_aq, angle, poids, methode,
+                           distance_pa, distance_p_droite)
+
+
 class CandidatFinal(ModuleAlgo):
 
     RAYON_CANDIDAT = 20
@@ -608,7 +672,43 @@ class CandidatFinal(ModuleAlgo):
         self.heureLocaleLumiere = None
         self.listeCandidatsHeureOmbre = None
 
-    def construireRepresentationCarte(self) -> list[ObjetGraphique]:
+    def construireRepresentationCarte(self, methode="ponderee") -> list[ObjetGraphique]:
+        if methode == "historique":
+            return self.construireRepresentationCarteHistorique()
+        if methode != "ponderee":
+            raise ValueError(f"Méthode de candidat inconnue : {methode}")
+        return self.construireRepresentationCartePonderee()
+
+    def calculerGeometriesPonderees(self):
+        """Une décision par A et droite horaire ; aucun filtre sur la position de C."""
+        resultats = []
+        cercle = CercleGraphique(villes_dict["Bourges"], self.distanceLumiere)
+        for signe in (-1, 1):
+            lumiere = LigneAzimut(villes_dict["Bourges"], self.azimutMidiStylet + signe * (180 - self.azimutLumiere))
+            u = tuple(carteConfig.A_inv @ lumiere.vecteur)
+            for heure, ombre in self.listeCandidatsHeureOmbre:
+                origine = carteConfig.pixels_to_lambert93(*ombre.pointReference)
+                v = tuple(carteConfig.A_inv @ ombre.vecteur)
+                bs = [p.coordonneesLambert() for p in ombre.intersectionCercle(cercle)] if ombre.lignePixelImage is not None else []
+                for a in lumiere.intersectionCercle(cercle):
+                    geometrie = calculerCandidatPondere(a.coordonneesLambert(), bs, origine, v, u)
+                    if geometrie is not None:
+                        resultats.append((signe, heure, geometrie))
+        return resultats
+
+    def construireRepresentationCartePonderee(self):
+        objets = []
+        for _, heure, g in self.calculerGeometriesPonderees():
+            centre = PointGraphique("Centre pondéré", *g.p)
+            ecart = abs(centre.distance(villes_dict["Bourges"]) - self.distanceLumiere)
+            objets.append(CercleGraphique(centre, self.RAYON_CANDIDAT, epaisseur=2, nom="Candidat",
+                tooltips=[f"Méthode : {g.methode}", f"Ombre : {heure}",
+                          f"A–Q : {g.distance_aq:.6f} km", f"Angle : {g.angle:.6f}°", f"Poids : {g.poids:.9f}",
+                          f"P–A : {g.distance_pa:.6f} km", f"P–droite horaire : {g.distance_p_droite:.6f} km",
+                          f"Écart radial au rayon nominal : {ecart:.6f} km"], tags={"level": "construction"}))
+        return objets
+
+    def construireRepresentationCarteHistorique(self) -> list[ObjetGraphique]:
         listeObjets = []
         triplets = []
 
