@@ -45,9 +45,9 @@ Les **85 centres historiques** sont confrontés aux 85 centres de l’expérienc
 
 Les distances sont planes, en kilomètres Lambert-93 ; toutes les coordonnées des tableaux sont en **mètres EPSG:2154**. Les centres distants d’au plus **1 mm** sont fusionnés pour les seules statistiques. Aucun doublon n’est rencontré ici, y compris entre scénarios : totaux bruts et géométriquement distincts coïncident.
 
-Références issues du CSV : correspondance exacte, ou variantes explicites Grotte Lombrives → Grotte de Lombrives ; Lac Trémelin → Lac-de-Trémelin ; Ferté Alais / La Ferté Alais → La Ferté-Alais ; Beaufort en Vallée → Beaufort-en-Vallée ; Boulogne → Boulogne-sur-Mer. **23 scénarios ont une référence mesurable.**
+Références issues du CSV : correspondance exacte, ou variantes explicites Grotte Lombrives → Grotte de Lombrives ; Lac Trémelin → Lac-de-Trémelin ; Ferté Alais / La Ferté Alais → La Ferté-Alais ; Beaufort en Vallée → Beaufort-en-Vallée ; Boulogne → Boulogne-sur-Mer. Complément fourni par l’utilisateur après la première publication : **Montmirail = latitude 48,10° N, longitude 0,769° E**, soit **(533949,006 ; 6780082,212) m Lambert-93** après transformation EPSG:4326 → EPSG:2154. Ce point sert uniquement à mesurer les distances dans le rapport ; il n’est ajouté ni au CSV ni aux scénarios. **24 scénarios ont désormais une référence mesurable** (23 du CSV et Montmirail fourni par l’utilisateur).
 
-Frontiere Sud Bretagne et Zone ne sont pas des points. Dinard, Plymouth, Lons-le-Saunier, Le Bec, Dover, Portsmouth, Quiberon, Come, Châlons-en-Champagne, Le Mans et **Montmirail** n’ont pas d’entrée ponctuelle suffisamment explicite dans le CSV. Waterloo (Bouvines) est ambigu entre deux entrées. Aucune coordonnée n’est inventée, aucun de ces cas n’entre dans les statistiques de couverture.
+Frontiere Sud Bretagne et Zone ne sont pas des points. Dinard, Plymouth, Lons-le-Saunier, Le Bec, Dover, Portsmouth, Quiberon, Come, Châlons-en-Champagne et Le Mans n’ont pas d’entrée ponctuelle suffisamment explicite dans le CSV. Waterloo (Bouvines) est ambigu entre deux entrées. Aucune coordonnée n’est inventée, aucun de ces cas n’entre dans les statistiques de couverture.
 
 ## Bilan global
 
@@ -55,10 +55,10 @@ Frontiere Sud Bretagne et Zone ne sont pas des points. Dinard, Plymouth, Lons-le
 - **296** configurations A/droite examinées ; **88** satisfont A–Q ≤ 30 km, **208** sont rejetées.
 - **81** centres pondérés ; **7** replis sur M parce que B est absent. Aucun repli pour C absent/parallélisme dans ce corpus ; les tests couvrent ces cas.
 - Scénarios sans candidat : **5 → 1**. Boulogne reste sans candidat. Loches, La Ferté Alais (1431), Le Bec et Le Mans en gagnent ; seuls les deux premiers ont une référence mesurable.
-- Couverture de 20 km parmi les 23 scénarios géoréférencés : **16 → 17**. Gains : **Loches** et **La Ferté Alais (1431)**. Perte : **Donon**.
+- Couverture de 20 km parmi les 24 scénarios géoréférencés : **16 → 18**. Gains : **Loches**, **La Ferté Alais (1431)** et **Montmirail**. Perte : **Donon**. La première publication indiquait 16 → 17 sur 23 références ; le complément Montmirail change uniquement l’évaluation des distances et de couverture, pas les centres calculés.
 - La proximité du candidat le plus proche s’améliore pour plusieurs lieux, mais se dégrade dans dix scénarios mesurables. Les très faibles différences < 1 µm ne sont pas comptées comme dégradation.
-- **77 centres nouveaux géométriquement** (non confondus à 1 mm avec un ancien centre du même scénario) ; 11 restent identiques. Parmi ces 77, **54** ont une référence : **20** la couvrent et **34** sont au-delà de 20 km ; **23** sont non évaluables. Ces 34 centres sont des faux positifs possibles pour le lieu visé, sans constituer une preuve d’erreur géométrique.
-- Sur l’ensemble des 88 nouveaux candidats, **37** sont au-delà de 20 km de la référence de leur scénario. Une augmentation nette de trois candidats masque donc de nombreux déplacements de centres ; elle ne démontre pas un gain de sélectivité.
+- **77 centres nouveaux géométriquement** (non confondus à 1 mm avec un ancien centre du même scénario) ; 11 restent identiques. Parmi ces 77, **55** ont une référence : **21** la couvrent et **34** sont au-delà de 20 km ; **22** sont non évaluables. Ces 34 centres sont des faux positifs possibles pour le lieu visé, sans constituer une preuve d’erreur géométrique.
+- Sur l’ensemble des 88 nouveaux candidats, **38** sont au-delà de 20 km de la référence de leur scénario, dont l’ancien centre de Montmirail conservé à 237,088 km. Une augmentation nette de trois candidats masque donc de nombreux déplacements de centres ; elle ne démontre pas un gain de sélectivité.
 
 ## Cas prioritaires
 
@@ -66,7 +66,7 @@ Frontiere Sud Bretagne et Zone ne sont pas des points. Dinard, Plymouth, Lons-le
 
 Date du segment : **19/08/1152**. Paramètres conservés : `{"base": "Pont de Noirmoutier", "stylet": "Loudun", "octave": "/4", "calendars": ["Standard", "Standard", "Standard"], "choices": ["=", "-2", "11:00"], "period": "PM", "orientation": "Envers"}`.
 
-Candidats **1 → 2** ; plus proche de la référence : **n.d. → n.d. km**.
+Candidats **1 → 2** ; plus proche du point Montmirail fourni par l’utilisateur : **237,088 → 10,954 km**. Le nouveau cercle centré sur M couvre donc ce point avec son rayon inchangé de 20 km.
 
 Centres anciens : (547753.292 ; 6543396.378).
 
@@ -77,10 +77,10 @@ Centres anciens : (547753.292 ; 6543396.378).
 
 | Branche / heure / indice A | A | B retenu | C | Q | M | G | P | Distance P–lieu (km) |
 |---|---|---|---|---|---|---|---|---:|
-| AM / 13:09:03 / 1 | (543970.539 ; 6784503.097) | absent | (540950.001 ; 6787781.118) | (541835.875 ; 6788281.593) | (542903.207 ; 6786392.345) | absent | (542903.207 ; 6786392.345) | n.d. |
-| PM / 10:55:00 / 1 | (550000.109 ; 6539739.308) | (540905.460 ; 6547891.028) | (552354.308 ; 6542558.798) | (551498.836 ; 6542957.229) | (550749.473 ; 6541348.268) | (547753.292 ; 6543396.378) | (547753.292 ; 6543396.378) | n.d. |
+| AM / 13:09:03 / 1 | (543970.539 ; 6784503.097) | absent | (540950.001 ; 6787781.118) | (541835.875 ; 6788281.593) | (542903.207 ; 6786392.345) | absent | (542903.207 ; 6786392.345) | 10,954 |
+| PM / 10:55:00 / 1 | (550000.109 ; 6539739.308) | (540905.460 ; 6547891.028) | (552354.308 ; 6542558.798) | (551498.836 ; 6542957.229) | (550749.473 ; 6541348.268) | (547753.292 ; 6543396.378) | (547753.292 ; 6543396.378) | 237,088 |
 
-**Limite importante : Montmirail n’a pas de coordonnées dans le CSV.** Sa distance et la pertinence géographique de ses cercles ne peuvent pas être conclues sans point de référence confirmé. Les deux configurations admissibles ont θ ≈ 75–77° et **t = 1**. Pour celle dont B existe, **P = G** et l’ancien centre est inchangé. Pour l’autre, **B est absent : P = M** conformément au repli prévu, malgré t = 1. Le triangle très aigu attendu n’est pas reproduit avec cette configuration sauvegardée, et aucun paramètre n’est changé pour le provoquer.
+**Montmirail est retrouvé au regard du point fourni : 10,954 km.** Les deux configurations admissibles ont θ ≈ 75–77° et **t = 1**. Pour celle dont B existe, **P = G** et l’ancien centre est inchangé, à 237,088 km du point de référence. Pour l’autre, **B est absent : P = M** conformément au repli prévu, malgré t = 1 ; c’est ce milieu qui couvre Montmirail. Ce succès ne valide donc pas la pondération d’un triangle très aigu : le triangle attendu n’est pas reproduit avec cette configuration sauvegardée, et aucun paramètre n’est changé pour le provoquer.
 
 | Branche / heure / indice A | A–Q (km) | θ | Admissible |
 |---|---:|---:|---|
@@ -193,7 +193,7 @@ Les cellules de centres listent **tous** les centres, pas seulement le plus proc
 | 18 Mai 1152 : Mariage d’Aliénor d’Aquitaine | Mirebeau | **2** : (493356.246 ; 6631909.819)<br>(500152.292 ; 6693002.254) | **2** : (498511.492 ; 6632164.515)<br>(495400.568 ; 6692389.640) | 9,030 | 13,834 |
 | 18 Mai 1152 : Mariage d’Aliénor d’Aquitaine | Zone | **4** : (506974.011 ; 6728801.926)<br>(510442.485 ; 6736246.032)<br>(744967.029 ; 6796103.969)<br>(730731.656 ; 6804958.337) | **2** : (510442.485 ; 6736246.032)<br>(730731.656 ; 6804958.337) | n.d. | n.d. |
 | 18 Mai 1152 : Mariage d’Aliénor d’Aquitaine | Le Mans | — | **1** : (686909.040 ; 6865481.990) | n.d. | n.d. |
-| 18 Mai 1152 : Mariage d’Aliénor d’Aquitaine | Montmirail | **1** : (547753.292 ; 6543396.378) | **2** : (542903.207 ; 6786392.345)<br>(547753.292 ; 6543396.378) | n.d. | n.d. |
+| 18 Mai 1152 : Mariage d’Aliénor d’Aquitaine | Montmirail | **1** : (547753.292 ; 6543396.378) | **2** : (542903.207 ; 6786392.345)<br>(547753.292 ; 6543396.378) | 237,088 | 10,954 |
 
 ## Répartition de l’admissibilité et des angles
 
@@ -234,7 +234,7 @@ Chaque observation est une configuration A/droite horaire, donc deux intersectio
 
 **Donon perd sa couverture : 17,126 → 21,112 km.** Mirebeau recule de 4,804 km tout en restant couvert ; Paris, Solesmes, Vézelay 1214 et Beaufort reculent aussi sans perdre la couverture. 3RDV et Pic du Midi restent hors rayon et reculent davantage. Compiègne est inchangée à la précision géométrique, pas classée artificiellement en dégradation.
 
-Pour rendre les faux positifs possibles vérifiables, voici les **34 centres géométriquement nouveaux** situés au-delà de 20 km du lieu de leur scénario. Ce classement évalue la concordance avec le lieu visé, sans prétendre disposer d’une vérité externe sur les solutions. Les 23 centres nouveaux non géoréférencés restent non classés.
+Pour rendre les faux positifs possibles vérifiables, voici les **34 centres géométriquement nouveaux** situés au-delà de 20 km du lieu de leur scénario. Ce classement évalue la concordance avec le lieu visé, sans prétendre disposer d’une vérité externe sur les solutions. Les 22 centres nouveaux non géoréférencés restent non classés.
 
 | Événement | Scénario | Centre P (m L93) | Distance au lieu (km) |
 |---|---|---|---:|
@@ -293,9 +293,10 @@ Les sept cas B absent sont maintenus conformément à la mission, et signalés d
 - Suite complète : `python -m pytest -q --tb=short` — **890 réussites en 243,76 s**.
 - 22 nouveaux cas : angles 0°, quasi nuls, 5/10/15/30/45/60/90/135/180°, projection orthogonale oblique, limite 30 km et dépassement millimétrique, C très lointain, absence de B/C, sélection du B proche, inversion des directions, direction nulle refusée, pipeline réel avec calibration, informations d’affichage et accès historique.
 - Les tests historiques de convergence, les golden, les heures nationales et les substitutions Clef/Clef 2 restent exécutés. Aucun JSON golden ni scénario n’est modifié.
+- Complément Montmirail : rechargement indépendant du scénario, transformation du point fourni en Lambert-93, vérification des deux listes de centres inchangées, des distances 237,088 / 10,954 km, du repli P = M avec B absent et des statistiques corrigées (16 → 18 couvertures sur 24 références). Seul ce rapport est modifié ; la suite complète ci-dessus n’est pas relancée pour ce complément documentaire.
 
 ## Recommandation
 
-**Ajuster et poursuivre l’évaluation avant toute adoption définitive.** Cette expérience mérite d’être conservée accessible : Lombrives et Lampouy se rapprochent nettement, Loches et La Ferté Alais sont retrouvées, les petits angles restent numériquement stables et Carnac/Beaufort restent couverts. Mais le gain net de couverture n’est que d’un scénario, Donon est perdu et les centres éloignés restent nombreux. Le cas aigu attendu de Montmirail n’est pas reproduit et sa référence manque. Ces limites empêchent de recommander un remplacement définitif validé.
+**Ajuster et poursuivre l’évaluation avant toute adoption définitive.** Cette expérience mérite d’être conservée accessible : Lombrives et Lampouy se rapprochent nettement, Loches, La Ferté Alais et Montmirail sont retrouvées, les petits angles restent numériquement stables et Carnac/Beaufort restent couverts. Mais le gain net de couverture n’est que de deux scénarios, Donon est perdu et les centres éloignés restent nombreux. Montmirail est couvert grâce au repli sur M quand B manque ; le cas aigu attendu n’est pas reproduit. Ces limites empêchent de recommander un remplacement définitif validé.
 
 La méthode est activée à titre expérimental comme demandé ; l’ancienne reste appelable pour comparaison et retour immédiat par l’appel `methode="historique"`. **Aucun ajustement de seuil, poids, date ou scénario n’est réalisé après observation.** Toute évolution ultérieure nécessite une nouvelle expérience explicitement définie.
