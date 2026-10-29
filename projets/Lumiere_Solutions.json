@@ -124,8 +124,8 @@
     ]
   },
   "rules": {},
-  "active_segment": "15 Juin 1066 : Guillaume le conquérant",
-  "active_scenario": "Mont Saint Michel",
+  "active_segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+  "active_scenario": "Soulac",
   "segments": [
     {
       "segment": "15 Aout 778 : Bataille de Roncevaux",
@@ -386,7 +386,7 @@
             },
             "soleil": {
               "stylet": "Saint-Valentin",
-              "choixHeure": "Même heure",
+              "choixHeure": "Symétrique",
               "sourceHeure": "Stylet"
             },
             "stylet": {
@@ -457,7 +457,7 @@
           "solution": true,
           "parameters": {
             "observation": {
-              "lieuObservation": "Cherbourg"
+              "lieuObservation": "Lampouy"
             },
             "heuredate": {
               "choixCalendrier": "Standard",
@@ -466,7 +466,7 @@
             },
             "soleil": {
               "stylet": "Loudun",
-              "choixHeure": "Symétrique",
+              "choixHeure": "Même heure",
               "sourceHeure": "Stylet"
             },
             "stylet": {
