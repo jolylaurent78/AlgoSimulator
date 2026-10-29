@@ -752,6 +752,8 @@ def test_ligne_horaire_final_conserve_point_lambert_azimut_et_objets_habilles(ca
     class ReferencesFictives(dict):
         def __init__(self):
             super().__init__(notes)
+            self.referentiel = SimpleNamespace(moteur=SimpleNamespace(
+                directionPourHeure=lambda _: SimpleNamespace(azimut=180.0, jd_ut1=0.0)))
             self.par_note = {}
             for note, valeurs in notes.items():
                 heure = HeureMoyenneLocale.depuisTexte(valeurs["HeureLocale"] + ":00")

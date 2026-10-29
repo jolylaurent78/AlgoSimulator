@@ -472,14 +472,15 @@ class LigneHoraireFinal(ModuleAlgo):
         self.choixCalendrier = "Standard"
         self.lettreChoix = ""
         self.choixHeure = "="
-        self.azimutMidiLocale = None
+        self._azimutMidiReference = None
+        self._dateMidiReferenceUT1 = None
+        self._azimutMidiLampouy = None
 
         self.heureLocale = ""
         self.listeCandidatsHeure = []
         self.lignesHorairesReference = []
         self.noteHoraire = None
         self.heureLocaleSecondes = None
-        self.dateMidiUT1 = None
         self.sensCarte = "Endroit"
 
     def setup(self):
@@ -504,13 +505,16 @@ class LigneHoraireFinal(ModuleAlgo):
         self.heureLocale = heure_am.toString()
         self.heureLocaleSecondes = heure_am.secondes
 
-        # On calcule l'écart d'azimut entre Midi solaire et Midi locale à Carnac
-        coordObs = villes_dict["Carnac"].getCoordonneesGPS()
-        (lat, lon) = coordObs
-        # On calcule l'heure de Midi solaire et l'écart d'azimut
-        contexte = ContexteObservation("Carnac", lat, lon, self.dateSegmentDataset)
-        self.dateMidiUT1 = contexte.versUT1(HeureMoyenneLocale(12 * 3600))
-        _, self.azimutMidiLocale = positionSoleil(coordObs, self.dateMidiUT1)
+        # Même contexte que les directions nationales : Carnac, 15/08/1066 julien.
+        midi = self.sentinelleLumiere.referentiel.moteur.directionPourHeure(HeureMoyenneLocale(12 * 3600))
+        self._azimutMidiReference = midi.azimut
+        self._dateMidiReferenceUT1 = midi.jd_ut1
+        self._azimutMidiLampouy = None
+        if self.dateDataset == "18/05/1152":
+            # Lampouy garde ses azimuts/heures historiques et son propre contexte.
+            contexte = ContexteObservation("Carnac", *villes_dict["Carnac"].getCoordonneesGPS(), "20/08/1152")
+            _, self._azimutMidiLampouy = positionSoleil(
+                contexte.coordonnees, contexte.versUT1(HeureMoyenneLocale(12 * 3600)))
 
         # On crée les lignes horaires
         self.listeLigneHoraire = []
@@ -525,8 +529,6 @@ class LigneHoraireFinal(ModuleAlgo):
         for note in tableauNotes:
             # L'axe du stylet est déjà un angle image. Aucune conversion
             # Lambert ni substitution de l'axe national n'a lieu ici.
-            deltaAzimutMidiLocale = 180 - self.azimutMidiLocale
-            deltaAzimutMidiLocale = deltaAzimutMidiLocale if self.sensCarte == "Endroit" else -deltaAzimutMidiLocale
             candidat = note == self.noteHoraire  # identité du repère, pas son heure arrondie
             for ampm in ("AM", "PM"):
                 heure = self.sentinelleLumiere.heurePourNote(note, ampm)
@@ -540,7 +542,10 @@ class LigneHoraireFinal(ModuleAlgo):
                     azimut = direction.azimut
                     repere = ref.identifiant
                     branche = "directe" if direction is ref.directe else "miroir"
-                ecart = azimut - 180 + deltaAzimutMidiLocale
+                midi_reference = self._azimutMidiLampouy if note == "L" else self._azimutMidiReference
+                ecart = azimut - midi_reference
+                if self.sensCarte == "Envers":
+                    ecart = -ecart
                 ligne = LigneAzimut(self.pointBase, self.azimutMidiStylet + ecart)
                 metadata = LigneHoraireReference(note, repere, branche, ampm, heure, azimut, ecart, candidat, ligne)
                 self.lignesHorairesReference.append(metadata)

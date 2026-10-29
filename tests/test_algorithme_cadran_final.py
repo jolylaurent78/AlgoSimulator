@@ -285,13 +285,14 @@ def test_ligne_horaire_final_regles_et_sens_azimut(monkeypatch, ampm, calendrier
     assert module.getValeursSensCarte() == ["Endroit", "Envers"]
     assert module._regleSensCarte() == sens_attendu
     assert module._regleChoixCalendrier() == calendrier_attendu
-    assert module.azimutMidiLocale == pytest.approx(177.91)
+    midi = module.sentinelleLumiere.referentiel.moteur.directionPourHeure(HeureMoyenneLocale(43200))
+    assert module._azimutMidiReference == midi.azimut
     assert len(module.listeLigneHoraire) == 16
     assert module.listeCandidatsHeure[0][0] == "09:43:00"
     assert module.listeCandidatsHeure[1][0] == "14:21:11"
     premier_delta = module.listeLigneHoraire[0][1]
     azimut = module.sentinelleLumiere.directionPourNote("C", "AM").azimut
-    assert premier_delta == pytest.approx(azimut - 180 + (2.09 if sens_attendu == "Endroit" else -2.09))
+    assert premier_delta == pytest.approx((azimut - midi.azimut) * (1 if sens_attendu == "Endroit" else -1))
 
 
 class PointCandidatFictif:

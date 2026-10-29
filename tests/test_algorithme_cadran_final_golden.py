@@ -88,7 +88,14 @@ def test_chargement_golden_lac_tremelin_restitue_le_pipeline_cadran_final_reel()
         ombre.heureLocale,
         ombre.sensCarte,
     ) == ("Standard", "C", "=", "09:43:00", "Endroit")
-    assert ombre.azimutMidiLocale == pytest.approx(177.91, abs=0.01)
+    ctx_ref = lumiere.sentinelle.referentiel.contexte
+    jd_midi = ctx_ref.versUT1(HeureMoyenneLocale(43200))
+    assert ombre._dateMidiReferenceUT1 == float(jd_midi)
+    assert ombre._azimutMidiReference == pytest.approx(positionSoleil(ctx_ref.coordonnees, jd_midi)[1])
+    ligne_midi = next(r for r in ombre.lignesHorairesReference if r.note == "G" and r.ampm == "AM")
+    assert ligne_midi.ecart_image == 0
+    from src.affichage_objets import PointGraphique
+    assert PointGraphique(villes_dict["Bourges"]).distanceLigne(ligne_midi.ligne) < 1e-8
     assert [heure for heure, _ in ombre.listeCandidatsHeure] == ["09:43:00", "14:21:11"]
     objets_ombre = ombre.construireRepresentationCarte()
     assert [objet.getPrintLabel() for objet in objets_ombre] == [f"{r.note} {r.branche} {r.heure_locale.toString()}" for r in ombre.lignesHorairesReference]
@@ -104,5 +111,5 @@ def test_chargement_golden_lac_tremelin_restitue_le_pipeline_cadran_final_reel()
     assert all(len(placement.text.split()[-1]) == 8 for placement in placements)
     candidats = modules["candidat"].construireRepresentationCarte()
     assert len(candidats) == 1
-    assert candidats[0].pointCentre.coordonneesLambert() == pytest.approx((326990.526, 6788874.563), abs=.001)
+    assert candidats[0].pointCentre.coordonneesLambert() == pytest.approx((319918.185, 6787297.401), abs=.001)
     assert scenario.solutionScenario is True

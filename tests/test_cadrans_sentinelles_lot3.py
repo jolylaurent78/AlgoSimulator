@@ -298,14 +298,15 @@ def test_bases_reelles_conservent_les_criteres_geometriques():
         "Metz": [],
         "Chateau Gaillard": [],
         "Domremy": [(895978.733016, 6813738.873863)],
-        "Fontevraud": [],
+        # Valeurs du projet mis à jour par b5f3524, avant le correctif des ombres.
+        "Fontevraud": [(485287.501133, 6693988.666879)],
         "Aléria": [(852694.661063, 6470829.982993), (1203409.397248, 6079766.537974)],
         "Rouen": [],
         "St Michael's Mount": [],
         "Chalus": [(548079.690644, 6508194.248413)],
         "Pont de Noirmoutiers": [(311417.214003, 6642264.743463), (988498.335152, 6626489.521880)],
-        "Reims": [],
-        "Saint Cyr Coetquidan": [],
+        "Reims": [(786717.909090, 6899512.556359)],
+        "Saint Cyr Coetquidan": [(800533.760391, 6656262.036723), (244536.978371, 6717990.495558)],
     }
     verifies = set()
     for scenarios in moteur._scenarios.values():
@@ -354,21 +355,20 @@ def test_lignes_finales_identite_branches_axe_image_et_candidats(references, not
     o.calculer()
     assert len(o.lignesHorairesReference) == 16
     assert len(o.listeCandidatsHeure) == 2
-    midi = contexte("Carnac", "25/07/778")
+    midi = references.referentiel.contexte
     jd = midi.versUT1(HeureMoyenneLocale(43200))
     _, az = positionSoleil(midi.coordonnees, jd)
-    assert float(o.dateMidiUT1) == float(jd)
-    assert o.azimutMidiLocale == pytest.approx(az)
+    assert float(o._dateMidiReferenceUT1) == float(jd)
+    assert o._azimutMidiReference == pytest.approx(az)
     assert az != pytest.approx(180)
     assert az != pytest.approx(125.371)
-    correction = (180 - az) * (1 if sens == "Endroit" else -1)
     for r in o.lignesHorairesReference:
         d = references.directionPourNote(r.note, r.ampm)
         ref = references.par_note[r.note]
         assert r.branche == ("directe" if d is ref.directe else "miroir")
         assert r.heure_locale.secondes == d.heure_locale.secondes
         assert r.azimut_solaire == d.azimut
-        assert r.ecart_image == pytest.approx(d.azimut - 180 + correction)
+        assert r.ecart_image == pytest.approx((d.azimut - az) * (1 if sens == "Endroit" else -1))
         assert r.ligne.azimut_deg == pytest.approx(o.azimutMidiStylet + r.ecart_image)
         assert r.candidat == (r.note == note)
     objets = o.construireRepresentationCarte()
