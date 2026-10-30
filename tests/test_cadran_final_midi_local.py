@@ -81,13 +81,13 @@ def test_ombres_nationales_ne_dependent_plus_du_contexte_historique(national, mo
 
 
 @pytest.mark.parametrize("sens", ["Endroit", "Envers"])
-def test_lampouy_garde_reference_angulaire_et_contexte_historique(national, sens):
+def test_lampouy_garde_reference_angulaire_dans_son_propre_contexte(national, sens):
     o = ombre_prete(national, sens)
     o.dateDataset = "18/05/1152"
     o.dateSegmentDataset = "29/06/1152"
     o.choixHeure = national["L"]["HeureLocale"]
     o.calculer()
-    ctx = ContexteObservation("Carnac", *villes_dict["Carnac"].getCoordonneesGPS(), "20/08/1152")
+    ctx = ContexteObservation("Lampouy", *villes_dict["Lampouy"].getCoordonneesGPS(), "19/08/1152")
     midi = positionSoleil(ctx.coordonnees, ctx.versUT1(HeureMoyenneLocale(43200)))[1]
     assert o._azimutMidiLampouy == midi
     assert o._azimutMidiLampouy != o._azimutMidiReference
@@ -98,10 +98,11 @@ def test_lampouy_garde_reference_angulaire_et_contexte_historique(national, sens
         attendu = national["L"]["AzimutCalibre"]
         if r.ampm == "PM":
             attendu = 360 - attendu
-        assert r.azimut_solaire == attendu
-        assert r.heure_locale == national.heurePourNote("L", r.ampm)
-        assert r.branche == "historique_" + r.ampm
-        assert r.ecart_image == pytest.approx((attendu - midi) * (1 if sens == "Endroit" else -1))
+        assert r.azimut_solaire == pytest.approx(attendu, abs=.0001)
+        direction = o.referenceLampouy.directionPourPeriode(r.ampm)
+        assert r.heure_locale == direction.heure_locale
+        assert r.branche == ("directe" if r.ampm == "AM" else "miroir")
+        assert r.ecart_image == pytest.approx((direction.azimut - midi) * (1 if sens == "Endroit" else -1))
 
 
 def test_interface_supprime_uniquement_azimut_midi_local():

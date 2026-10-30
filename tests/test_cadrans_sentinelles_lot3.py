@@ -454,7 +454,7 @@ def test_identite_candidate_ne_depend_pas_de_chaines_arrondies(references):
 
 
 @pytest.mark.parametrize("ampm", ["AM", "PM"])
-def test_lampouy_reste_angulaire_et_temporellement_historique(references, monkeypatch, ampm):
+def test_lampouy_base_historique_et_final_calibre_independamment(references, monkeypatch, ampm):
     h = cercle_pret(references)
     h.dateDataset = "18/05/1152"
     h.heureAMPM = ampm
@@ -471,12 +471,17 @@ def test_lampouy_reste_angulaire_et_temporellement_historique(references, monkey
     assert h.heureSentinelle == heure_precedente
     assert h.heureSentinelleSecondes == secondes_precedentes
     l = lumiere_prete(references)
+    l.dateDataset = "18/05/1152"
+    l.dateSegmentDataset = "19/08/1152"
     l.heureAMPM = ampm
     l.choixHeure = references['L']['HeureLocale']
     l.calculer()
-    ancienne = final.convertirHeureLocaleVersUTC(references.heurePourNote("L", ampm).toString(), villes_dict['Roncevaux'].getCoordonneesGPS()[1])
-    assert float(l.dateObservationUT1) == float(MyJulianDate.fromString("25/07/778", ancienne))
-    assert l.brancheReference == "historique_" + ampm
+    direction = l.referenceLampouy.directionPourPeriode(ampm)
+    assert l.referenceLampouy.contexte.lieu == "Lampouy"
+    assert l.referenceLampouy.contexte.date == "19/08/1152"
+    assert l.heureLocaleSecondes == direction.heure_locale.secondes
+    assert float(l.dateObservationUT1) == float(contexte("Roncevaux", "19/08/1152").versUT1(direction.heure_locale))
+    assert l.brancheReference == ("directe" if ampm == "AM" else "miroir")
     o = ombre_prete(references)
     o.dateDataset = "18/05/1152"
     o.choixHeure = references['L']['HeureLocale']

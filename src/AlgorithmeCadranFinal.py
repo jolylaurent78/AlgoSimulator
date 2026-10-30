@@ -7,6 +7,7 @@ from src.ListeSegmentsDataSet import ListeSegmentsDataSet
 from src.Sentinelle import LieuxObservation
 from src.CadranNationalSentinelles import SentinelleNationale as Sentinelle
 from src.ReferentielSentinelles import HeureMoyenneLocale, ContexteObservation
+from src.ReferentielLampouyFinal import CHOIX_LAMPOUY, ReferentielLampouyFinal
 
 # Librairie calcul astronomique
 from src.calculAstronomique import positionSoleil
@@ -280,8 +281,7 @@ class LumiereFinal(ModuleAlgo):
     def getValeursChoixHeure(self):
         list = ["=", "+2", "-2", "Clef", "Clef 2", "11:00"]
         if self.dateDataset == "18/05/1152":
-            heureLampouy = self.sentinelle["L"]["HeureLocale"]
-            list.append(heureLampouy)
+            list.append(CHOIX_LAMPOUY)
         return list
 
     def getValeursHeureAMPM(self):
@@ -324,6 +324,7 @@ class LumiereFinal(ModuleAlgo):
         self.brancheReference = None
         self.directionReference = None
         self.horaireLampouy = False
+        self.referenceLampouy = None
         self.azimut = None
         self.hauteur = None
         self.deltaMidi = None
@@ -346,27 +347,28 @@ class LumiereFinal(ModuleAlgo):
             choixNote = "J"
         elif self.choixHeure in ("=", "+2", "-2", "Clef", "Clef 2"):
             choixNote = noteAvecSubstitutionCadranFinal(self.lettreChoix, self.choixHeure)
-        elif self.choixHeure == self.sentinelle["L"]["HeureLocale"]:
+        elif self.choixHeure == CHOIX_LAMPOUY:
             choixNote = "L"
         else:
             raise ValueError(f"Heure inconnue : {self.choixHeure}")
 
         self.noteHoraire = choixNote
         self.horaireLampouy = choixNote == "L"
-        heure = self.sentinelle.heurePourNote(choixNote, self.heureAMPM)
-        self.heureLocale = heure.toString()
-        self.heureLocaleSecondes = heure.secondes
+        self.referenceLampouy = None
         if self.horaireLampouy:
-            self.directionReference = None
-            self.brancheReference = "historique_" + self.heureAMPM
-            self.heureUTC = convertirHeureLocaleVersUTC(self.heureLocale, lon)
-            self.dateObservationUT1 = MyJulianDate.fromString(self.dateSegmentDataset, self.heureUTC)
+            self.referenceLampouy = ReferentielLampouyFinal.charger()
+            self.directionReference = self.referenceLampouy.directionPourPeriode(self.heureAMPM)
+            heure = self.directionReference.heure_locale
+            self.brancheReference = "directe" if self.directionReference is self.referenceLampouy.directe else "miroir"
         else:
+            heure = self.sentinelle.heurePourNote(choixNote, self.heureAMPM)
             self.directionReference = self.sentinelle.directionPourNote(choixNote, self.heureAMPM)
             self.brancheReference = ("directe" if self.directionReference is self.sentinelle.par_note[choixNote].directe else "miroir")
-            contexte = ContexteObservation(self.lieuObservationSegment, lat, lon, self.dateSegmentDataset)
-            self.dateObservationUT1 = contexte.versUT1(heure)
-            self.heureUTC = HeureMoyenneLocale(((float(self.dateObservationUT1) + .5) % 1) * 86400).toString()
+        self.heureLocale = heure.toString()
+        self.heureLocaleSecondes = heure.secondes
+        contexte = ContexteObservation(self.lieuObservationSegment, lat, lon, self.dateSegmentDataset)
+        self.dateObservationUT1 = contexte.versUT1(heure)
+        self.heureUTC = HeureMoyenneLocale(((float(self.dateObservationUT1) + .5) % 1) * 86400).toString()
 
         # On calcule l'angle entre la droite de Midi Solaire et la droite Stylet - ST Cyr
         self.hauteur, self.azimut = positionSoleil(coordObs, self.dateObservationUT1)
@@ -407,6 +409,11 @@ class LumiereFinal(ModuleAlgo):
             )
         ligneLumiere2.setPrintLabel(self.heureLocale)
         listeObjets.append(ligneLumiere2)
+        if self.horaireLampouy:
+            for ligne in listeObjets:
+                ligne.setTooltips(ligne.tooltips + [
+                    f"Référence fixe : Lampouy, {self.referenceLampouy.contexte.date}, {self.brancheReference}",
+                    f"Azimut de calibration : {self.directionReference.azimut:.6f}°"])
         return listeObjets
 
 
@@ -443,8 +450,7 @@ class LigneHoraireFinal(ModuleAlgo):
     def getValeursChoixHeure(self):
         list = ["=", "+2", "-2", "Clef", "Clef 2", "11:00"]
         if self.dateDataset == "18/05/1152":
-            heureLampouy = self.sentinelleLumiere["L"]["HeureLocale"]
-            list.append(heureLampouy)
+            list.append(CHOIX_LAMPOUY)
         return list
 
     def getValeursSensCarte(self):
@@ -488,6 +494,7 @@ class LigneHoraireFinal(ModuleAlgo):
         self._azimutMidiReference = None
         self._dateMidiReferenceUT1 = None
         self._azimutMidiLampouy = None
+        self.referenceLampouy = None
 
         self.heureLocale = ""
         self.listeCandidatsHeure = []
@@ -508,11 +515,15 @@ class LigneHoraireFinal(ModuleAlgo):
             self.noteHoraire = "J"
         elif self.choixHeure in ("=", "+2", "-2", "Clef", "Clef 2"):
             self.noteHoraire = noteAvecSubstitutionCadranFinal(self.lettreChoix, self.choixHeure)
-        elif self.choixHeure == self.sentinelleLumiere["L"]["HeureLocale"]:
+        elif self.choixHeure == CHOIX_LAMPOUY:
             self.noteHoraire = "L"
         else:
             raise ValueError(f"Heure inconnue : {self.choixHeure}")
-        heure_am = self.sentinelleLumiere.heurePourNote(self.noteHoraire, "AM")
+        self.referenceLampouy = None
+        if self.dateDataset == "18/05/1152" or self.noteHoraire == "L":
+            self.referenceLampouy = ReferentielLampouyFinal.charger()
+        heure_am = (self.referenceLampouy.directe.heure_locale if self.noteHoraire == "L" else
+                    self.sentinelleLumiere.heurePourNote(self.noteHoraire, "AM"))
         self.heureLocale = heure_am.toString()
         self.heureLocaleSecondes = heure_am.secondes
 
@@ -521,11 +532,8 @@ class LigneHoraireFinal(ModuleAlgo):
         self._azimutMidiReference = midi.azimut
         self._dateMidiReferenceUT1 = midi.jd_ut1
         self._azimutMidiLampouy = None
-        if self.dateDataset == "18/05/1152":
-            # Lampouy garde ses azimuts/heures historiques et son propre contexte.
-            contexte = ContexteObservation("Carnac", *villes_dict["Carnac"].getCoordonneesGPS(), "20/08/1152")
-            _, self._azimutMidiLampouy = positionSoleil(
-                contexte.coordonnees, contexte.versUT1(HeureMoyenneLocale(12 * 3600)))
+        if self.referenceLampouy is not None:
+            self._azimutMidiLampouy = self.referenceLampouy.azimut_midi
 
         # On crée les lignes horaires
         self.listeLigneHoraire = []
@@ -542,12 +550,13 @@ class LigneHoraireFinal(ModuleAlgo):
             # Lambert ni substitution de l'axe national n'a lieu ici.
             candidat = note == self.noteHoraire  # identité du repère, pas son heure arrondie
             for ampm in ("AM", "PM"):
-                heure = self.sentinelleLumiere.heurePourNote(note, ampm)
                 if note == "L":
-                    azimut = self.sentinelleLumiere["L"]["AzimutCalibre"]
-                    azimut = azimut if ampm == "AM" else (360 - azimut) % 360
-                    repere, branche = "Lampouy", "historique_" + ampm
+                    direction = self.referenceLampouy.directionPourPeriode(ampm)
+                    heure, azimut = direction.heure_locale, direction.azimut
+                    repere = "Lampouy"
+                    branche = "directe" if direction is self.referenceLampouy.directe else "miroir"
                 else:
+                    heure = self.sentinelleLumiere.heurePourNote(note, ampm)
                     ref = self.sentinelleLumiere.par_note[note]
                     direction = self.sentinelleLumiere.directionPourNote(note, ampm)
                     azimut = direction.azimut
@@ -582,6 +591,10 @@ class LigneHoraireFinal(ModuleAlgo):
             moment = "matin" if metadata.ampm == "AM" else "après-midi"
             ligneGraphique.setTooltips([legende, f"Branche solaire : {moment}",
                                        f"Azimut image : {self.azimutMidiStylet + metadata.ecart_image:.6f}°"])
+            if metadata.note == "L":
+                ligneGraphique.setTooltips(ligneGraphique.tooltips + [
+                    f"Référence fixe : Lampouy, {self.referenceLampouy.contexte.date}",
+                    f"Azimut de calibration : {metadata.azimut_solaire:.6f}°"])
             ligneGraphique.ajouterTag("level", "design")
             listeObjets.append(ligneGraphique)
         return listeObjets
