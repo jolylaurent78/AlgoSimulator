@@ -29,6 +29,7 @@ class ListeSegmentsDataSet(ModuleAlgo):
                     "DateSegment": row["DateSegment"],
                     "Date": row["Date"],
                     "Stylet": row["Stylet"],
+                    "SentinelleStylet": row.get("SentinelleStylet", ""),
                     "LettreDecl": row["LettreDecl"],
                     "Base1": row["Base1"],
                     "Base2": row["Base2"],
@@ -40,6 +41,7 @@ class ListeSegmentsDataSet(ModuleAlgo):
         self.dateSegment = None
         self.lettreDecl = None
         self.stylet = None
+        self.sentinelleStylet = None
         self.base1 = None
         self.base2 = None
         self.extremite1 = None
@@ -67,6 +69,8 @@ class ListeSegmentsDataSet(ModuleAlgo):
             if cle.lower() == attribut.lower():
                 return val
 
+        if attribut.lower() == "sentinellestylet":
+            return ""  # Champ facultatif dans les anciens snapshots.
         raise ValueError(f"[Dataset] L’attribut '{attribut}' est introuvable dans les données du segment '{segment}'.")
 
     def calculer(self):
@@ -86,6 +90,7 @@ class ListeSegmentsDataSet(ModuleAlgo):
         self.date = infos["Date"]
         self.dateSegment = infos["DateSegment"]
         self.stylet = infos["Stylet"]
+        self.sentinelleStylet = infos.get("SentinelleStylet", "")
         self.lettreDecl = infos["LettreDecl"]
         self.base1 = infos["Base1"]
         self.base2 = infos["Base2"]

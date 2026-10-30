@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import csv
 import json
+import logging
 from collections import OrderedDict
 from pathlib import Path
 from typing import Any
@@ -259,6 +260,7 @@ def _construire_dataset_depuis_snapshot(dataset_json: Any) -> ListeSegmentsDataS
     dataset.dateSegment = None
     dataset.lettreDecl = None
     dataset.stylet = None
+    dataset.sentinelleStylet = None
     dataset.base1 = None
     dataset.base2 = None
     dataset.extremite1 = None
@@ -376,8 +378,9 @@ def chargerProjetJsonV1(
 ) -> tuple[AlgorithmeManager, LayerManager]:
     """Charge un projet PERSIST-V1 et retourne ``(moteurAlgo, layerManager)``.
 
-    Le moteur est construit avec le snapshot du dataset, jamais avec le CSV
-    courant. Les scÃ©narios JSON sont les seuls scÃ©narios persistants recrÃ©Ã©s.
+    Le snapshot reste autoritaire. Seules les affectations SentinelleStylet
+    manquantes des anciens projets BaseCadran sont complétées depuis le CSV.
+    Les scÃ©narios JSON sont les seuls scÃ©narios persistants recrÃ©Ã©s.
     """
     with Path(chemin).open("r", encoding="utf-8") as fichier:
         snapshot = json.load(fichier)
@@ -387,6 +390,18 @@ def chargerProjetJsonV1(
         Path("config") / f"{classe_algorithme.__name__}.csv"
     )
     dataset = _construire_dataset_depuis_snapshot(snapshot.get("dataset"))
+    if classe_algorithme is AlgorithmeBaseCadran:
+        manquants = {nom: infos for nom, infos in dataset.evenements.items() if "SentinelleStylet" not in infos}
+        if manquants:
+            try:
+                with Path("data/dataset.csv").open(encoding="utf-8", newline="") as fichier_csv:
+                    affectations = {r["Evènement"]: r.get("SentinelleStylet", "") for r in csv.DictReader(fichier_csv)}
+            except FileNotFoundError:
+                logging.getLogger(__name__).warning("CSV absent : affectations des anciens projets BaseCadran non complétées")
+            else:
+                for nom, infos in manquants.items():
+                    if nom in affectations:
+                        infos["SentinelleStylet"] = affectations[nom]
     if not isinstance(snapshot.get("segments"), list):
         raise ValueError("Projet JSON V1 invalide : 'segments' doit Ãªtre une liste.")
     if not isinstance(snapshot.get("rules"), dict):

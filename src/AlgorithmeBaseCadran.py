@@ -1,10 +1,12 @@
 from math import radians, tan
+import logging
+import re
 
 # Moteur Algo générique
 from src.AlgorithmeManager import ModuleAlgo, AlgorithmeManager
 from src.ListeSegmentsDataSet import ListeSegmentsDataSet
 from src.Sentinelle import LieuxObservation
-from src.CadranNationalSentinelles import SentinelleNationale as Sentinelle
+from src.CadranNationalSentinelles import SentinelleNationale as Sentinelle, SelectionHoraire
 from src.ReferentielSentinelles import HeureMoyenneLocale, ContexteObservation
 
 # Librairie calcul astronomique
@@ -87,6 +89,7 @@ class CercleHoraire(ModuleAlgo):
     def getEntreesModules(self):
         return ["segment.choixCalendrier",
                 "dataset.stylet",
+                "dataset.sentinelleStylet",
                 "dataset.date",
                 "segment.lettreChoix"]
 
@@ -107,6 +110,8 @@ class CercleHoraire(ModuleAlgo):
         # Variables input des autres modules
         self.choixCalendrierSegment = None
         self.styletDataset = None
+        self.sentinelleStyletDataset = ""
+        self.diagnosticAffectation = ""
         self.lettreChoixSegment = None
         self.dateDataset = None
 
@@ -142,7 +147,24 @@ class CercleHoraire(ModuleAlgo):
         self.pointStylet = PointGraphique(villes_dict[self.stylet])
         px, py = self.pointStylet.coordonneesPixelAbs()
 
-        self.selectionHoraire = self.sentinelle.rechercherLigneHoraire(px, py)
+        code = self.sentinelleStyletDataset
+        if code is None or code == "":
+            self.diagnosticAffectation = f"Stylet {self.stylet} sans SentinelleStylet : recherche automatique de compatibilité"
+            logging.getLogger(__name__).warning(self.diagnosticAffectation)
+            self.selectionHoraire = self.sentinelle.rechercherLigneHoraire(px, py)
+        else:
+            if not isinstance(code, str) or re.fullmatch(r"S[1-7]M?", code) is None:
+                raise ValueError(f"SentinelleStylet invalide pour {self.stylet} : {code!r} (attendu S1 à S7 ou S1M à S7M)")
+            ref = self.sentinelle.referentiel.get(code[:2])
+            branche = "miroir" if code.endswith("M") else "directe"
+            direction = self.sentinelle.directionPourNote(ref.note, branche)
+            ligne = self.sentinelle.afficherLigneHoraire(ref.note, branche, "construction")
+            distance = int(self.pointStylet.distanceLigne(ligne))
+            self.selectionHoraire = SelectionHoraire(
+                distance < 20, ref.identifiant, ref.note, branche, direction.branche,
+                direction.heure_locale, direction.azimut, ligne.orientation_grille,
+                ligne.getAzimutCarte(), distance)
+            self.diagnosticAffectation = f"Stylet {self.stylet} affecté explicitement à {code} ({ref.note}, {branche})"
         self.heureStylet = self.selectionHoraire.heure_locale.toString()
         self.heureStyletSecondes = self.selectionHoraire.heure_locale.secondes
         self.styletAMPM = self.selectionHoraire.ampm

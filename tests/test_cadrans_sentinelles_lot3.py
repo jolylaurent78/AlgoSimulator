@@ -295,18 +295,24 @@ def test_bases_reelles_conservent_les_criteres_geometriques():
     empreinte = sha256(fichier.read_bytes()).hexdigest()
     moteur, _ = chargerProjetJsonV1(fichier)
     attendus = {
+        "Saint Amour": [(888574.512428, 6594140.364372)],
+        "Rocamadour": [(583844.131423, 6399250.149704)],
+        "Gergovie": [(695227.735988, 6486010.239425)],
+        "Carignan": [],
+        "Ile d'Aix": [(377128.725772, 6539620.079491), (371660.686958, 6546823.649281)],
         "Metz": [],
         "Chateau Gaillard": [],
         "Domremy": [(895978.733016, 6813738.873863)],
-        # Valeurs du projet mis à jour par b5f3524, avant le correctif des ombres.
         "Fontevraud": [(485287.501133, 6693988.666879)],
-        "Aléria": [(852694.661063, 6470829.982993), (1203409.397248, 6079766.537974)],
         "Rouen": [],
-        "St Michael's Mount": [],
         "Chalus": [(548079.690644, 6508194.248413)],
         "Pont de Noirmoutiers": [(311417.214003, 6642264.743463), (988498.335152, 6626489.521880)],
         "Reims": [(786717.909090, 6899512.556359)],
-        "Saint Cyr Coetquidan": [(800533.760391, 6656262.036723), (244536.978371, 6717990.495558)],
+        "Bouvines": [(709697.984416, 7039227.428647)],
+        "Le Goulet": [(602578.048793, 6885749.080517)],
+        # S6M explicite, Standard -2 enregistré : F au lieu de G. Les cercles
+        # ne s'intersectent plus ; ne pas conserver artificiellement les deux candidats.
+        "Saint Cyr Coetquidan": [],
     }
     verifies = set()
     for scenarios in moteur._scenarios.values():
