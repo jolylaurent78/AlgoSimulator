@@ -75,6 +75,10 @@ class ResultatCandidatBase:
     contraintes: tuple | None = None
     rejet: str = ""
     partition: int | None = None
+    traitement: str = "ponderee"
+    cercle_non_secant: str | None = None
+    q: tuple | None = None
+    distance_aq: float | None = None
 
     @property
     def accepte(self):
@@ -148,22 +152,60 @@ def calculerCandidatBasePondere(a, b, horaire, cercle_distance, origine, directi
     return r
 
 
+def ecartDroiteCercle(origine, direction, cercle):
+    """Distance minimale droite/cercle en km, nulle si la droite est sécante."""
+    u = unitaire(direction)
+    return max(0.,abs(croix(soustraire(cercle.centre,origine),u))-cercle.rayon)/1000
+
+
+def calculerSecoursNonSecant(cercle, nom, horaire, cercle_distance, origine, direction):
+    """Milieu du plus court trajet cercle/partition, sans tangentes ni sommet C."""
+    u = unitaire(direction)
+    n = (-u[1],u[0])
+    delta = soustraire(cercle.centre,origine)
+    signe = delta[0]*n[0]+delta[1]*n[1]
+    q = tuple(cercle.centre[i]-signe*n[i] for i in (0,1))
+    r = ResultatCandidatBase(methode="secours_non_secant",traitement="secours_non_secant",
+                            cercle_non_secant=nom,q=q,segment="AQ")
+    if abs(signe) <= cercle.rayon + TOL_METRES:
+        r.rejet = "cercle sécant : secours non applicable"
+        return r
+    a = tuple(cercle.centre[i]-(1 if signe>0 else -1)*cercle.rayon*n[i] for i in (0,1))
+    r.a = a
+    r.distance_aq = r.d_min = (abs(signe)-cercle.rayon)/1000
+    if r.distance_aq > 30 + TOL_METRES/1000:
+        r.rejet = "écart AQ > 30 km"
+        return r
+    r.m = r.p = tuple((a[i]+q[i])/2 for i in (0,1))
+    r.contraintes = distancesContraintesBase(r.p,horaire,cercle_distance,origine,direction)
+    if not all(isfinite(d) and d <= 20 + TOL_METRES/1000 for d in r.contraintes):
+        r.rejet = "contrainte finale > 20 km"
+    return r
+
+
 def chercherCandidatsBasePonderes(horaire, cercle_distance, partitions):
     """Toutes les combinaisons ; diagnostics conservés, doublons retirés du rendu."""
     retenus, diagnostics = [], []
+
+    def enregistrer(r,index):
+        r.partition = index
+        if r.accepte:
+            if any(distance(r.p,g.p) <= DEDUP_METRES for g in retenus):
+                r.rejet = "doublon à 1 mm"
+            else:
+                retenus.append(r)
+        diagnostics.append(r)
+
     for index,(origine,direction) in enumerate(partitions):
         points_a = intersectionsDroiteCercle(origine,direction,horaire)
         points_b = intersectionsDroiteCercle(origine,direction,cercle_distance)
         if not points_a or not points_b:
-            diagnostics.append(ResultatCandidatBase(partition=index,rejet="partition sans intersection avec les deux cercles"))
+            for cercle,nom,points in ((horaire,"horaire",points_a),(cercle_distance,"distance",points_b)):
+                if not points:
+                    enregistrer(calculerSecoursNonSecant(cercle,nom,horaire,cercle_distance,origine,direction),index)
+            continue
         for a in points_a:
             for b in points_b:
                 r = calculerCandidatBasePondere(a,b,horaire,cercle_distance,origine,direction)
-                r.partition = index
-                if r.accepte:
-                    if any(distance(r.p,g.p) <= DEDUP_METRES for g in retenus):
-                        r.rejet = "doublon à 1 mm"
-                    else:
-                        retenus.append(r)
-                diagnostics.append(r)
+                enregistrer(r,index)
     return retenus,diagnostics

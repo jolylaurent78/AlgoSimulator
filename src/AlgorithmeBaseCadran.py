@@ -24,7 +24,7 @@ from src.data_loader import villes_dict
 # Gestion des layers graphiques
 from src.layerManager import LayerManager
 from src.carte_config import carteConfig
-from src.GeometrieCandidatsBase import CercleMetrique, ResultatCandidatBase, chercherCandidatsBasePonderes
+from src.GeometrieCandidatsBase import CercleMetrique, ResultatCandidatBase, chercherCandidatsBasePonderes, ecartDroiteCercle, TOL_METRES
 
 
 class AlgorithmeBaseCadran(AlgorithmeManager):
@@ -369,7 +369,11 @@ class Partition(ModuleAlgo):
         def filtrageLignePartition(cercle: CercleGraphique, lignePartition: LigneGraphique, note: str, azimut: float):
             listePts = cercle.intersectionLigne(lignePartition)
             # Si elle a des intersections, on la rajoute
-            if listePts != []:
+            # Le contrôle métrique évite qu'un arrondi du cache pixel élimine
+            # une ligne admissible à la limite des 30 km.
+            if listePts != [] or ecartDroiteCercle(
+                    carteConfig.pixels_to_lambert93(*lignePartition.pointReference),
+                    tuple(carteConfig.A_inv @ lignePartition.vecteur),cercleMetrique) <= 30 + TOL_METRES/1000:
                 self.listeLignesPartitions.append((lignePartition, note, azimut))
                 # Si elle est candidats, on al rajoute à la liste des lignes éligibles
                 if note == self.lettrePartition:
@@ -380,7 +384,8 @@ class Partition(ModuleAlgo):
         centre = cercleHeure.getCentre()
         rayon = cercleHeure.getRayonKm()
         # On crée un cercle de filtrage plus grand pour garder les lignes de partition qui frolent le cercle
-        cercleFiltrage = CercleGraphique(centre, rayon+20)
+        cercleFiltrage = CercleGraphique(centre, rayon+30)
+        cercleMetrique = CercleMetrique(centre.coordonneesLambert(),rayon*1000)
 
         # On initialise les 2 lignes de partitions pour le Sol
         for azimut in [self.azimutSoleil, 360 - self.azimutSoleil]:
@@ -668,6 +673,14 @@ class CandidatBase(ModuleAlgo):
                             f"P–cercle horaire : {afficher(g.contraintes[0])}",
                             f"P–cercle distance : {afficher(g.contraintes[1])}",
                             f"P–partition : {afficher(g.contraintes[2])}"]
+                if g.traitement == "secours_non_secant":
+                    tooltips = [f"Centre P (Lambert-93 m) : {g.p[0]:.3f}, {g.p[1]:.3f}",
+                                "Type : secours_non_secant", f"Cercle non sécant : {g.cercle_non_secant}",
+                                f"A (m) : {g.a[0]:.3f}, {g.a[1]:.3f}", f"Q (m) : {g.q[0]:.3f}, {g.q[1]:.3f}",
+                                f"AQ : {afficher(g.distance_aq)}", "Accepté : les trois contraintes sont à 20 km maximum",
+                                f"P–cercle horaire : {afficher(g.contraintes[0])}",
+                                f"P–cercle distance : {afficher(g.contraintes[1])}",
+                                f"P–partition : {afficher(g.contraintes[2])}"]
             cercleCandidat = CercleGraphique(
                 pt,
                 CandidatBase.RAYON_CANDIDAT,

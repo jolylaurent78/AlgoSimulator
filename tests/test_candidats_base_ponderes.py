@@ -130,11 +130,15 @@ def test_points_confondus_triangle_degenere_et_coordonnees_non_finies():
     with pytest.raises(ValueError):intersectionsDroiteCercle((float('nan'),0.),(1.,0.),CercleMetrique((0.,0.),1))
 
 
-def test_partition_sans_intersection_diagnostiquee():
+def test_partition_non_secante_secours_diagnostique_et_deduplique():
     c=CercleMetrique((0.,0.),1000.)
     retenus,diagnostics=chercherCandidatsBasePonderes(c,c,[((0.,5000.),(1.,0.))])
-    assert retenus==[]
-    assert 'sans intersection' in diagnostics[0].rejet
+    assert len(retenus)==1
+    assert retenus[0].traitement=='secours_non_secant'
+    assert retenus[0].p==(0.,3000.)
+    assert len(diagnostics)==2
+    assert {g.cercle_non_secant for g in diagnostics}=={'horaire','distance'}
+    assert 'doublon' in diagnostics[1].rejet
 
 
 def test_limite_triangle_tres_aigu_et_translation_lambert():
