@@ -181,7 +181,7 @@ def test_meridiens_affichage_activation_projection_et_masquage():
     for ligne, sens, signe in zip(lignes, ('Est', 'Ouest'), (1, -1)):
         attendu = longitude + signe * 10.25 / 240
         assert ligne.getPrintLabel() == f'Méridien {sens}'
-        assert any('10.250000 s' in t for t in ligne.tooltips)
+        assert 'Décalage horaire : 00:10' in ligne.tooltips
         assert carteConfig.lambert93_to_gps(ligne.x1_l93, ligne.y1_l93)[0] == pytest.approx(attendu)
         assert carteConfig.lambert93_to_gps(ligne.x2_l93, ligne.y2_l93)[0] == pytest.approx(attendu)
         # Un troisième point GPS du méridien appartient bien à la droite rendue.
@@ -214,3 +214,8 @@ def test_ancien_scenario_sans_meridiens_reste_desactive():
     index = next(i for i, r in enumerate(lignes) if r.get('Attribut') == 'sensCarte')
     assert lignes[index+1]['Attribut'] == 'afficherMeridiensHoraires'
     assert lignes[index+1]['Type'] == 'input_multiple'
+
+
+def test_format_decalage_meridiens_minutes_totales_secondes():
+    assert final.formaterDecalageHoraire(3600 + 41*60 + 57) == '101:57'
+    assert final.formaterDecalageHoraire(3599.6) == '60:00'

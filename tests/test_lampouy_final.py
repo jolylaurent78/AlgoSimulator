@@ -181,3 +181,23 @@ def test_selection_lampouy_reutilise_le_referentiel(monkeypatch):
     assert 'Lampouy' in l.getValeursChoixHeure() and '10:09' not in l.getValeursChoixHeure()
     o=final.LigneHoraireFinal.__new__(final.LigneHoraireFinal);o.dateDataset='18/05/1152'
     assert 'Lampouy' in o.getValeursChoixHeure() and '10:09' not in o.getValeursChoixHeure()
+
+
+def test_lampouy_relit_azimut_csv_et_recalcule_les_deux_heures(tmp_path,monkeypatch):
+    source=Path('data/sentinelle.csv').read_bytes()
+    dossier=tmp_path/'data';dossier.mkdir()
+    fichier=dossier/'sentinelle.csv';fichier.write_bytes(source)
+    monkeypatch.chdir(tmp_path)
+    avant=ReferentielLampouyFinal.charger()
+    contenu=fichier.read_text(encoding='utf-8')
+    modifie=contenu.replace('Lampouy,L,138.5,','Lampouy,L,138,')
+    assert modifie!=contenu
+    fichier.write_text(modifie,encoding='utf-8')
+    apres=ReferentielLampouyFinal.charger()
+    assert avant.directe.azimut==pytest.approx(138.5,abs=.0001)
+    assert apres.directe.azimut==pytest.approx(138.,abs=.0001)
+    assert apres.miroir.azimut==pytest.approx(222.,abs=.0001)
+    assert apres.contexte==avant.contexte
+    for ancienne,nouvelle in ((avant.directe,apres.directe),(avant.miroir,apres.miroir)):
+        assert nouvelle.heure_locale.secondes!=ancienne.heure_locale.secondes
+        assert nouvelle.heure_locale.toString()!=ancienne.heure_locale.toString()

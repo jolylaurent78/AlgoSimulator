@@ -12,6 +12,12 @@ from src.ReferentielLampouyFinal import CHOIX_LAMPOUY as CHOIX_LAMPOUY_HISTORIQU
 CHOIX_LAMPOUY = "Lampouy"
 
 
+def formaterDecalageHoraire(secondes):
+    """Minutes totales et secondes ; arrondi réservé à l'affichage."""
+    minutes, reste = divmod(int(secondes + .5), 60)
+    return f"{minutes:02d}:{reste:02d}"
+
+
 def longitudesMeridiensHoraires(longitude, secondes_lumiere, secondes_ombre):
     """Écart circulaire en secondes TML et méridiens normalisés sur [-180, 180[."""
     decalage = abs((secondes_lumiere - secondes_ombre + 43200) % 86400 - 43200)
@@ -611,7 +617,7 @@ class LigneHoraireFinal(ModuleAlgo):
                          for latitude in (0., 89.)]
             ligne = LigneEntreVilles(sud, nord, nom=f"Méridien {sens}", couleur=(125, 150, 125), epaisseur=1,
                 tooltips=[f"Longitude : {longitude_meridien:.8f}°",
-                          f"Décalage horaire : {decalage / 3600:.6f} h ({decalage:.6f} s)"],
+                          f"Décalage horaire : {formaterDecalageHoraire(decalage)}"],
                 tags={"level": "design"})
             ligne.setPrintLabel(f"Méridien {sens}")
             objets.append(ligne)
