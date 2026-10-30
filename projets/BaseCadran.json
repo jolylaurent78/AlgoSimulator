@@ -124,8 +124,8 @@
     ]
   },
   "rules": {},
-  "active_segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
-  "active_scenario": "Le Goulet",
+  "active_segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
+  "active_scenario": "Saint Cyr Coetquidan",
   "segments": [
     {
       "segment": "15 Aout 778 : Bataille de Roncevaux",
@@ -360,80 +360,6 @@
             ],
             "thickness": 1,
             "visible": true
-          }
-        },
-        {
-          "name": "St Michael's Mount",
-          "type": "utilisateur",
-          "segment": "20 Mars 1815 : Début des 100 jours",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "choixCalendrier": "Standard"
-            },
-            "cercleHoraire": {
-              "stylet": "Golfe-Juan",
-              "heureAMPM": "PM",
-              "heureSubstitution": "=",
-              "cercleAMPM": "AM"
-            },
-            "partition": {
-              "lieuObservation": "Bourges",
-              "P2M2": "=",
-              "typeSymetrie": "Flip vertical"
-            },
-            "cercleDistance": {
-              "centreCercle": "Stylet",
-              "P2M2": "-2",
-              "octave": "x2"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
-          "name": "Aléria",
-          "type": "utilisateur",
-          "segment": "20 Mars 1815 : Début des 100 jours",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "choixCalendrier": "Standard"
-            },
-            "cercleHoraire": {
-              "stylet": "Golfe-Juan",
-              "heureAMPM": "PM",
-              "heureSubstitution": "=",
-              "cercleAMPM": "AM"
-            },
-            "partition": {
-              "lieuObservation": "Bourges",
-              "P2M2": "+2",
-              "typeSymetrie": "Flip horizontal"
-            },
-            "cercleDistance": {
-              "centreCercle": "Stylet",
-              "P2M2": "=",
-              "octave": "/2"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
           }
         }
       ]

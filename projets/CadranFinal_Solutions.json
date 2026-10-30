@@ -124,8 +124,8 @@
     ]
   },
   "rules": {},
-  "active_segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
-  "active_scenario": "Thury sous Clermont",
+  "active_segment": "20 Mars 1815 : Début des 100 jours",
+  "active_scenario": "Portsmouth",
   "segments": [
     {
       "segment": "15 Aout 778 : Bataille de Roncevaux",
@@ -639,7 +639,7 @@
             "lumiere": {
               "choixCalendrier": "Standard",
               "choixHeure": "Clef",
-              "heureAMPM": "AM"
+              "heureAMPM": "PM"
             },
             "ombre": {
               "choixCalendrier": "Standard",
@@ -961,7 +961,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         },
         {
@@ -998,7 +998,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         },
         {
@@ -1383,7 +1383,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         },
         {
@@ -1472,18 +1472,18 @@
             "stylet": {
               "choixBase": "Base 1",
               "choixCalendrier": "Standard",
-              "P2M2": "+2",
+              "P2M2": "-2",
               "octave": "/2"
             },
             "lumiere": {
               "choixCalendrier": "Standard",
               "choixHeure": "Clef",
-              "heureAMPM": "AM"
+              "heureAMPM": "PM"
             },
             "ombre": {
               "choixCalendrier": "Standard",
               "choixHeure": "-2",
-              "sensCarte": "Envers"
+              "sensCarte": "Endroit"
             }
           },
           "cached_results": {},
@@ -1494,7 +1494,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         },
         {
