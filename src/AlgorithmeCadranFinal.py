@@ -11,6 +11,17 @@ from src.ReferentielLampouyFinal import CHOIX_LAMPOUY as CHOIX_LAMPOUY_HISTORIQU
 
 CHOIX_LAMPOUY = "Lampouy"
 
+
+def longitudesMeridiensHoraires(longitude, secondes_lumiere, secondes_ombre):
+    """Écart circulaire en secondes TML et méridiens normalisés sur [-180, 180[."""
+    decalage = abs((secondes_lumiere - secondes_ombre + 43200) % 86400 - 43200)
+    normaliser = lambda angle: (angle + 180) % 360 - 180
+    est, ouest = normaliser(longitude + decalage / 240), normaliser(longitude - decalage / 240)
+    meridiens = [("Est", est)]
+    if abs(normaliser(est - ouest)) > 1e-10:
+        meridiens.append(("Ouest", ouest))
+    return decalage, meridiens
+
 # Librairie calcul astronomique
 from src.calculAstronomique import positionSoleil
 from src.calculAstronomique import MyJulianDate, convertirHeureLocaleVersUTC
@@ -444,6 +455,7 @@ class LigneHoraireFinal(ModuleAlgo):
                 "lumiere.sentinelle",
                 "lumiere.heureAMPM",
                 "lumiere.choixCalendrier",
+                "lumiere.heureLocaleSecondes",
                 ]
 
     def getValeursChoixCalendrier(self):
@@ -457,6 +469,9 @@ class LigneHoraireFinal(ModuleAlgo):
 
     def getValeursSensCarte(self):
         return ["Endroit", "Envers"]
+
+    def getValeursAfficherMeridiensHoraires(self):
+        return ["Non", "Oui"]
 
     def getRegles(self):
         return [
@@ -488,6 +503,7 @@ class LigneHoraireFinal(ModuleAlgo):
         self.sentinelleLumiere = None
         self.heureAMPMLumiere = None
         self.choixCalendrierLumiere = ""
+        self.heureLocaleSecondesLumiere = None
 
         # calculé
         self.choixCalendrier = "Standard"
@@ -504,6 +520,7 @@ class LigneHoraireFinal(ModuleAlgo):
         self.noteHoraire = None
         self.heureLocaleSecondes = None
         self.sensCarte = "Endroit"
+        self.afficherMeridiensHoraires = "Non"
 
     def setup(self):
         self.pointBourges = PointGraphique(villes_dict["Bourges"])
@@ -578,6 +595,28 @@ class LigneHoraireFinal(ModuleAlgo):
     COULEUR_TRAIT_HEURE = (255, 193, 132)
     COULEUR_TRAIT_CANDIDAT = (164, 82, 0)
 
+    def construireMeridiensHoraires(self):
+        if (self.afficherMeridiensHoraires != "Oui" or self.heureLocaleSecondesLumiere is None
+                or self.heureLocaleSecondes is None):
+            return []
+        _, longitude = villes_dict[self.lieuObservationSegment].getCoordonneesGPS()
+        decalage, meridiens = longitudesMeridiensHoraires(
+            longitude, self.heureLocaleSecondesLumiere, self.heureLocaleSecondes)
+        objets = []
+        for sens, longitude_meridien in meridiens:
+            # En Lambert-93 (projection conique), un méridien est une droite.
+            # Deux points GPS définissent sa direction réelle ; la primitive
+            # existante étend et découpe ensuite cette droite aux bords de carte.
+            sud, nord = [PointGraphique("Méridien", *carteConfig.gps_to_lambert93(longitude_meridien, latitude))
+                         for latitude in (0., 89.)]
+            ligne = LigneEntreVilles(sud, nord, nom=f"Méridien {sens}", couleur=(125, 150, 125), epaisseur=1,
+                tooltips=[f"Longitude : {longitude_meridien:.8f}°",
+                          f"Décalage horaire : {decalage / 3600:.6f} h ({decalage:.6f} s)"],
+                tags={"level": "design"})
+            ligne.setPrintLabel(f"Méridien {sens}")
+            objets.append(ligne)
+        return objets
+
     def construireRepresentationCarte(self) -> list[ObjetGraphique]:
         listeObjets = []
 
@@ -599,6 +638,7 @@ class LigneHoraireFinal(ModuleAlgo):
                     f"Azimut de calibration : {metadata.azimut_solaire:.6f}°"])
             ligneGraphique.ajouterTag("level", "design")
             listeObjets.append(ligneGraphique)
+        listeObjets.extend(self.construireMeridiensHoraires())
         return listeObjets
 
 

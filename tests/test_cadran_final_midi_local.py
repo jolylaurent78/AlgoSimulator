@@ -112,7 +112,7 @@ def test_interface_supprime_uniquement_azimut_midi_local():
     ihm.attributsModulesAffichés = []
     lignes = ihm.parser_csv("config/AlgorithmeCadranFinal.csv")
     ombres = [r for r in lignes if r.get("Module") == "ombre"]
-    assert {r["Attribut"] for r in ombres} == {"choixCalendrier", "lettreChoix", "choixHeure", "heureLocale", "sensCarte"}
+    assert {r["Attribut"] for r in ombres} == {"choixCalendrier", "lettreChoix", "choixHeure", "heureLocale", "sensCarte", "afficherMeridiensHoraires"}
     assert all(r.get("Label") != "Az Midi local" for r in lignes)
     assert all(attr != "azimutMidiLocale" for _, attr, *_ in ihm.attributsModulesAffichés)
 
@@ -156,3 +156,61 @@ def test_fixture_778_candidat_verifie_par_triplet_geometrique():
     assert triplets_valides[0].coordonneesLambert() == pytest.approx((319918.185, 6787297.401), abs=.001)
     for attendu in triplets_valides + milieux_valides:
         assert sum(attendu.distance(centre) < 1e-8 for centre in centres) == 1
+
+
+def test_meridiens_conversion_heure_longitude_et_minuit():
+    delta, meridiens = final.longitudesMeridiensHoraires(2., 3600., 0.)
+    assert delta == 3600.
+    assert meridiens == [("Est", 17.), ("Ouest", -13.)]
+    assert final.longitudesMeridiensHoraires(179., 23.5*3600, .5*3600) == (3600., [("Est", -166.), ("Ouest", 164.)])
+    assert len(final.longitudesMeridiensHoraires(2., 0., 0.)[1]) == 1
+    assert len(final.longitudesMeridiensHoraires(2., 43200., 0.)[1]) == 1
+
+
+def test_meridiens_affichage_activation_projection_et_masquage():
+    from src.carte_config import carteConfig
+    o = final.LigneHoraireFinal()  # Sans construction de référentiel astronomique.
+    o.lieuObservationSegment = 'Carnac'
+    o.heureLocaleSecondesLumiere = 3610.25
+    o.heureLocaleSecondes = 3600.
+    assert o.construireRepresentationCarte() == []
+    o.afficherMeridiensHoraires = 'Oui'
+    lignes = o.construireRepresentationCarte()
+    assert len(lignes) == 2
+    longitude = villes_dict['Carnac'].getCoordonneesGPS()[1]
+    for ligne, sens, signe in zip(lignes, ('Est', 'Ouest'), (1, -1)):
+        attendu = longitude + signe * 10.25 / 240
+        assert ligne.getPrintLabel() == f'Méridien {sens}'
+        assert any('10.250000 s' in t for t in ligne.tooltips)
+        assert carteConfig.lambert93_to_gps(ligne.x1_l93, ligne.y1_l93)[0] == pytest.approx(attendu)
+        assert carteConfig.lambert93_to_gps(ligne.x2_l93, ligne.y2_l93)[0] == pytest.approx(attendu)
+        # Un troisième point GPS du méridien appartient bien à la droite rendue.
+        px = carteConfig.lambert93_to_pixels(*carteConfig.gps_to_lambert93(attendu, 47.))
+        assert ligne.distanceDepuis(*px) < 1e-6
+        assert ligne.lignePixelImage is not None
+    o.lieuObservationSegment = 'Bourges'
+    assert o.construireRepresentationCarte()[0].x1_l93 != lignes[0].x1_l93
+    o.heureLocaleSecondesLumiere = o.heureLocaleSecondes
+    assert len(o.construireRepresentationCarte()) == 1
+    o.afficherMeridiensHoraires = 'Non'
+    assert o.construireRepresentationCarte() == []
+
+
+def test_ancien_scenario_sans_meridiens_reste_desactive():
+    import csv
+    from types import SimpleNamespace
+    from src.ProjectPersistence import _restaurer_parametres_scenario, _snapshot_parametres_scenario
+    o = final.LigneHoraireFinal()
+    scenario = SimpleNamespace(nom='Ancien', modules={'ombre': o})
+    _restaurer_parametres_scenario(scenario, {'ombre': {'sensCarte': 'Endroit', 'choixHeure': '='}})
+    assert o.afficherMeridiensHoraires == 'Non'
+    assert o.getValeursAfficherMeridiensHoraires() == ['Non', 'Oui']
+    assert o.construireRepresentationCarte() == []
+    o.afficherMeridiensHoraires = 'Oui'
+    assert _snapshot_parametres_scenario(scenario, [('ombre', 'afficherMeridiensHoraires')]) == {
+        'ombre': {'afficherMeridiensHoraires': 'Oui'}}
+    with Path('config/AlgorithmeCadranFinal.csv').open(encoding='utf-8-sig') as fichier:
+        lignes = list(csv.DictReader(l for l in fichier if l.strip() and not l.startswith('#')))
+    index = next(i for i, r in enumerate(lignes) if r.get('Attribut') == 'sensCarte')
+    assert lignes[index+1]['Attribut'] == 'afficherMeridiensHoraires'
+    assert lignes[index+1]['Type'] == 'input_multiple'
