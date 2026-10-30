@@ -124,8 +124,8 @@
     ]
   },
   "rules": {},
-  "active_segment": "20 Mars 1815 : Début des 100 jours",
-  "active_scenario": "Portsmouth",
+  "active_segment": "12 Avril 1365 : Traité de Guérande",
+  "active_scenario": "Waterloo",
   "segments": [
     {
       "segment": "15 Aout 778 : Bataille de Roncevaux",
@@ -428,7 +428,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         },
         {
@@ -502,7 +502,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         }
       ]
@@ -775,43 +775,6 @@
           }
         },
         {
-          "name": "Waterloo (Bouvines)",
-          "type": "utilisateur",
-          "segment": "12 Avril 1365 : Traité de Guérande",
-          "solution": true,
-          "parameters": {
-            "segment": {
-              "lieuObservation": "Dieppe"
-            },
-            "stylet": {
-              "choixBase": "Base 1",
-              "choixCalendrier": "Standard",
-              "P2M2": "Clef",
-              "octave": "x4"
-            },
-            "lumiere": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "-2",
-              "heureAMPM": "AM"
-            },
-            "ombre": {
-              "choixCalendrier": "Standard",
-              "choixHeure": "=",
-              "sensCarte": "Envers"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
-        {
           "name": "Lons-le-Saunier",
           "type": "utilisateur",
           "segment": "12 Avril 1365 : Traité de Guérande",
@@ -872,6 +835,43 @@
               "choixCalendrier": "Standard",
               "choixHeure": "+2",
               "sensCarte": "Endroit"
+            }
+          },
+          "cached_results": {},
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Waterloo",
+          "type": "utilisateur",
+          "segment": "12 Avril 1365 : Traité de Guérande",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "lieuObservation": "Dieppe"
+            },
+            "stylet": {
+              "choixBase": "Base 1",
+              "choixCalendrier": "Standard",
+              "P2M2": "Clef",
+              "octave": "x4"
+            },
+            "lumiere": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "-2",
+              "heureAMPM": "AM"
+            },
+            "ombre": {
+              "choixCalendrier": "Standard",
+              "choixHeure": "=",
+              "sensCarte": "Envers"
             }
           },
           "cached_results": {},
