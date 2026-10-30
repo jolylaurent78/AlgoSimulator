@@ -13,10 +13,10 @@
         "DateSegment": "25/07/778",
         "Date": "15/08/778",
         "Stylet": "Roncevaux",
+        "SentinelleStylet": "S1",
         "LettreDecl": "F",
         "Base1": "Saint-Amour",
-        "Base2": "Rocamadour",
-        "SentinelleStylet": "S1"
+        "Base2": "Rocamadour"
       },
       {
         "event": "20 Mars 1815 : Début des 100 jours",
@@ -27,10 +27,10 @@
         "DateSegment": "28/05/1815",
         "Date": "20/03/1815",
         "Stylet": "Golfe-Juan",
+        "SentinelleStylet": "S5M",
         "LettreDecl": "E",
-        "Base1": "Aléria",
-        "Base2": "Île-d'Aix",
-        "SentinelleStylet": "S5M"
+        "Base1": "Rouen",
+        "Base2": "Île-d'Aix"
       },
       {
         "event": "30 Mai 1431 : Mort de Jeanne d’Arc",
@@ -41,10 +41,10 @@
         "DateSegment": "19/04/1431",
         "Date": "30/05/1431",
         "Stylet": "Sainte-Catherine-de-Fierbois",
-        "LettreDecl": "A",
+        "SentinelleStylet": "S6M",
+        "LettreDecl": "G",
         "Base1": "Domrémy",
-        "Base2": "Coetquidan",
-        "SentinelleStylet": "S6M"
+        "Base2": "Coetquidan"
       },
       {
         "event": "12 Avril 1365 : Traité de Guérande",
@@ -55,10 +55,10 @@
         "DateSegment": "08/08/1365",
         "Date": "12/04/1365",
         "Stylet": "Alise-Sainte-Reine",
+        "SentinelleStylet": "",
         "LettreDecl": "D",
         "Base1": "Bouvines",
-        "Base2": "Reims",
-        "SentinelleStylet": ""
+        "Base2": "Reims"
       },
       {
         "event": "27 Juillet 1214 : Bataille des Bouvines",
@@ -69,10 +69,10 @@
         "DateSegment": "29/03/1214",
         "Date": "27/07/1214",
         "Stylet": "Vouneuil-sur-Vienne",
+        "SentinelleStylet": "S5",
         "LettreDecl": "D",
         "Base1": "Metz",
-        "Base2": "Château-Gaillard",
-        "SentinelleStylet": "S5"
+        "Base2": "Château-Gaillard"
       },
       {
         "event": "15 Juin 1066 : Guillaume le conquérant",
@@ -83,10 +83,10 @@
         "DateSegment": "01/09/1066",
         "Date": "15/06/1066",
         "Stylet": "Nouaillé-Maupertuis",
+        "SentinelleStylet": "S6",
         "LettreDecl": "F",
         "Base1": "Gergovie",
-        "Base2": "Carignan",
-        "SentinelleStylet": "S6"
+        "Base2": "Carignan"
       },
       {
         "event": "19 Juillet 933 : Hommage de Guillaume Longue Epée",
@@ -94,13 +94,13 @@
         "Extremite1": "Dieppe",
         "MilieuSegment": "Angers",
         "Extremite2": "Hericourt",
-        "DateSegment": "16/05/933",
+        "DateSegment": "18/05/933",
         "Date": "19/07/933",
         "Stylet": "Saint-Valentin",
-        "LettreDecl": "G",
+        "SentinelleStylet": "S7M",
+        "LettreDecl": "F",
         "Base1": "Châlus",
-        "Base2": "Fontevraud",
-        "SentinelleStylet": "S7M"
+        "Base2": "Fontevraud"
       },
       {
         "event": "28 Septembre 1066: Débarquement de Guillaume le Conquérant",
@@ -111,10 +111,10 @@
         "DateSegment": "02/09/1066",
         "Date": "28/09/1066",
         "Stylet": "3RDV",
+        "SentinelleStylet": "",
         "LettreDecl": "D",
         "Base1": "",
-        "Base2": "",
-        "SentinelleStylet": ""
+        "Base2": ""
       },
       {
         "event": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
@@ -122,19 +122,19 @@
         "Extremite1": "Carnac",
         "MilieuSegment": "Beaufort-en-Vallée",
         "Extremite2": "Lampouy",
-        "DateSegment": "20/08/1152",
+        "DateSegment": "19/08/1152",
         "Date": "18/05/1152",
         "Stylet": "Loudun",
+        "SentinelleStylet": "S5M",
         "LettreDecl": "G",
         "Base1": "Le Goulet",
-        "Base2": "Pont de Noirmoutier",
-        "SentinelleStylet": "S5M"
+        "Base2": "Pont de Noirmoutier"
       }
     ]
   },
   "rules": {},
-  "active_segment": "30 Mai 1431 : Mort de Jeanne d’Arc",
-  "active_scenario": "Saint Cyr Coetquidan",
+  "active_segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+  "active_scenario": "Pont de Noirmoutiers",
   "segments": [
     {
       "segment": "15 Aout 778 : Bataille de Roncevaux",
@@ -187,7 +187,7 @@
             },
             "cercleHoraire": {
               "stylet": "Roncevaux",
-              "heureAMPM": "AM",
+              "heureAMPM": "PM",
               "heureSubstitution": "=",
               "cercleAMPM": "AM"
             },
@@ -240,7 +240,7 @@
             },
             "cercleDistance": {
               "centreCercle": "Ouverture",
-              "P2M2": "+2",
+              "P2M2": "Clef",
               "octave": "x1"
             }
           },
@@ -252,7 +252,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         },
         {
@@ -289,7 +289,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         }
       ]
@@ -489,7 +489,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         },
         {
@@ -499,7 +499,7 @@
           "solution": true,
           "parameters": {
             "segment": {
-              "choixCalendrier": "Déclinaison"
+              "choixCalendrier": "Standard"
             },
             "cercleHoraire": {
               "stylet": "Sainte-Catherine-de-Fierbois",
@@ -509,12 +509,12 @@
             },
             "partition": {
               "lieuObservation": "Roncevaux",
-              "P2M2": "-2",
+              "P2M2": "Clef",
               "typeSymetrie": "Flip vertical"
             },
             "cercleDistance": {
               "centreCercle": "Ouverture",
-              "P2M2": "+2",
+              "P2M2": "=",
               "octave": "x2"
             }
           },
@@ -526,7 +526,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         }
       ]
@@ -568,7 +568,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         },
         {
@@ -605,7 +605,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         }
       ]
@@ -647,7 +647,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         },
         {
@@ -684,7 +684,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         }
       ]
@@ -708,7 +708,7 @@
               "cercleAMPM": "AM"
             },
             "partition": {
-              "lieuObservation": "Lampouy",
+              "lieuObservation": "Cherbourg",
               "P2M2": "-2",
               "typeSymetrie": "Flip horizontal"
             },
