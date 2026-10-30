@@ -14,7 +14,9 @@ from pathlib import Path
 from typing import Any
 
 from src.AlgorithmeBaseCadran import AlgorithmeBaseCadran
-from src.AlgorithmeCadranFinal import AlgorithmeCadranFinal
+from src.AlgorithmeCadranFinal import (
+    AlgorithmeCadranFinal, LumiereFinal, LigneHoraireFinal, CHOIX_LAMPOUY, CHOIX_LAMPOUY_HISTORIQUE,
+)
 from src.AlgorithmeLumiereStyletInitial import AlgorithmeLumiereStyletInitial
 from src.AlgorithmeManager import AlgorithmeManager, Scenario, TypeScenario
 from src.AlgorithmeSegment import AlgorithmeSegment
@@ -291,6 +293,9 @@ def _restaurer_parametres_scenario(scenario: Scenario, parametres: Any) -> None:
                 raise ValueError(
                     f"ScÃ©nario '{scenario.nom}' : attribut JSON '{module_id}.{attribut}' introuvable."
                 )
+            if (isinstance(module, (LumiereFinal, LigneHoraireFinal)) and attribut == "choixHeure"
+                    and valeur == CHOIX_LAMPOUY_HISTORIQUE):
+                valeur = CHOIX_LAMPOUY
             setattr(module, attribut, valeur)
 
 

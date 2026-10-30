@@ -6,7 +6,8 @@ import pytest
 
 import src.AlgorithmeCadranFinal as final
 from src.CadranNationalSentinelles import SentinelleNationale
-from src.ReferentielLampouyFinal import CHOIX_LAMPOUY, ReferentielLampouyFinal
+from src.AlgorithmeCadranFinal import CHOIX_LAMPOUY
+from src.ReferentielLampouyFinal import ReferentielLampouyFinal
 from src.ReferentielSentinelles import ContexteObservation
 from src.calculAstronomique import positionSoleil
 from src.data_loader import villes_dict
@@ -124,24 +125,59 @@ def test_ombres_labels_tooltips_et_observation_independante(reference,national):
     assert national._lampouy is None
 
 
-def test_projet_historique_10_09_charge_sauve_et_recharge(tmp_path):
-    from src.ProjectPersistence import chargerProjetJsonV1,sauvegarderProjetJsonV1
-    fichier=Path('projets/CadranFinal_Solutions.json')
-    empreinte=sha256(fichier.read_bytes()).hexdigest()
-    m,layers=chargerProjetJsonV1(fichier)
-    selectionnes=[(event,name,s) for event,ss in m._scenarios.items() for name,s in ss.items()
-                 if s.modules['lumiere'].choixHeure==CHOIX_LAMPOUY or s.modules['ombre'].choixHeure==CHOIX_LAMPOUY]
-    assert selectionnes
-    sortie=tmp_path/'compatibilite_lampouy.json'
-    sauvegarderProjetJsonV1(sortie,m,layers)
-    recharge,_=chargerProjetJsonV1(sortie)
-    for event,name,s in selectionnes:
-        for cle in ('lumiere','ombre'):
-            a=s.modules[cle];b=recharge.getScenario(name,event).modules[cle]
-            assert a.choixHeure==b.choixHeure
-            assert a.heureLocaleSecondes==b.heureLocaleSecondes
-            if a.choixHeure==CHOIX_LAMPOUY:
-                assert a.noteHoraire==b.noteHoraire=='L'
-                assert a.heureLocale!='10:09'
-                assert a.referenceLampouy==b.referenceLampouy
-    assert sha256(fichier.read_bytes()).hexdigest()==empreinte
+def test_ancien_choix_10_09_charge_comme_lampouy(tmp_path):
+    import json
+    from types import SimpleNamespace
+    from src.ProjectPersistence import _restaurer_parametres_scenario
+    modules={cle:classe.__new__(classe) for cle,classe in (
+        ('lumiere',final.LumiereFinal),('ombre',final.LigneHoraireFinal))}
+    modules['autre']=SimpleNamespace(choixHeure='=')
+    for module in modules.values():module.choixHeure='='
+    scenario=SimpleNamespace(nom='Ancien',modules=modules)
+    fichier=tmp_path/'ancien.json'
+    fichier.write_text(json.dumps({cle:{'choixHeure':'10:09'} for cle in modules}),encoding='utf-8')
+    avant=fichier.read_bytes()
+    _restaurer_parametres_scenario(scenario,json.loads(fichier.read_text(encoding='utf-8')))
+    assert modules['lumiere'].choixHeure==modules['ombre'].choixHeure=='Lampouy'
+    assert modules['autre'].choixHeure=='10:09'
+    assert fichier.read_bytes()==avant
+
+
+def test_nouveau_choix_sauvegarde_lampouy(tmp_path,monkeypatch):
+    import json
+    from types import SimpleNamespace
+    import src.ProjectPersistence as persistance
+    scenario=SimpleNamespace(nom='Nouveau',modules={
+        cle:SimpleNamespace(choixHeure='Lampouy') for cle in ('lumiere','ombre')})
+    # Exerce les primitives réelles d'extraction et d'écriture, sans calcul de projet.
+    monkeypatch.setattr(persistance,'construireSnapshotProjetJsonV1',lambda *args:
+        {'parameters':persistance._snapshot_parametres_scenario(scenario,
+            [('lumiere','choixHeure'),('ombre','choixHeure')])})
+    sortie=tmp_path/'nouveau.json'
+    persistance.sauvegarderProjetJsonV1(sortie,None,None)
+    params=json.loads(sortie.read_text(encoding='utf-8'))['parameters']
+    assert params=={'lumiere':{'choixHeure':'Lampouy'},'ombre':{'choixHeure':'Lampouy'}}
+
+
+def test_selection_lampouy_reutilise_le_referentiel(monkeypatch):
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+    from src.ReferentielSentinelles import HeureMoyenneLocale
+    direction=SimpleNamespace(heure_locale=HeureMoyenneLocale(36490.30073472659))
+    reference=SimpleNamespace(directe=direction,directionPourPeriode=Mock(return_value=direction))
+    charger=Mock(return_value=reference)
+    monkeypatch.setattr(final.ReferentielLampouyFinal,'charger',charger)
+    monkeypatch.setattr(final,'ContexteObservation',lambda *args:SimpleNamespace(versUT1=lambda heure:0.))
+    monkeypatch.setattr(final,'positionSoleil',Mock(return_value=(45.,138.5)))
+    l=final.LumiereFinal.__new__(final.LumiereFinal)
+    l.choixCalendrier='Standard';l.lettreDomSegment='C';l.lettreDeclDataset='F'
+    l.lieuObservationSegment='Lampouy';l.dateSegmentDataset='19/08/1152';l.dateDataset='18/05/1152'
+    l.choixHeure='Lampouy';l.heureAMPM='AM';l.hauteurStylet=1.
+    l.calculer()
+    charger.assert_called_once_with()
+    reference.directionPourPeriode.assert_called_once_with('AM')
+    assert l.noteHoraire=='L' and l.referenceLampouy is reference
+    assert l.heureLocaleSecondes==direction.heure_locale.secondes
+    assert 'Lampouy' in l.getValeursChoixHeure() and '10:09' not in l.getValeursChoixHeure()
+    o=final.LigneHoraireFinal.__new__(final.LigneHoraireFinal);o.dateDataset='18/05/1152'
+    assert 'Lampouy' in o.getValeursChoixHeure() and '10:09' not in o.getValeursChoixHeure()

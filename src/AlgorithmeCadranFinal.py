@@ -7,7 +7,9 @@ from src.ListeSegmentsDataSet import ListeSegmentsDataSet
 from src.Sentinelle import LieuxObservation
 from src.CadranNationalSentinelles import SentinelleNationale as Sentinelle
 from src.ReferentielSentinelles import HeureMoyenneLocale, ContexteObservation
-from src.ReferentielLampouyFinal import CHOIX_LAMPOUY, ReferentielLampouyFinal
+from src.ReferentielLampouyFinal import CHOIX_LAMPOUY as CHOIX_LAMPOUY_HISTORIQUE, ReferentielLampouyFinal
+
+CHOIX_LAMPOUY = "Lampouy"
 
 # Librairie calcul astronomique
 from src.calculAstronomique import positionSoleil
@@ -347,7 +349,7 @@ class LumiereFinal(ModuleAlgo):
             choixNote = "J"
         elif self.choixHeure in ("=", "+2", "-2", "Clef", "Clef 2"):
             choixNote = noteAvecSubstitutionCadranFinal(self.lettreChoix, self.choixHeure)
-        elif self.choixHeure == CHOIX_LAMPOUY:
+        elif self.choixHeure in (CHOIX_LAMPOUY, CHOIX_LAMPOUY_HISTORIQUE):
             choixNote = "L"
         else:
             raise ValueError(f"Heure inconnue : {self.choixHeure}")
@@ -515,7 +517,7 @@ class LigneHoraireFinal(ModuleAlgo):
             self.noteHoraire = "J"
         elif self.choixHeure in ("=", "+2", "-2", "Clef", "Clef 2"):
             self.noteHoraire = noteAvecSubstitutionCadranFinal(self.lettreChoix, self.choixHeure)
-        elif self.choixHeure == CHOIX_LAMPOUY:
+        elif self.choixHeure in (CHOIX_LAMPOUY, CHOIX_LAMPOUY_HISTORIQUE):
             self.noteHoraire = "L"
         else:
             raise ValueError(f"Heure inconnue : {self.choixHeure}")
