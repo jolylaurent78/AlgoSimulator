@@ -471,7 +471,7 @@
               "cercleAMPM": "AM"
             },
             "partition": {
-              "lieuObservation": "Cherbourg",
+              "lieuObservation": "Gérardmer",
               "P2M2": "Clef",
               "typeSymetrie": "Flip horizontal"
             },
@@ -647,7 +647,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         },
         {
@@ -684,7 +684,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         }
       ]
@@ -692,43 +692,6 @@
     {
       "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
       "scenarios": [
-        {
-          "name": "Pont de Noirmoutiers",
-          "type": "default",
-          "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
-          "solution": false,
-          "parameters": {
-            "segment": {
-              "choixCalendrier": "Standard"
-            },
-            "cercleHoraire": {
-              "stylet": "Loudun",
-              "heureAMPM": "AM",
-              "heureSubstitution": "=",
-              "cercleAMPM": "PM"
-            },
-            "partition": {
-              "lieuObservation": "Cherbourg",
-              "P2M2": "+2",
-              "typeSymetrie": "Flip vertical"
-            },
-            "cercleDistance": {
-              "centreCercle": "Ouverture",
-              "P2M2": "-2",
-              "octave": "x2"
-            }
-          },
-          "cached_results": {},
-          "layer_preferences": {
-            "color": [
-              0,
-              0,
-              0
-            ],
-            "thickness": 1,
-            "visible": false
-          }
-        },
         {
           "name": "Le Goulet",
           "type": "utilisateur",
@@ -753,6 +716,43 @@
               "centreCercle": "Ouverture",
               "P2M2": "+2",
               "octave": "x1"
+            }
+          },
+          "cached_results": {},
+          "layer_preferences": {
+            "color": [
+              0,
+              0,
+              0
+            ],
+            "thickness": 1,
+            "visible": false
+          }
+        },
+        {
+          "name": "Pont de Noirmoutiers",
+          "type": "default",
+          "segment": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
+          "solution": true,
+          "parameters": {
+            "segment": {
+              "choixCalendrier": "Standard"
+            },
+            "cercleHoraire": {
+              "stylet": "Loudun",
+              "heureAMPM": "AM",
+              "heureSubstitution": "=",
+              "cercleAMPM": "PM"
+            },
+            "partition": {
+              "lieuObservation": "Cherbourg",
+              "P2M2": "+2",
+              "typeSymetrie": "Flip vertical"
+            },
+            "cercleDistance": {
+              "centreCercle": "Ouverture",
+              "P2M2": "-2",
+              "octave": "x2"
             }
           },
           "cached_results": {},
