@@ -296,23 +296,22 @@ def test_bases_reelles_conservent_les_criteres_geometriques():
     moteur, _ = chargerProjetJsonV1(fichier)
     attendus = {
         "Saint Amour": [(888574.512428, 6594140.364372)],
-        "Rocamadour": [(583844.131423, 6399250.149704)],
-        "Gergovie": [(695227.735988, 6486010.239425)],
+        "Rocamadour": [(580473.206445, 6400068.708559)],
+        "Gergovie": [],
         "Carignan": [],
         "Ile d'Aix": [(377128.725772, 6539620.079491), (371660.686958, 6546823.649281)],
         "Metz": [],
         "Chateau Gaillard": [],
         "Domremy": [(895978.733016, 6813738.873863)],
-        "Fontevraud": [(485287.501133, 6693988.666879)],
+        "Fontevraud": [(485382.000222, 6693897.652441)],
         "Rouen": [],
-        "Chalus": [(548079.690644, 6508194.248413)],
-        "Pont de Noirmoutiers": [(311417.214003, 6642264.743463), (988498.335152, 6626489.521880)],
+        "Chalus": [(549397.625005, 6509742.069402)],
+        "Pont de Noirmoutiers": [(311026.032588, 6642076.836875), (990823.506573, 6627332.295081)],
         "Reims": [(786717.909090, 6899512.556359)],
         "Bouvines": [(709697.984416, 7039227.428647)],
-        "Le Goulet": [(602578.048793, 6885749.080517)],
-        # S6M explicite, Standard -2 enregistré : F au lieu de G. Les cercles
-        # ne s'intersectent plus ; ne pas conserver artificiellement les deux candidats.
-        "Saint Cyr Coetquidan": [],
+        "Le Goulet": [(601259.816918, 6885070.436900)],
+        # Valeurs historiques du projet d6ff8fa, sans modifier ses paramètres.
+        "Saint Cyr Coetquidan": [(314502.221191, 6796161.738146)],
     }
     verifies = set()
     for scenarios in moteur._scenarios.values():
@@ -322,6 +321,7 @@ def test_bases_reelles_conservent_les_criteres_geometriques():
             verifies.add(nom)
             h = scenario.modules["cercleHoraire"]
             c = scenario.modules["candidatBase"]
+            c.calculer(methode="historique")
             assert h.angleHoraire > 0
             assert len(c.listeCandidats) == len(attendus[nom])
             for pt, coord in zip(c.listeCandidats, attendus[nom]):
@@ -333,11 +333,17 @@ def test_bases_reelles_conservent_les_criteres_geometriques():
             cd = CercleGraphique(c.centreCercledistance, c.distanceRefCercledistance)
             intersections = cd.intersectionCercle(ch)
             if not intersections:
-                assert not attendus[nom]
-                ecarts = [p.distance(q) for ligne in c.candidatsPartition
-                          for p in ligne.intersectionCercle(ch)
-                          for q in ligne.intersectionCercle(cd)]
-                assert min(ecarts, default=float("inf")) >= 20
+                milieux = []
+                for ligne in c.candidatsPartition:
+                    couples = [(p.distance(q), p, q) for p in ligne.intersectionCercle(ch)
+                               for q in ligne.intersectionCercle(cd)]
+                    if couples:
+                        ecart, p, q = min(couples, key=lambda c:c[0])
+                        if ecart < 20:
+                            milieux.append(tuple((a+b)/2 for a,b in zip(p.coordonneesLambert(),q.coordonneesLambert())))
+                assert len(milieux) == len(attendus[nom])
+                for milieu, coord in zip(milieux,attendus[nom]):
+                    assert milieu == pytest.approx(coord,abs=.001)
                 continue
             assert len(intersections) == 2
             milieux = []

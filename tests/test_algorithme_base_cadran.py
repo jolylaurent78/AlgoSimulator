@@ -327,7 +327,7 @@ def test_candidat_base_retient_lintersection_directe_proche(monkeypatch):
     module = candidat_base_pret()
     module.candidatsPartition = [LigneCandidatFictive(projections=[projection])]
 
-    module.calculer()
+    module.calculer(methode="historique")
 
     assert len(module.listeCandidats) == 1
 
@@ -343,6 +343,6 @@ def test_candidat_base_approche_les_cercles_non_intersectes(monkeypatch, distanc
         LigneCandidatFictive(intersections={"horaire": [point_horaire], "distance": [point_distance]})
     ]
 
-    module.calculer()
+    module.calculer(methode="historique")
 
     assert len(module.listeCandidats) == nombre_attendu

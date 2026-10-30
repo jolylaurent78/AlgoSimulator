@@ -22,6 +22,8 @@ from src.data_loader import villes_dict
 
 # Gestion des layers graphiques
 from src.layerManager import LayerManager
+from src.carte_config import carteConfig
+from src.GeometrieCandidatsBase import CercleMetrique, ResultatCandidatBase, chercherCandidatsBasePonderes
 
 
 class AlgorithmeBaseCadran(AlgorithmeManager):
@@ -589,7 +591,31 @@ class CandidatBase(ModuleAlgo):
     def setup(self):
         self.pointBourges = PointGraphique(villes_dict["Bourges"])
 
-    def calculer(self):
+    def calculer(self, methode="ponderee"):
+        self.methodeCandidats = methode
+        self.geometriesCandidats = []
+        self.diagnosticsCandidats = []
+        if methode == "historique":
+            return self.calculerHistorique()
+        if methode != "ponderee":
+            raise ValueError(f"Méthode de candidats BaseCadran inconnue : {methode}")
+        self.pointStylet = PointGraphique(villes_dict[self.styletCerclehoraire])
+        self.pointChoix = PointGraphique("3 points", *self.coordPointChoixCerclehoraire)
+        # Conserver la construction existante ; travailler ensuite exclusivement
+        # avec ses données normatives Lambert, jamais avec le cache du cercle pixel.
+        horaire = CercleGraphique.depuisTroisPoints(self.pointBourges,self.pointStylet,self.pointChoix)
+        self.listeCandidats = []
+        if horaire is None:
+            self.diagnosticsCandidats = [ResultatCandidatBase(rejet="cercle horaire dégénéré")]
+            return
+        cercle_h = CercleMetrique(horaire.pointCentre.coordonneesLambert(),horaire.getRayonKm()*1000)
+        cercle_d = CercleMetrique(self.centreCercledistance.coordonneesLambert(),self.distanceRefCercledistance*1000)
+        partitions = [(carteConfig.pixels_to_lambert93(*ligne.pointReference),
+                       tuple(carteConfig.A_inv @ ligne.vecteur)) for ligne in self.candidatsPartition]
+        self.geometriesCandidats,self.diagnosticsCandidats = chercherCandidatsBasePonderes(cercle_h,cercle_d,partitions)
+        self.listeCandidats = [PointGraphique("Centre pondéré",*g.p) for g in self.geometriesCandidats]
+
+    def calculerHistorique(self):
         # On crée les points de référence
         self.pointStylet = PointGraphique(villes_dict[self.styletCerclehoraire])
         (x_l93, y_l93) = self.coordPointChoixCerclehoraire
@@ -632,13 +658,27 @@ class CandidatBase(ModuleAlgo):
 
     def construireRepresentationCarte(self) -> list[ObjetGraphique]:
         listeObjets = []
-        for pt in self.listeCandidats:
+        for index,pt in enumerate(self.listeCandidats):
+            tooltips = []
+            if getattr(self,"methodeCandidats","historique") == "ponderee":
+                g = self.geometriesCandidats[index]
+                def afficher(d):
+                    return "indéterminée" if d is None else f"{d:.6f} km"
+                tooltips = [f"Centre P (Lambert-93 m) : {g.p[0]:.3f}, {g.p[1]:.3f}",
+                            f"Méthode : {g.methode}",
+                            f"AB : {afficher(g.ab)} ; AC : {afficher(g.ac)} ; BC : {afficher(g.bc)}",
+                            f"Segment retenu : {g.segment} ; d_min : {afficher(g.d_min)}",
+                            "Angle indéterminé (secours AB)" if g.angle is None else f"Angle intérieur : {g.angle:.9f}°",
+                            f"Poids t : {g.poids:.12f}",
+                            f"P–cercle horaire : {afficher(g.contraintes[0])}",
+                            f"P–cercle distance : {afficher(g.contraintes[1])}",
+                            f"P–partition : {afficher(g.contraintes[2])}"]
             cercleCandidat = CercleGraphique(
                 pt,
                 CandidatBase.RAYON_CANDIDAT,
                 epaisseur=2,
                 nom="Candidat",
-                tooltips=[],
+                tooltips=tooltips,
                 tags={"level" : "construction"}
             )
             listeObjets.append(cercleCandidat)

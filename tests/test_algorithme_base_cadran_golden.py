@@ -102,6 +102,7 @@ def test_chargement_golden_rocamadour_restitue_le_pipeline_base_cadran_reel():
     assert cercle_distance.distanceRef == pytest.approx(cercle_distance.hauteurStylet / 2 / tan(radians(hauteur)))
     assert cercle_distance.distanceRef == pytest.approx(296.3055, abs=0.001)
 
+    modules["candidatBase"].calculer(methode="historique")
     assert len(modules["candidatBase"].listeCandidats) == 1
     assert scenario.solutionScenario is True
     # La modification du point vient uniquement du nouvel angle horaire.
