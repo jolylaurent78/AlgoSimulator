@@ -85,7 +85,7 @@ class ResultatCandidatBase:
         return self.p is not None and not self.rejet
 
 
-def pondererTriangleBase(a, b, c=None):
+def pondererTriangleBase(a, b, c=None, *, segment_reference=None):
     """Présélection et centre ; aucune exigence d'inclusion des sommets dans 20 km."""
     r = ResultatCandidatBase(a=a, b=b, c=c)
     if not all(isfinite(x) for p in (a,b,c) if p is not None for x in p):
@@ -97,7 +97,7 @@ def pondererTriangleBase(a, b, c=None):
         r.ac, r.bc = distance(a,c)/1000, distance(b,c)/1000
         segments += [(r.ac,'AC',a,c,b), (r.bc,'BC',b,c,a)]
     # min() conserve la première occurrence : AB, puis AC, puis BC.
-    r.d_min, r.segment, debut, fin, oppose = min(segments, key=lambda s:s[0])
+    r.d_min, r.segment, debut, fin, oppose = segments[0] if segment_reference == 'AB' else min(segments, key=lambda s:s[0])
     if r.d_min > 30 + TOL_METRES/1000:
         r.rejet = "distance minimale > 30 km"
         return r
@@ -126,10 +126,11 @@ def distancesContraintesBase(p, horaire, cercle_distance, origine, direction):
             abs(croix(soustraire(p,origine),u))/1000)
 
 
-def calculerCandidatBasePondere(a, b, horaire, cercle_distance, origine, direction):
+def calculerCandidatBasePondere(a, b, horaire, cercle_distance, origine, direction, *, cercle_non_secant=None):
     """Tangentes aux points partition/cercle, puis contrôle des trois contraintes."""
     c = None
-    na, nb = soustraire(a,horaire.centre), soustraire(b,cercle_distance.centre)
+    cercle_a,cercle_b = (cercle_distance,horaire) if cercle_non_secant == 'distance' else (horaire,cercle_distance)
+    na, nb = soustraire(a,cercle_a.centre), soustraire(b,cercle_b.centre)
     if hypot(*na) > TOL_METRES and hypot(*nb) > TOL_METRES:
         na,nb = unitaire(na),unitaire(nb)
         u,v = (-na[1],na[0]),(-nb[1],nb[0])
@@ -143,13 +144,32 @@ def calculerCandidatBasePondere(a, b, horaire, cercle_distance, origine, directi
                            for p,n in ((a,na),(b,nb))]
                 if max(residus) <= TOL_METRES:
                     c = possible
-    r = pondererTriangleBase(a,b,c)
+    r = pondererTriangleBase(a,b,c,segment_reference='AB' if cercle_non_secant else None)
+    if cercle_non_secant:
+        r.traitement = 'ponderee_intersections_cercles'
+        r.cercle_non_secant = cercle_non_secant
     if not r.accepte:
         return r
     r.contraintes = distancesContraintesBase(r.p,horaire,cercle_distance,origine,direction)
     if not all(isfinite(d) and d <= 20 + TOL_METRES/1000 for d in r.contraintes):
         r.rejet = "contrainte finale > 20 km"
     return r
+
+
+def intersectionsCercles(premier, second):
+    """Intersections isolées en Lambert-93 ; aucun point inventé si confondus."""
+    delta = soustraire(second.centre,premier.centre)
+    longueur = hypot(*delta)
+    r,s = premier.rayon,second.rayon
+    if longueur <= TOL_METRES or longueur > r+s+TOL_METRES or longueur < abs(r-s)-TOL_METRES:
+        return []
+    u = (delta[0]/longueur,delta[1]/longueur)
+    avance = ((r-s)*(r+s)+longueur*longueur)/(2*longueur)
+    pied = tuple(premier.centre[i]+avance*u[i] for i in (0,1))
+    hauteur = sqrt(max(0.,(r-avance)*(r+avance)))
+    if hauteur <= TOL_METRES:
+        return [pied]
+    return [(pied[0]-signe*hauteur*u[1],pied[1]+signe*hauteur*u[0]) for signe in (-1,1)]
 
 
 def ecartDroiteCercle(origine, direction, cercle):
@@ -200,6 +220,21 @@ def chercherCandidatsBasePonderes(horaire, cercle_distance, partitions):
         points_a = intersectionsDroiteCercle(origine,direction,horaire)
         points_b = intersectionsDroiteCercle(origine,direction,cercle_distance)
         if not points_a or not points_b:
+            # Cas 2 : A appartient aux deux cercles ; B à la partition et
+            # au seul cercle coupé. Les tangentes sont prises sur ces cercles.
+            valide = False
+            if bool(points_a) != bool(points_b):
+                nom = 'distance' if points_a else 'horaire'
+                for a in intersectionsCercles(horaire,cercle_distance):
+                    for b in points_a or points_b:
+                        r = calculerCandidatBasePondere(a,b,horaire,cercle_distance,origine,direction,
+                                                       cercle_non_secant=nom)
+                        valide = valide or r.accepte
+                        enregistrer(r,index)
+            # Un candidat valide, même déjà présent par déduplication, évite
+            # de produire aussi le secours A–Q pour cette même partition.
+            if valide:
+                continue
             for cercle,nom,points in ((horaire,"horaire",points_a),(cercle_distance,"distance",points_b)):
                 if not points:
                     enregistrer(calculerSecoursNonSecant(cercle,nom,horaire,cercle_distance,origine,direction),index)

@@ -673,6 +673,13 @@ class CandidatBase(ModuleAlgo):
                             f"P–cercle horaire : {afficher(g.contraintes[0])}",
                             f"P–cercle distance : {afficher(g.contraintes[1])}",
                             f"P–partition : {afficher(g.contraintes[2])}"]
+                if g.traitement == "ponderee_intersections_cercles":
+                    tooltips += ["Type : ponderee_intersections_cercles (cas 2, segment AB imposé)",
+                                 f"Cercle non sécant : {g.cercle_non_secant}"]
+                    for nom in ('a','b','c','m','g'):
+                        point = getattr(g,nom)
+                        tooltips.append(f"{nom.upper()} (m) : indéterminé" if point is None else
+                                        f"{nom.upper()} (m) : {point[0]:.3f}, {point[1]:.3f}")
                 if g.traitement == "secours_non_secant":
                     tooltips = [f"Centre P (Lambert-93 m) : {g.p[0]:.3f}, {g.p[1]:.3f}",
                                 "Type : secours_non_secant", f"Cercle non sécant : {g.cercle_non_secant}",

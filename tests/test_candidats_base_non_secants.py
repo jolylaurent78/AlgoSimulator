@@ -13,14 +13,13 @@ LIGNE=((0.,0.),(1.,0.))
 
 
 @pytest.mark.parametrize('nom',['horaire','distance'])
-def test_un_seul_cercle_non_secant_ecart_9km(nom,monkeypatch):
+def test_secours_aq_un_seul_cercle_non_secant_ecart_9km(nom,monkeypatch):
     non_secant=geo.CercleMetrique((0.,19000.),10000.)
     secant=geo.CercleMetrique((0.,0.),20000.)
     h,d=(non_secant,secant) if nom=='horaire' else (secant,non_secant)
     monkeypatch.setattr(geo,'calculerCandidatBasePondere',Mock(side_effect=AssertionError('Aucun C dans le cas 2')))
-    retenus,diagnostics=geo.chercherCandidatsBasePonderes(h,d,[LIGNE])
-    assert len(retenus)==len(diagnostics)==1
-    r=retenus[0]
+    r=geo.calculerSecoursNonSecant(non_secant,nom,h,d,*LIGNE)
+    assert r.accepte
     assert r.traitement==r.methode=='secours_non_secant'
     assert r.cercle_non_secant==nom
     assert r.a==(0.,9000.) and r.q==(0.,0.)
@@ -141,7 +140,7 @@ def test_prefiltre_garde_une_ligne_a_25km_malgre_cache_pixel(monkeypatch):
     assert p.candidats  # Le préfiltre de 20 km aurait éliminé toutes ces droites.
 
 
-def test_fontevraud_sans_changer_les_parametres_ni_forcer_la_couverture():
+def test_fontevraud_pondere_ab_sans_changer_les_parametres():
     fichier=Path('projets/BaseCadran.json');sha=sha256(fichier.read_bytes()).hexdigest()
     m,layers=chargerProjetJsonV1(fichier)
     event=next(e for e in m._scenarios if '933' in e)
@@ -152,13 +151,18 @@ def test_fontevraud_sans_changer_les_parametres_ni_forcer_la_couverture():
     assert (d.centreCercle,d.P2M2,d.octave)==('Stylet','=','/2')
     assert len(c.listeCandidats)==1
     g=c.geometriesCandidats[0]
-    assert g.traitement=='secours_non_secant' and g.cercle_non_secant=='horaire'
-    assert g.distance_aq==pytest.approx(9.883048873832566,abs=1e-6)
-    assert g.p==tuple((g.a[i]+g.q[i])/2 for i in (0,1))
-    assert g.contraintes==pytest.approx((4.941524436916312,19.566304223185885,4.941524436916276),abs=1e-6)
+    assert g.traitement=='ponderee_intersections_cercles' and g.cercle_non_secant=='horaire'
+    assert g.segment=='AB' and g.ab>g.ac
+    assert (g.ab,g.ac,g.bc)==pytest.approx((13.209795363433223,.812507041379817,13.674380912383095),abs=1e-6)
+    assert g.angle==pytest.approx(53.715975274134905,abs=1e-6)
+    assert g.poids==1 and g.p==g.g
+    assert g.p==pytest.approx((487768.67884452024,6694499.713915286),abs=1e-6)
+    assert g.contraintes==pytest.approx((3.691481264784408,.08288949980642064,8.175098512098264),abs=1e-6)
+    assert not any(r.traitement=='secours_non_secant' and r.partition==g.partition for r in c.diagnosticsCandidats)
     from src.data_loader import villes_dict
-    assert c.listeCandidats[0].distance(villes_dict['Fontevraud'])==pytest.approx(26.522400278494533,abs=1e-6)
+    assert c.listeCandidats[0].distance(villes_dict['Fontevraud'])==pytest.approx(18.333632526056114,abs=1e-6)
     tooltip=' '.join(c.construireRepresentationCarte()[0].tooltips)
-    assert 'secours_non_secant' in tooltip and 'AQ' in tooltip and 'Q (m)' in tooltip
+    assert 'ponderee_intersections_cercles' in tooltip and 'AB imposé' in tooltip
+    assert all(f'{nom} (m)' in tooltip for nom in ('A','B','C','M','G'))
     assert c.construireRepresentationCarte()[0].getRayonKm()==20
     assert sha256(fichier.read_bytes()).hexdigest()==sha
