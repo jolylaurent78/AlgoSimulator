@@ -15,7 +15,8 @@
         "Stylet": "Roncevaux",
         "LettreDecl": "F",
         "Base1": "Saint-Amour",
-        "Base2": "Rocamadour"
+        "Base2": "Rocamadour",
+        "SentinelleStylet": "S1"
       },
       {
         "event": "20 Mars 1815 : Début des 100 jours",
@@ -28,7 +29,8 @@
         "Stylet": "Golfe-Juan",
         "LettreDecl": "E",
         "Base1": "Aléria",
-        "Base2": "Île-d'Aix"
+        "Base2": "Île-d'Aix",
+        "SentinelleStylet": "S5M"
       },
       {
         "event": "30 Mai 1431 : Mort de Jeanne d’Arc",
@@ -41,7 +43,8 @@
         "Stylet": "Sainte-Catherine-de-Fierbois",
         "LettreDecl": "A",
         "Base1": "Domrémy",
-        "Base2": "Coetquidan"
+        "Base2": "Coetquidan",
+        "SentinelleStylet": "S6M"
       },
       {
         "event": "12 Avril 1365 : Traité de Guérande",
@@ -54,7 +57,8 @@
         "Stylet": "Alise-Sainte-Reine",
         "LettreDecl": "D",
         "Base1": "Bouvines",
-        "Base2": "Reims"
+        "Base2": "Reims",
+        "SentinelleStylet": ""
       },
       {
         "event": "27 Juillet 1214 : Bataille des Bouvines",
@@ -67,7 +71,8 @@
         "Stylet": "Vouneuil-sur-Vienne",
         "LettreDecl": "D",
         "Base1": "Metz",
-        "Base2": "Château-Gaillard"
+        "Base2": "Château-Gaillard",
+        "SentinelleStylet": "S5"
       },
       {
         "event": "15 Juin 1066 : Guillaume le conquérant",
@@ -80,7 +85,8 @@
         "Stylet": "Nouaillé-Maupertuis",
         "LettreDecl": "F",
         "Base1": "Gergovie",
-        "Base2": "Carignan"
+        "Base2": "Carignan",
+        "SentinelleStylet": "S6"
       },
       {
         "event": "19 Juillet 933 : Hommage de Guillaume Longue Epée",
@@ -93,7 +99,8 @@
         "Stylet": "Saint-Valentin",
         "LettreDecl": "G",
         "Base1": "Châlus",
-        "Base2": "Fontevraud"
+        "Base2": "Fontevraud",
+        "SentinelleStylet": "S7M"
       },
       {
         "event": "28 Septembre 1066: Débarquement de Guillaume le Conquérant",
@@ -106,7 +113,8 @@
         "Stylet": "3RDV",
         "LettreDecl": "D",
         "Base1": "",
-        "Base2": ""
+        "Base2": "",
+        "SentinelleStylet": ""
       },
       {
         "event": "18 Mai 1152 : Mariage d’Aliénor d’Aquitaine",
@@ -119,7 +127,8 @@
         "Stylet": "Loudun",
         "LettreDecl": "G",
         "Base1": "Le Goulet",
-        "Base2": "Pont de Noirmoutier"
+        "Base2": "Pont de Noirmoutier",
+        "SentinelleStylet": "S5M"
       }
     ]
   },
@@ -458,18 +467,18 @@
             "cercleHoraire": {
               "stylet": "Sainte-Catherine-de-Fierbois",
               "heureAMPM": "AM",
-              "heureSubstitution": "-2",
+              "heureSubstitution": "=",
               "cercleAMPM": "AM"
             },
             "partition": {
-              "lieuObservation": "Roncevaux",
-              "P2M2": "+2",
-              "typeSymetrie": "Flip vertical"
+              "lieuObservation": "Cherbourg",
+              "P2M2": "Clef",
+              "typeSymetrie": "Flip horizontal"
             },
             "cercleDistance": {
               "centreCercle": "Stylet",
-              "P2M2": "=",
-              "octave": "x2"
+              "P2M2": "+2",
+              "octave": "x1"
             }
           },
           "cached_results": {},
@@ -480,7 +489,7 @@
               0
             ],
             "thickness": 1,
-            "visible": false
+            "visible": true
           }
         },
         {
@@ -517,7 +526,7 @@
               0
             ],
             "thickness": 1,
-            "visible": true
+            "visible": false
           }
         }
       ]
