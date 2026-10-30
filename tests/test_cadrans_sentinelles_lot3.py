@@ -161,14 +161,14 @@ def test_rouen_joker_pm_garde_heure_automatique_s5_miroir(references):
     assert (h.selectionHoraire.repere, h.selectionHoraire.branche) == ("S5", "miroir")
     assert h.heureStylet == "12:04:01"
     assert h.heureStyletSecondes == references.heurePourNote("G", "miroir").secondes
-    assert h.heureSentinelle == "13:05:00"
-    assert h.heureSentinelleSecondes == 47100
+    assert h.heureSentinelle == "13:04:00"
+    assert h.heureSentinelleSecondes == 47040
     assert h.brancheReference == "symetrie_tml"
-    assert h.angleHoraire == pytest.approx(18.927594, abs=.000001)
+    assert h.angleHoraire == pytest.approx(18.606620, abs=.000001)
     cote_pm = cote_axe(h)
     h.heureAMPM = "AM"
     h.calculer()
-    assert h.heureSentinelle == "10:55:00"
+    assert h.heureSentinelle == "10:56:00"
     assert h.angleHoraire > 0
     assert cote_pm * cote_axe(h) > 0
     assert h.heureStylet == "12:04:01"
@@ -211,7 +211,7 @@ def test_calendrier_selectionne_note_depart_avant_substitution(references, calen
                 "=": {"AM": "11:37:03", "PM": "12:22:57"},
                 "+2": {"AM": "08:14:46", "PM": "15:45:14"},
                 "-2": {"AM": "12:00:00", "PM": "12:00:00"},
-                "11:00": {"AM": "10:55:00", "PM": "13:05:00"},
+                "11:00": {"AM": "10:56:00", "PM": "13:04:00"},
             }
             assert h.heureSentinelle == attendues[substitution][periode]
         assert h.brancheReference == ("symetrie_tml" if periode == "PM" else
@@ -236,7 +236,7 @@ def test_standard_joker_detecte_reste_joker_avec_substitutions(references, perio
     h.heureAMPM = periode
     h.calculer()
     assert h.selectionHoraire.note == "J"
-    assert h.heureStylet == "13:09:03"
+    assert h.heureStylet == "13:08:03"
     assert h.noteHoraire == "J"
     assert h.heureSentinelleSecondes == heure_base(references, "J", periode).secondes
     assert h.heureStyletSecondes == h.selectionHoraire.heure_locale.secondes
@@ -301,14 +301,14 @@ def test_bases_reelles_conservent_les_criteres_geometriques():
         "Carignan": [],
         "Ile d'Aix": [(377128.725772, 6539620.079491), (371660.686958, 6546823.649281)],
         "Metz": [],
-        "Chateau Gaillard": [],
+        "Chateau Gaillard": [(576904.964799, 6902698.291993)],
         "Domremy": [(895978.733016, 6813738.873863)],
         "Fontevraud": [(485382.000222, 6693897.652441)],
         "Rouen": [],
         "Chalus": [(549397.625005, 6509742.069402)],
         "Pont de Noirmoutiers": [(311026.032588, 6642076.836875), (990823.506573, 6627332.295081)],
         "Reims": [(786717.909090, 6899512.556359)],
-        "Bouvines": [(709697.984416, 7039227.428647)],
+        "Bouvines": [],
         "Le Goulet": [(601259.816918, 6885070.436900)],
         # Valeurs historiques du projet d6ff8fa, sans modifier ses paramètres.
         "Saint Cyr Coetquidan": [(314502.221191, 6796161.738146)],

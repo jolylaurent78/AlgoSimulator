@@ -28,7 +28,7 @@ ATTENDUS = {
     "S5": ("G", "heure", "12:00:00", "structurante"),
     "S6": ("A", "heure", "11:42:00", "structurante"),
     "S7": ("B", "azimut", 169.5, "reevaluee_physiquement"),
-    "Joker": ("J", "heure", "10:55:00", "hypothese_de_travail"),
+    "Joker": ("J", "heure", "10:56:00", "calibration_de_travail_validee"),
 }
 
 
@@ -119,8 +119,8 @@ def test_branches_reelles(referentiel, identifiant, branche_directe, branche_mir
     ref = referentiel.get(identifiant)
     assert (ref.directe.branche, ref.miroir.branche) == (branche_directe, branche_miroir)
     if identifiant == "Joker":
-        assert ref.heure_directe.toString() == "10:55:00"
-        assert ref.heure_miroir.toString("HH:MM") == "13:09"
+        assert ref.heure_directe.toString() == "10:56:00"
+        assert ref.heure_miroir.toString("HH:MM") == "13:08"
 
 
 @pytest.mark.parametrize("identifiant", ATTENDUS)

@@ -31,10 +31,11 @@ def test_s7_169_5_de406_trois_heures_et_provenance(national):
 def test_ancienne_calibration_archivee_et_autres_references_inchangees(national, tmp_path):
     fichier = Path("data/sentinelles_reference_v1.json")
     donnees = json.loads(fichier.read_text(encoding="utf-8"))
-    archive = donnees["historique_calibrations"][-1]
+    archives_s7 = [h for h in donnees["historique_calibrations"] if h["identifiant"] == "S7"]
+    archive = archives_s7[-1]
     ancienne = archive["calibration_precedente"]
     assert archive["identifiant"] == "S7"
-    premiere = donnees["historique_calibrations"][0]
+    premiere = archives_s7[0]
     assert premiere["cible_horaire_indicative"] == "11:35:49"
     assert premiere["calibration_precedente"]["valeur_reference"] == "11:30:42"
     assert ancienne["azimut_physique_initial"] == 170

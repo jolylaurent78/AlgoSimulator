@@ -164,7 +164,7 @@ def test_lumiere_final_inverse_le_calendrier_du_stylet(calendrier_stylet, regle_
 
 @pytest.mark.parametrize(
     ("choix", "ampm", "heure_attendue"),
-    [("=", "AM", "09:43:00"), ("+2", "PM", "15:59:05"), ("-2", "AM", "11:42:00"), ("Clef", "AM", "10:25:04"), ("11:00", "AM", "10:55:00")],
+    [("=", "AM", "09:43:00"), ("+2", "PM", "15:59:05"), ("-2", "AM", "11:42:00"), ("Clef", "AM", "10:25:04"), ("11:00", "AM", "10:56:00")],
 )
 @pytest.mark.slow
 def test_lumiere_final_applique_substitution_ampm_utc_et_distance(monkeypatch, choix, ampm, heure_attendue):

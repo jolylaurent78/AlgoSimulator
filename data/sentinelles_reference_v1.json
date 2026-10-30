@@ -31,6 +31,20 @@
         "temoins": {"azimut_direct": 169.0, "heure_directe": "11:35:51", "azimut_miroir": 191.0, "heure_miroir": "12:28:10"}
       },
       "calcul_precedent_de406": {"azimut_direct": 169.0000183724259, "secondes_directes_tml": 41751.13010191123, "azimut_miroir": 190.99996750271725, "secondes_miroir_tml": 44890.1531078736}
+    },
+    {
+      "date_reevaluation": "2026-10-30",
+      "identifiant": "Joker",
+      "motif": "Ajustement de 10:55 à 10:56 TML, validé par étude globale DE406 : couverture simultanée de Rouen, Château-Gaillard et Bouvines, maintien de la sélection native d'Alise-Sainte-Reine et amélioration de l'accord avec l'azimut physique historique de 153°.",
+      "calibration_precedente": {
+        "identifiant": "Joker", "note": "J", "nature": "axe_rangee",
+        "azimut_physique_initial": 153.0,
+        "autorite": "heure", "valeur_reference": "10:55:00",
+        "origine": "Heure de travail 10:55, confrontation avec Alise-Sainte-Reine ; axe de la rangée, pas une huitième pierre.",
+        "statut": "hypothese_de_travail",
+        "temoins": {"azimut_direct": 152.747, "heure_directe": "10:55:00", "azimut_miroir": 207.253, "heure_miroir": "13:08:59"}
+      },
+      "calcul_precedent_de406": {"azimut_direct": 152.7318335370279, "secondes_directes_tml": 39300.0, "azimut_miroir": 207.26816410623715, "secondes_miroir_tml": 47343.44082706372, "heure_miroir_tml": "13:09:03.440827"}
     }
   ],
   "directions": [
@@ -93,10 +107,10 @@
     {
       "identifiant": "Joker", "note": "J", "nature": "axe_rangee",
       "azimut_physique_initial": 153.0,
-      "autorite": "heure", "valeur_reference": "10:55:00",
-      "origine": "Heure de travail 10:55, confrontation avec Alise-Sainte-Reine ; axe de la rangée, pas une huitième pierre.",
-      "statut": "hypothese_de_travail",
-      "temoins": {"azimut_direct": 152.747, "heure_directe": "10:55:00", "azimut_miroir": 207.253, "heure_miroir": "13:08:59"}
+      "autorite": "heure", "valeur_reference": "10:56:00",
+      "origine": "Ajustement de 10:55 à 10:56 TML, validé par étude globale DE406 : couverture simultanée de Rouen, Château-Gaillard et Bouvines, maintien de la sélection native d'Alise-Sainte-Reine et amélioration de l'accord avec l'azimut physique historique de 153°. Voir docs/joker_1056_etude_globale.md (ac9b11c). Axe de la rangée, pas une huitième pierre ; calibration précédente conservée dans historique_calibrations.",
+      "statut": "calibration_de_travail_validee",
+      "temoins": {"azimut_direct": 153.10953410274112, "heure_directe": "10:56:00", "azimut_miroir": 206.89044838586045, "heure_miroir": "13:08:03.364589"}
     }
   ]
 }

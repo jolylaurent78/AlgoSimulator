@@ -55,7 +55,7 @@ def test_joker_preserve_sans_substitution_angulaire(modules_reference,choix):
     h.calculer()
     assert h.selectionHoraire.note=='J'
     assert h.noteHoraire=='J'
-    assert h.heureSentinelle=='10:55:00'
+    assert h.heureSentinelle=='10:56:00'
     assert not h.horaireLampouy
 
 
