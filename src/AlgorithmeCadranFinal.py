@@ -10,7 +10,8 @@ from src.ReferentielSentinelles import HeureMoyenneLocale, ContexteObservation
 
 # Librairie calcul astronomique
 from src.calculAstronomique import positionSoleil
-from src.calculAstronomique import MyJulianDate, convertirHeureLocaleVersUTC, decalageGamme
+from src.calculAstronomique import MyJulianDate, convertirHeureLocaleVersUTC
+from src.substitutionsMusicales import _noteSourceClef2, noteAvecSubstitution as noteAvecSubstitutionCadranFinal
 
 # Affichage des objects graphiques
 from src.affichage_objets import ObjetGraphique, PointGraphique, Ligne, LigneEntreVilles, LigneAzimut, CercleGraphique
@@ -22,20 +23,6 @@ from src.data_loader import villes_dict
 # Gestion des layers graphiques
 from src.layerManager import LayerManager
 from src.carte_config import carteConfig
-
-
-def _noteSourceClef2(notes):
-    """Première note définie pour Clef 2 : initiale, puis +2, puis -2."""
-    return next((note for note in (notes[0], notes[2], notes[1]) if note in ("C", "F")), None)
-
-
-def noteAvecSubstitutionCadranFinal(note, substitution):
-    """Conserver les choix historiques ; Clef 2 envoie Do ou Fa vers Sol."""
-    notes = decalageGamme(note)
-    if substitution == "Clef 2":
-        # Sol et les autres cas sans correspondance définie gardent leur note.
-        return "G" if _noteSourceClef2(notes) is not None else note
-    return notes[{"=": 0, "+2": 2, "-2": 1, "Clef": 3}[substitution]]
 
 
 class AlgorithmeCadranFinal(AlgorithmeManager):

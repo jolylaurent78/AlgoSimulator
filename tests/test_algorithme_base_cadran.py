@@ -173,7 +173,7 @@ def test_cercle_horaire_applique_substitution_ampm_et_signe(monkeypatch, substit
 
     assert module.getValeursHeureAMPM() == ["AM", "PM"]
     assert module.getValeursCercleAMPM() == ["AM", "PM"]
-    assert module.getValeursHeureSubstitution() == ["=", "+2", "-2", "11:00"]
+    assert module.getValeursHeureSubstitution() == ["=", "+2", "-2", "Clef", "Clef 2", "11:00"]
     assert module.heureSentinelle == heure_attendue
     assert module.angleHoraire == pytest.approx(angle_attendu)
 
@@ -203,7 +203,7 @@ def test_partition_repartit_les_notes_selon_la_symetrie(monkeypatch, symetrie, n
 
     module.calculer()
 
-    assert module.getValeursP2M2() == ("=", "+2", "-2", "Clef")
+    assert module.getValeursP2M2() == ("=", "+2", "-2", "Clef", "Clef 2")
     assert module.getValeursTypeSymetrie() == ("Flip vertical", "Flip horizontal")
     assert module.lettrePartition == "A"
     assert [nom for _, nom in module.listeNotesPartition[:4]] == notes_attendues
@@ -254,7 +254,7 @@ def test_cercle_distance_choisit_centre_heure_et_octave(monkeypatch, centre, oct
 
     hauteur_attendue = 100.0 / CercleDistance.tableauGamme["F"][1] * CercleDistance.tableauGamme["A"][1]
     assert module.getValeursCentreCercle() == ("Ouverture", "Stylet")
-    assert module.getValeursP2M2() == ("=", "+2", "-2", "Clef")
+    assert module.getValeursP2M2() == ("=", "+2", "-2", "Clef", "Clef 2")
     assert module.getValeursOctave() == ("x1", "x2", "/2")
     assert module.heureReference == heure_attendue
     assert module.lettreHauteur == "A"

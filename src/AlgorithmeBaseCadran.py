@@ -11,7 +11,8 @@ from src.ReferentielSentinelles import HeureMoyenneLocale, ContexteObservation
 
 # Librairie calcul astronomique
 from src.calculAstronomique import positionSoleil, calculLeverSoleil
-from src.calculAstronomique import MyJulianDate, convertirHeureLocaleVersUTC, decalageGamme
+from src.calculAstronomique import MyJulianDate, convertirHeureLocaleVersUTC
+from src.substitutionsMusicales import noteAvecSubstitution
 
 # Affichage des objects graphiques
 from src.affichage_objets import ObjetGraphique, PointGraphique, LigneEntreVilles, LigneAzimut, LigneGraphique, CercleGraphique
@@ -102,7 +103,7 @@ class CercleHoraire(ModuleAlgo):
         return ["AM", "PM"]
 
     def getValeursHeureSubstitution(self):
-        liste = ["=", "+2", "-2", "11:00"]
+        liste = ["=", "+2", "-2", "Clef", "Clef 2", "11:00"]
         if self.dateDataset == "18/05/1152":
             azimutLampouyStr = f"{self.sentinelle["L"]["AzimutCalibre"]}°"
             liste.append(azimutLampouyStr)
@@ -172,7 +173,7 @@ class CercleHoraire(ModuleAlgo):
         self.styletAMPM = self.selectionHoraire.ampm
 
         # On a deux cas: Si lampouy, on suppose que l'angle est l'angle des aligmenets de Lampouy
-        self.horaireLampouy = self.heureSubstitution not in ("=", "+2", "-2", "11:00")
+        self.horaireLampouy = self.heureSubstitution not in ("=", "+2", "-2", "Clef", "Clef 2", "11:00")
         if self.horaireLampouy:
             azimutLampouyStr = f"{self.sentinelle['L']['AzimutCalibre']}°"
             if self.heureSubstitution != azimutLampouyStr:
@@ -194,12 +195,10 @@ class CercleHoraire(ModuleAlgo):
                 else:
                     noteDepart = self.lettreChoixSegment
                 # Le Joker reste hors de la gamme, même avec +2 ou -2.
-                if noteDepart == "J" or self.heureSubstitution == "=":
+                if noteDepart == "J":
                     choixNote = noteDepart
                 else:
-                    tabDec = {"+2": 2, "-2": 1}
-                    listeNotes = decalageGamme(noteDepart)  # On décale sans susbtition Fa/Sol
-                    choixNote = listeNotes[tabDec[self.heureSubstitution]]
+                    choixNote = noteAvecSubstitution(noteDepart, self.heureSubstitution)
             self.noteHoraire = choixNote
             direction = self.sentinelle.directionPourNote(choixNote, "AM")
             self.brancheReference = ("directe" if direction is self.sentinelle.par_note[choixNote].directe else "miroir")
@@ -295,7 +294,7 @@ class Partition(ModuleAlgo):
         return LieuxObservation.getListeLieuxObservation(self.lettreDomSegment, self.dateDataset)
 
     def getValeursP2M2(self):
-        return "=", "+2", "-2", "Clef"
+        return "=", "+2", "-2", "Clef", "Clef 2"
 
     def getValeursTypeSymetrie(self):
         return "Flip vertical", "Flip horizontal"
@@ -353,9 +352,7 @@ class Partition(ModuleAlgo):
         heureObsJD = MyJulianDate.fromString(self.dateSegmentDataset, self.heureUTCCarnac)
         _, self.azimutSoleil = positionSoleil((latCarnac, lonCarnac), heureObsJD)
 
-        tabDec = {"=": 0, "+2": 2, "-2": 1, "Clef": 3}
-        listeNotes = decalageGamme(self.lettreChoixSegment)  # On décale sans susbtition Fa/Sol
-        self.lettrePartition = listeNotes[tabDec[self.P2M2]]
+        self.lettrePartition = noteAvecSubstitution(self.lettreChoixSegment, self.P2M2)
 
         # On doit calculer ici les lignes candidates
         self.pointCarignan = PointGraphique(villes_dict["Carignan"], epaisseur=4, afficherNom=True)
@@ -467,7 +464,7 @@ class CercleDistance(ModuleAlgo):
         return "Ouverture", "Stylet"
 
     def getValeursP2M2(self):
-        return "=", "+2", "-2", "Clef"
+        return "=", "+2", "-2", "Clef", "Clef 2"
 
     def getValeursOctave(self):
         return "x1", "x2", "/2"
@@ -526,9 +523,7 @@ class CercleDistance(ModuleAlgo):
         self.distanceClef = self.pointStylet.distance(PointGraphique(villes_dict["Metz"]))
 
         # On sélectionne la hauteur du stylet
-        tabDec = {"=": 0, "+2": 2, "-2": 1, "Clef": 3}
-        listeNotes = decalageGamme(self.lettreChoixSegment)  # On décale sans susbtition Fa/Sol
-        self.lettreHauteur = listeNotes[tabDec[self.P2M2]]
+        self.lettreHauteur = noteAvecSubstitution(self.lettreChoixSegment, self.P2M2)
 
         _, longFA = CercleDistance.tableauGamme["F"]
         _, longNote = CercleDistance.tableauGamme[self.lettreHauteur]
