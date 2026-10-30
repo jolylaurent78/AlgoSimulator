@@ -60,6 +60,21 @@ class AlgorithmeCadranFinal(AlgorithmeManager):
     def appliquerParametresDepuisStructure(self):
         pass
 
+    def calculerModules(self, nom_scenario=None, segment=None, setup=False):
+        scenario = self.getScenario(nom_scenario, segment)
+        if self.dataset.base1 or self.dataset.base2:
+            scenario.ordreModules = self.ordreModules
+            return super().calculerModules(nom_scenario, segment, setup)
+
+        # Sans bases, seul l'événement reste actif. La reconstruction du calque
+        # efface les anciens objets sans appeler les représentations géométriques.
+        scenario.ordreModules = ["segment"]
+        self.injecterEntreesDansModuleObjet("segment", nom_scenario, segment)
+        if setup:
+            scenario.modules["segment"].setup()
+        self.appliquerReglesSurModule("segment", nom_scenario, segment)
+        scenario.modules["segment"].calculer()
+
     def getLargeurHauteurIHM(self):
         return 495, 600
 
