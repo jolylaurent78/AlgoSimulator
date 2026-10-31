@@ -5,7 +5,7 @@ import re
 # Moteur Algo générique
 from src.AlgorithmeManager import ModuleAlgo, AlgorithmeManager
 from src.ListeSegmentsDataSet import ListeSegmentsDataSet
-from src.Sentinelle import LieuxObservation
+from src.Sentinelle import LieuxObservation, Sentinelle as LectureSentinelles
 from src.CadranNationalSentinelles import SentinelleNationale as Sentinelle, SelectionHoraire
 from src.ReferentielSentinelles import HeureMoyenneLocale, ContexteObservation
 
@@ -25,6 +25,17 @@ from src.data_loader import villes_dict
 from src.layerManager import LayerManager
 from src.carte_config import carteConfig
 from src.GeometrieCandidatsBase import CercleMetrique, ResultatCandidatBase, chercherCandidatsBasePonderes, ecartDroiteCercle, TOL_METRES
+
+
+CHOIX_LAMPOUY = "Lampouy"
+
+
+def normaliserSubstitutionLampouy(valeur, date):
+    """Les anciens choix en degrés du 18 mai désignaient tous Lampouy."""
+    if (date == "18/05/1152" and isinstance(valeur, str)
+            and re.fullmatch(r"\d+(?:[.,]\d+)?°", valeur)):
+        return CHOIX_LAMPOUY
+    return valeur
 
 
 class AlgorithmeBaseCadran(AlgorithmeManager):
@@ -105,8 +116,7 @@ class CercleHoraire(ModuleAlgo):
     def getValeursHeureSubstitution(self):
         liste = ["=", "+2", "-2", "Clef", "Clef 2", "11:00"]
         if self.dateDataset == "18/05/1152":
-            azimutLampouyStr = f"{self.sentinelle["L"]["AzimutCalibre"]}°"
-            liste.append(azimutLampouyStr)
+            liste.append(CHOIX_LAMPOUY)
         return liste
 
     def __init__(self):
@@ -144,6 +154,7 @@ class CercleHoraire(ModuleAlgo):
 
     def calculer(self):
         # On initialise la valeur du stylet avec celui défini par le segment par défaut
+        self.heureSubstitution = normaliserSubstitutionLampouy(self.heureSubstitution, self.dateDataset)
         self.stylet = self.styletDataset
 
         # On récupère l'heure associée au stylet
@@ -175,10 +186,13 @@ class CercleHoraire(ModuleAlgo):
         # On a deux cas: Si lampouy, on suppose que l'angle est l'angle des aligmenets de Lampouy
         self.horaireLampouy = self.heureSubstitution not in ("=", "+2", "-2", "Clef", "Clef 2", "11:00")
         if self.horaireLampouy:
-            azimutLampouyStr = f"{self.sentinelle['L']['AzimutCalibre']}°"
-            if self.heureSubstitution != azimutLampouyStr:
+            if self.heureSubstitution != CHOIX_LAMPOUY:
                 raise ValueError(f"Substitution angulaire inconnue : {self.heureSubstitution}")
-            azimutSoleil = self.sentinelle["L"]["AzimutCalibre"]
+            # Lecture fraîche avec le lecteur existant, sans recalibration horaire.
+            lecture = LectureSentinelles.__new__(LectureSentinelles)
+            lecture.fichierSentinelles = {}
+            lecture.chargerFichier(self.sentinelle.chemin_csv)
+            azimutSoleil = float(lecture.fichierSentinelles["Lampouy"]["Azimut"])
             self.noteHoraire = "L"
             self.brancheReference = "historique_" + self.heureAMPM
             # Substitution d'angle uniquement : préserver l'heure antérieure,

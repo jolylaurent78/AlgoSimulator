@@ -13,7 +13,7 @@ from collections import OrderedDict
 from pathlib import Path
 from typing import Any
 
-from src.AlgorithmeBaseCadran import AlgorithmeBaseCadran
+from src.AlgorithmeBaseCadran import AlgorithmeBaseCadran, CercleHoraire, normaliserSubstitutionLampouy
 from src.AlgorithmeCadranFinal import (
     AlgorithmeCadranFinal, LumiereFinal, LigneHoraireFinal, CHOIX_LAMPOUY, CHOIX_LAMPOUY_HISTORIQUE,
 )
@@ -296,6 +296,8 @@ def _restaurer_parametres_scenario(scenario: Scenario, parametres: Any) -> None:
             if (isinstance(module, (LumiereFinal, LigneHoraireFinal)) and attribut == "choixHeure"
                     and valeur == CHOIX_LAMPOUY_HISTORIQUE):
                 valeur = CHOIX_LAMPOUY
+            if isinstance(module, CercleHoraire) and attribut == "heureSubstitution":
+                valeur = normaliserSubstitutionLampouy(valeur, module.dateDataset)
             setattr(module, attribut, valeur)
 
 

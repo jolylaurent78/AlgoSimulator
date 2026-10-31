@@ -7,6 +7,64 @@ from src.CadranNationalSentinelles import SentinelleNationale
 from src.AlgorithmeBaseCadran import CandidatBase, CercleDistance, CercleHoraire, Partition, Segment
 
 
+def test_ancien_choix_lampouy_base_charge_sans_dependre_azimut(tmp_path):
+    import json
+    from src.ProjectPersistence import _restaurer_parametres_scenario
+    module=CercleHoraire.__new__(CercleHoraire)
+    module.dateDataset='18/05/1152';module.heureSubstitution='='
+    scenario=SimpleNamespace(nom='Le Goulet',modules={'cercleHoraire':module})
+    fichier=tmp_path/'ancien.json'
+    for ancien in ('138.5°','138°','138.0°'):
+        fichier.write_text(json.dumps({'cercleHoraire':{'heureSubstitution':ancien}}),encoding='utf-8')
+        avant=fichier.read_bytes()
+        _restaurer_parametres_scenario(scenario,json.loads(fichier.read_text(encoding='utf-8')))
+        assert module.heureSubstitution=='Lampouy'
+        assert module.getValeursHeureSubstitution()==['=','+2','-2','Clef','Clef 2','11:00','Lampouy']
+        assert fichier.read_bytes()==avant
+    assert base_cadran.normaliserSubstitutionLampouy('138.5°','20/03/1815')=='138.5°'
+
+
+def test_sauvegarde_substitution_lampouy_base_sans_azimut(tmp_path,monkeypatch):
+    import json
+    import src.ProjectPersistence as persistance
+    module=CercleHoraire.__new__(CercleHoraire)
+    module.dateDataset='18/05/1152';module.heureSubstitution='='
+    scenario=SimpleNamespace(nom='Le Goulet',modules={'cercleHoraire':module})
+    persistance._restaurer_parametres_scenario(scenario,{'cercleHoraire':{'heureSubstitution':'138.5°'}})
+    monkeypatch.setattr(persistance,'construireSnapshotProjetJsonV1',lambda *args:
+        {'parameters':persistance._snapshot_parametres_scenario(scenario,[('cercleHoraire','heureSubstitution')])})
+    sortie=tmp_path/'nouveau.json'
+    persistance.sauvegarderProjetJsonV1(sortie,None,None)
+    assert json.loads(sortie.read_text(encoding='utf-8'))['parameters']=={
+        'cercleHoraire':{'heureSubstitution':'Lampouy'}}
+
+
+def test_substitution_lampouy_base_relit_azimut_au_recalcul(tmp_path,monkeypatch):
+    from unittest.mock import Mock
+    from src.ReferentielSentinelles import HeureMoyenneLocale
+    installer_geometrie_base(monkeypatch)
+    fichier=tmp_path/'sentinelle.csv'
+    entete='Nom,Note,Azimut,AzimutGeant,Ville\n'
+    fichier.write_text(entete+'Lampouy,L,138,139,\n',encoding='utf-8')
+    reference=SimpleNamespace(chemin_csv=fichier,rechercherLigneHoraire=lambda *_:
+        SimpleNamespace(heure_locale=HeureMoyenneLocale(32400.),ampm='AM'))
+    monkeypatch.setattr(base_cadran,'Sentinelle',lambda *_:reference)
+    monkeypatch.setattr(base_cadran,'positionSoleil',Mock(side_effect=AssertionError('Aucun DE406 pour cette substitution')))
+    module=CercleHoraire()
+    module.dateDataset='18/05/1152';module.styletDataset='Roncevaux'
+    module.heureSubstitution='Lampouy'
+    module.heureSentinelle='09:00:00';module.heureSentinelleSecondes=32400.
+    module.calculer()
+    assert module.azimutSoleil==138. and module.angleHoraire==42.
+    fichier.write_text(entete+'Lampouy,L,137,139,\n',encoding='utf-8')
+    module.calculer()
+    assert module.heureSubstitution=='Lampouy' and module.noteHoraire=='L'
+    assert module.azimutSoleil==137. and module.angleHoraire==43.
+    assert module.heureSentinelleSecondes==32400.
+    module.heureAMPM='PM';module.calculer()
+    assert module.angleHoraire==-43. and module.heureSentinelleSecondes==32400.
+
+
 class DateFictive:
     def __init__(self, lettre="C", texte="04:48:38"):
         self.lettre = lettre
